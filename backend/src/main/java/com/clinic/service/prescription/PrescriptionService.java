@@ -7,12 +7,12 @@ import com.clinic.dto.prescription.PrescriptionItemRequest;
 import com.clinic.dto.prescription.PrescriptionRequest;
 import com.clinic.dto.prescription.PrescriptionResponse;
 import com.clinic.entity.medical.MedicalRecord;
-import com.clinic.entity.medicine.Medicine;
+import com.clinic.entity.prescription.Medicine;
 import com.clinic.entity.prescription.Prescription;
 import com.clinic.entity.prescription.PrescriptionItem;
 import com.clinic.mapper.prescription.PrescriptionMapper;
 import com.clinic.repository.medical.MedicalRecordRepository;
-import com.clinic.repository.medicine.MedicineRepository;
+import com.clinic.repository.prescription.MedicineRepository;
 import com.clinic.repository.prescription.PrescriptionRepository;
 
 import lombok.RequiredArgsConstructor;

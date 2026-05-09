@@ -2,7 +2,7 @@ package com.clinic.entity.prescription;
 
 import java.math.BigDecimal;
 
-import com.clinic.entity.medicine.Medicine;
+import com.clinic.entity.prescription.Medicine;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;

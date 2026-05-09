@@ -2,9 +2,9 @@ package com.clinic.scheduler;
 
 import com.clinic.common.enums.FollowUpStatus;
 import com.clinic.common.enums.NotificationType;
-import com.clinic.entity.followup.FollowUp;
-import com.clinic.repository.followup.FollowUpRepository;
-import com.clinic.service.notification.NotificationService;
+import com.clinic.entity.crm.FollowUp;
+import com.clinic.repository.crm.FollowUpRepository;
+import com.clinic.service.crm.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

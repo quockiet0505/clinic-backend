@@ -11,7 +11,7 @@ import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.NotificationType;
 import com.clinic.entity.appointment.Appointment;
 import com.clinic.repository.appointment.AppointmentRepository;
-import com.clinic.service.notification.NotificationService;
+import com.clinic.service.crm.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
