@@ -1,0 +1,17 @@
+# Bỏ qua thư mục build của Maven/Gradle
+target/
+backend/target/
+build/
+.gradle/
+
+# Bỏ qua các file cấu hình của IDE (IntelliJ, Eclipse, VS Code)
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Bỏ qua các file log và file môi trường
+*.log
+.env

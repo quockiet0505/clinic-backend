@@ -1,0 +1,9 @@
+# backend
+backend/target/
+
+# node
+node_modules/
+
+# build
+dist/
+
