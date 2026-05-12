@@ -6,15 +6,12 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.clinic.common.enums.MedicalRecordStatus;
 import com.clinic.dto.medical.MedicalRecordRequest;
 import com.clinic.dto.medical.MedicalRecordResponse;
-import com.clinic.entity.appointment.Appointment;
 import com.clinic.entity.medical.MedicalRecord;
 import com.clinic.entity.patient.Patient;
 import com.clinic.entity.staff.Staff;
 import com.clinic.mapper.medical.MedicalRecordMapper;
-import com.clinic.repository.appointment.AppointmentRepository;
 import com.clinic.repository.medical.MedicalRecordRepository;
 import com.clinic.repository.patient.PatientRepository;
 import com.clinic.repository.staff.StaffRepository;
@@ -24,63 +21,63 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class MedicalRecordService {
-    private final MedicalRecordRepository recordRepository;
+    
+    private final MedicalRecordRepository medicalRecordRepository;
     private final PatientRepository patientRepository;
     private final StaffRepository staffRepository;
-    private final AppointmentRepository appointmentRepository;
-    private final MedicalRecordMapper recordMapper;
+    private final MedicalRecordMapper medicalRecordMapper;
 
+    /**
+     * Creates a new medical record for a patient.
+     */
     @Transactional
     public MedicalRecordResponse create(MedicalRecordRequest request) {
         Patient patient = patientRepository.findById(request.getPatientId())
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
-        
-        Staff doctor = staffRepository.findById(request.getMainDoctorId())
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                .orElseThrow(() -> new RuntimeException("Patient not found."));
+        Staff mainDoctor = staffRepository.findById(request.getMainDoctorId())
+                .orElseThrow(() -> new RuntimeException("Main doctor not found."));
 
-        MedicalRecord record = recordMapper.toEntity(request);
+        MedicalRecord record = medicalRecordMapper.toEntity(request);
         record.setPatient(patient);
-        record.setMainDoctor(doctor);
-        record.setStatus(MedicalRecordStatus.IN_PROGRESS);
+        record.setMainDoctor(mainDoctor);
 
-        if (request.getAppointmentId() != null) {
-            Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
-                    .orElseThrow(() -> new RuntimeException("Appointment not found"));
-            record.setAppointment(appointment);
-        }
-
-        return recordMapper.toResponse(recordRepository.save(record));
+        return medicalRecordMapper.toResponse(medicalRecordRepository.save(record));
     }
 
+    /**
+     * Retrieves all medical records.
+     */
     @Transactional(readOnly = true)
-    public List<MedicalRecordResponse> getByPatientId(Integer patientId) {
-        return recordRepository.findByPatient_PatientId(patientId).stream()
-                .map(recordMapper::toResponse)
+    public List<MedicalRecordResponse> getAll() {
+        return medicalRecordRepository.findAll().stream()
+                .map(medicalRecordMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Updates an existing medical record and logs the doctor who made the changes.
+     */
     @Transactional
-    public MedicalRecordResponse update(Integer id, MedicalRecordRequest request) {
-        MedicalRecord record = recordRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Medical record not found"));
-        
-        // Cannot update if cancelled or done (Strict Business Logic)
-        if (record.getStatus() == MedicalRecordStatus.DONE || record.getStatus() == MedicalRecordStatus.CANCELLED) {
-            throw new RuntimeException("Cannot update a completed or cancelled medical record");
-        }
+    public MedicalRecordResponse update(Integer recordId, MedicalRecordRequest request) {
+        MedicalRecord record = medicalRecordRepository.findById(recordId)
+                .orElseThrow(() -> new RuntimeException("Medical record not found."));
 
         record.setDiagnosis(request.getDiagnosis());
         record.setTreatment(request.getTreatment());
         record.setNote(request.getNote());
+        
+        if (request.getStatus() != null) {
+            record.setStatus(request.getStatus());
+        }
 
-        return recordMapper.toResponse(recordRepository.save(record));
-    }
-    
-    @Transactional
-    public void updateStatus(Integer id, MedicalRecordStatus status) {
-        MedicalRecord record = recordRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Medical record not found"));
-        record.setStatus(status);
-        recordRepository.save(record);
+        // Track which doctor updated the record and the reason for the edit
+        if (request.getUpdatedByDoctorId() != null) {
+            Staff updatedBy = staffRepository.findById(request.getUpdatedByDoctorId())
+                    .orElseThrow(() -> new RuntimeException("Doctor tracking ID not found."));
+            record.setUpdatedByDoctor(updatedBy);
+            record.setEditReason(request.getEditReason());
+        }
+
+        return medicalRecordMapper.toResponse(medicalRecordRepository.save(record));
     }
 }

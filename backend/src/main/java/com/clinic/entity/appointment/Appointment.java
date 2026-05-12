@@ -6,6 +6,7 @@ import java.time.LocalTime;
 
 import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.AppointmentType;
+import com.clinic.common.enums.CancelledByType;
 import com.clinic.common.enums.CreatedByType;
 import com.clinic.entity.base.BaseEntity;
 import com.clinic.entity.patient.Patient;
@@ -78,11 +79,15 @@ public class Appointment extends BaseEntity {
     @Column(name = "checkin_time")
     private LocalDateTime checkinTime;
 
-    @Column(name = "checkout_time")
-    private LocalDateTime checkoutTime;
-
     @Column(name = "queue_number")
     private Integer queueNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cancelled_by")
+    private CancelledByType cancelledBy;
+
+    @Column(name = "cancel_reason", columnDefinition = "TEXT")
+    private String cancelReason;
 
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;

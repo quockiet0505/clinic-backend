@@ -3,7 +3,7 @@ package com.clinic.entity.medical;
 import java.time.LocalDateTime;
 
 import com.clinic.common.enums.ServiceOrderStatus;
-import com.clinic.entity.medical.MedicalRecord;
+import com.clinic.entity.base.BaseEntity;
 import com.clinic.entity.staff.Staff;
 
 import jakarta.persistence.Column;
@@ -16,7 +16,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,7 +28,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceOrder {
+public class ServiceOrder extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
@@ -48,14 +47,15 @@ public class ServiceOrder {
     private Staff orderedBy;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private ServiceOrderStatus status = ServiceOrderStatus.ORDERED;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
+    @Column(name = "sample_collected_at")
+    private LocalDateTime sampleCollectedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sample_collected_by")
+    private Staff sampleCollectedBy;
 }

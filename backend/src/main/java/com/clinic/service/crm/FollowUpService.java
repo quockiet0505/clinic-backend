@@ -24,20 +24,24 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class FollowUpService {
+
     private final FollowUpRepository followUpRepository;
-    private final MedicalRecordRepository recordRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
     private final PatientRepository patientRepository;
     private final StaffRepository staffRepository;
     private final FollowUpMapper followUpMapper;
 
+    /**
+     * Create a follow-up schedule for a patient after a medical examination.
+     */
     @Transactional
     public FollowUpResponse create(FollowUpRequest request) {
-        MedicalRecord record = recordRepository.findById(request.getRecordId())
-                .orElseThrow(() -> new RuntimeException("Medical record not found"));
+        MedicalRecord record = medicalRecordRepository.findById(request.getRecordId())
+                .orElseThrow(() -> new RuntimeException("Medical Record not found."));
         Patient patient = patientRepository.findById(request.getPatientId())
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                .orElseThrow(() -> new RuntimeException("Patient not found."));
         Staff doctor = staffRepository.findById(request.getDoctorId())
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                .orElseThrow(() -> new RuntimeException("Doctor not found."));
 
         FollowUp followUp = followUpMapper.toEntity(request);
         followUp.setMedicalRecord(record);
@@ -48,18 +52,25 @@ public class FollowUpService {
         return followUpMapper.toResponse(followUpRepository.save(followUp));
     }
 
+    /**
+     * Get all follow-up schedules.
+     */
     @Transactional(readOnly = true)
-    public List<FollowUpResponse> getByPatientId(Integer patientId) {
-        return followUpRepository.findByPatient_PatientId(patientId).stream()
+    public List<FollowUpResponse> getAll() {
+        return followUpRepository.findAll().stream()
                 .map(followUpMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Update follow-up status (e.g., CONFIRMED, COMPLETED, CANCELLED).
+     */
     @Transactional
-    public void updateStatus(Integer id, FollowUpStatus status) {
+    public FollowUpResponse updateStatus(Integer id, FollowUpStatus newStatus) {
         FollowUp followUp = followUpRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Follow-up not found"));
-        followUp.setStatus(status);
-        followUpRepository.save(followUp);
+                .orElseThrow(() -> new RuntimeException("Follow-up schedule not found."));
+        
+        followUp.setStatus(newStatus);
+        return followUpMapper.toResponse(followUpRepository.save(followUp));
     }
 }

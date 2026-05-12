@@ -25,24 +25,35 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/follow-ups")
 @RequiredArgsConstructor
 public class FollowUpController {
+
     private final FollowUpService followUpService;
 
+    /**
+     * Create a new follow-up schedule for a patient.
+     */
     @PostMapping
-    @PreAuthorize("hasRole('DOCTOR')") // Doctor sets the follow-up
+    @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
     public ResponseEntity<FollowUpResponse> create(@Valid @RequestBody FollowUpRequest request) {
         return ResponseEntity.ok(followUpService.create(request));
     }
 
-    @GetMapping("/patient/{patientId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
-    public ResponseEntity<List<FollowUpResponse>> getByPatient(@PathVariable Integer patientId) {
-        return ResponseEntity.ok(followUpService.getByPatientId(patientId));
+    /**
+     * Get all follow-up records.
+     */
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<List<FollowUpResponse>> getAll() {
+        return ResponseEntity.ok(followUpService.getAll());
     }
 
+    /**
+     * Update the status of a follow-up (e.g., CONFIRMED, COMPLETED).
+     */
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<Void> updateStatus(@PathVariable Integer id, @RequestParam FollowUpStatus status) {
-        followUpService.updateStatus(id, status);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<FollowUpResponse> updateStatus(
+            @PathVariable Integer id,
+            @RequestParam FollowUpStatus status) {
+        return ResponseEntity.ok(followUpService.updateStatus(id, status));
     }
 }

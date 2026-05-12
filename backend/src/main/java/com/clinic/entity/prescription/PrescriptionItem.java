@@ -2,8 +2,6 @@ package com.clinic.entity.prescription;
 
 import java.math.BigDecimal;
 
-import com.clinic.entity.prescription.Medicine;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -26,7 +24,7 @@ import lombok.Setter;
 public class PrescriptionItem {
 
     @EmbeddedId
-    private PrescriptionItemKey id = new PrescriptionItemKey();
+    private PrescriptionItemKey id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("prescriptionId")
@@ -38,11 +36,15 @@ public class PrescriptionItem {
     @JoinColumn(name = "medicine_id")
     private Medicine medicine;
 
-    @Column(length = 100)
+    @Column(length = 50, nullable = false)
+    private String unit;
+
+    @Column(precision = 8, scale = 2, nullable = false)
+    private BigDecimal quantity;
+
+    @Column(length = 255)
     private String dosage;
 
-    private Integer quantity;
-
     @Column(precision = 10, scale = 2)
-    private BigDecimal price; // Price locked at the exact moment of prescribing
+    private BigDecimal price;
 }

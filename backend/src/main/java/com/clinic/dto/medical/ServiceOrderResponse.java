@@ -1,4 +1,5 @@
 package com.clinic.dto.medical;
+
 import java.time.LocalDateTime;
 
 import com.clinic.common.enums.ServiceOrderStatus;
@@ -14,5 +15,10 @@ public class ServiceOrderResponse {
     private Integer orderedById;
     private String orderedByName;
     private ServiceOrderStatus status;
-    private LocalDateTime createdAt;
+    
+    // Cập nhật lấy mẫu / từ chối
+    private String rejectionReason;
+    private LocalDateTime sampleCollectedAt;
+    private Integer sampleCollectedById;
+    private String sampleCollectedByName;
 }

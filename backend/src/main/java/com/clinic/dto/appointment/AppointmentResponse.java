@@ -6,6 +6,7 @@ import java.time.LocalTime;
 
 import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.AppointmentType;
+import com.clinic.common.enums.CancelledByType;
 import com.clinic.common.enums.CreatedByType;
 
 import lombok.Data;
@@ -26,4 +27,8 @@ public class AppointmentResponse {
     private LocalDateTime checkinTime;
     private LocalDateTime checkoutTime;
     private Integer queueNumber;
+    
+    // New fields mapped from DB
+    private CancelledByType cancelledBy;
+    private String cancelReason;
 }

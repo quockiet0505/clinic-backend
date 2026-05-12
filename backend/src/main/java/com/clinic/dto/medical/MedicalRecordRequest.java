@@ -1,19 +1,24 @@
 package com.clinic.dto.medical;
 
+import com.clinic.common.enums.MedicalRecordStatus;
+
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class MedicalRecordRequest {
-    @NotNull(message = "Patient ID is required")
+    @NotNull
     private Integer patientId;
-
-    private Integer appointmentId; // Nullable for direct walk-ins
-
-    @NotNull(message = "Doctor ID is required")
+    private Integer appointmentId;
+    @NotNull
     private Integer mainDoctorId;
-
+    
     private String diagnosis;
     private String treatment;
     private String note;
+    private MedicalRecordStatus status;
+    
+    // Thêm lưu vết sửa bệnh án
+    private Integer updatedByDoctorId;
+    private String editReason;
 }

@@ -1,5 +1,9 @@
 package com.clinic.service.prescription;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,6 +14,7 @@ import com.clinic.entity.medical.MedicalRecord;
 import com.clinic.entity.prescription.Medicine;
 import com.clinic.entity.prescription.Prescription;
 import com.clinic.entity.prescription.PrescriptionItem;
+import com.clinic.entity.prescription.PrescriptionItemKey;
 import com.clinic.mapper.prescription.PrescriptionMapper;
 import com.clinic.repository.medical.MedicalRecordRepository;
 import com.clinic.repository.prescription.MedicineRepository;
@@ -22,55 +27,71 @@ import lombok.RequiredArgsConstructor;
 public class PrescriptionService {
 
     private final PrescriptionRepository prescriptionRepository;
-    private final MedicalRecordRepository recordRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
     private final MedicineRepository medicineRepository;
     private final PrescriptionMapper prescriptionMapper;
 
+    /**
+     * Creates a new prescription linked to a medical record.
+     * Maps each medicine requested and assigns the current selling price.
+     */
     @Transactional
     public PrescriptionResponse create(PrescriptionRequest request) {
-        MedicalRecord record = recordRepository.findById(request.getRecordId())
-                .orElseThrow(() -> new RuntimeException("Medical Record not found."));
+        MedicalRecord record = medicalRecordRepository.findById(request.getRecordId())
+                .orElseThrow(() -> new RuntimeException("Medical record not found."));
 
-        // A record should typically only have one prescription
-        if (prescriptionRepository.findByMedicalRecord_RecordId(record.getRecordId()).isPresent()) {
-            throw new RuntimeException("A prescription already exists for this medical record.");
-        }
-
-        Prescription prescription = new Prescription();
+        Prescription prescription = prescriptionMapper.toEntity(request);
         prescription.setMedicalRecord(record);
-
-        // Process each medicine item
-        for (PrescriptionItemRequest itemReq : request.getItems()) {
-            Medicine medicine = medicineRepository.findById(itemReq.getMedicineId())
-                    .orElseThrow(() -> new RuntimeException("Medicine ID " + itemReq.getMedicineId() + " not found."));
-
-            // Logical Check: Do we have enough medicine in stock?
-            if (medicine.getQuantity() < itemReq.getQuantity()) {
-                throw new RuntimeException("Not enough stock for medicine: " + medicine.getName() + ". Available: " + medicine.getQuantity());
-            }
-
-            PrescriptionItem item = new PrescriptionItem();
-            item.setMedicine(medicine);
-            item.setDosage(itemReq.getDosage());
-            item.setQuantity(itemReq.getQuantity());
-            
-            // CRITICAL: Lock the price at the time of prescribing
-            item.setPrice(medicine.getPrice()); 
-
-            prescription.addItem(item);
-
-            // Deduct from inventory (Optional, but highly recommended for a real clinic)
-            medicine.setQuantity(medicine.getQuantity() - itemReq.getQuantity());
-            medicineRepository.save(medicine);
+        
+        // Initialize the items list to avoid NullPointerException
+        if (prescription.getItems() == null) {
+            prescription.setItems(new ArrayList<>());
         }
 
-        return prescriptionMapper.toResponse(prescriptionRepository.save(prescription));
+        // We must save the prescription FIRST to generate a prescription_id for the composite keys
+        final Prescription savedPrescription = prescriptionRepository.save(prescription);
+
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
+            for (PrescriptionItemRequest itemRequest : request.getItems()) {
+                Medicine medicine = medicineRepository.findById(itemRequest.getMedicineId())
+                        .orElseThrow(() -> new RuntimeException("Medicine not found: " + itemRequest.getMedicineId()));
+
+                PrescriptionItem item = prescriptionMapper.toItemEntity(itemRequest);
+                item.setPrescription(savedPrescription);
+                item.setMedicine(medicine);
+                
+                // Assign the current selling price of the medicine at the time of prescription
+                item.setPrice(medicine.getSellPrice());
+
+                // Construct and set the composite primary key
+                PrescriptionItemKey key = new PrescriptionItemKey(savedPrescription.getPrescriptionId(), medicine.getMedicineId());
+                item.setId(key);
+
+                savedPrescription.getItems().add(item);
+            }
+        }
+
+        // Save again to cascade the items into the prescription_item table
+        return prescriptionMapper.toResponse(prescriptionRepository.save(savedPrescription));
     }
 
+    /**
+     * Retrieves a specific prescription by its ID.
+     */
     @Transactional(readOnly = true)
-    public PrescriptionResponse getByRecordId(Integer recordId) {
-        Prescription prescription = prescriptionRepository.findByMedicalRecord_RecordId(recordId)
-                .orElseThrow(() -> new RuntimeException("Prescription not found for this medical record."));
+    public PrescriptionResponse getById(Integer id) {
+        Prescription prescription = prescriptionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Prescription not found."));
         return prescriptionMapper.toResponse(prescription);
+    }
+    
+    /**
+     * Retrieves all prescriptions.
+     */
+    @Transactional(readOnly = true)
+    public List<PrescriptionResponse> getAll() {
+        return prescriptionRepository.findAll().stream()
+                .map(prescriptionMapper::toResponse)
+                .collect(Collectors.toList());
     }
 }

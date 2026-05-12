@@ -1,5 +1,6 @@
 package com.clinic.util;
 
+import org.springframework.lang.NonNull;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -18,7 +19,7 @@ public class EmailUtil {
 
     // Async ensures the API doesn't hang while sending the email
     @Async
-    public void sendEmail(String to, String subject, String htmlBody) {
+    public void sendEmail(@NonNull String to, @NonNull String subject, @NonNull String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");

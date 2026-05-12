@@ -7,10 +7,10 @@ import lombok.Data;
 @Data
 public class PrescriptionItemResponse {
     private Integer medicineId;
-    private String medicineName;
+    private String medicineName; 
+    
     private String unit;
+    private BigDecimal quantity;
     private String dosage;
-    private Integer quantity;
     private BigDecimal price;
-    private BigDecimal subTotal; // quantity * price
 }

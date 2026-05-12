@@ -1,15 +1,25 @@
 package com.clinic.dto.medical;
+
+import java.time.LocalDateTime;
+
+import com.clinic.common.enums.ServiceOrderStatus;
+
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class ServiceOrderRequest {
-    @NotNull(message = "Record ID is required")
+    @NotNull
     private Integer recordId;
-
-    @NotNull(message = "Service ID is required")
+    @NotNull
     private Integer serviceId;
-
-    @NotNull(message = "Ordered By (Doctor ID) is required")
+    @NotNull
     private Integer orderedById;
+    
+    private ServiceOrderStatus status;
+    
+    // Cập nhật lấy mẫu / từ chối
+    private String rejectionReason;
+    private LocalDateTime sampleCollectedAt;
+    private Integer sampleCollectedById;
 }

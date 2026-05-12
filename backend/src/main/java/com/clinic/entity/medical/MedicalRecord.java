@@ -14,7 +14,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -25,9 +24,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "medical_record", indexes = {
-    @Index(name = "idx_medical_record_patient", columnList = "patient_id")
-})
+@Table(name = "medical_record")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -42,7 +39,6 @@ public class MedicalRecord extends BaseEntity {
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
-    // Optional: Walk-in patients might not have an appointment
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "appointment_id")
     private Appointment appointment;
@@ -61,6 +57,12 @@ public class MedicalRecord extends BaseEntity {
     private String note;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private MedicalRecordStatus status = MedicalRecordStatus.IN_PROGRESS;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by_doctor_id")
+    private Staff updatedByDoctor;
+
+    @Column(name = "edit_reason", columnDefinition = "TEXT")
+    private String editReason;
 }

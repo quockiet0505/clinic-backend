@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,21 +28,21 @@ public class AppointmentController {
 
     private final AppointmentService appointmentService;
 
-    // View all appointments (Admins, Staff, Doctors)
+    // Retrieve all active appointments
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
     public ResponseEntity<List<AppointmentResponse>> getAll() {
         return ResponseEntity.ok(appointmentService.getAllActive());
     }
 
-    // Create a new appointment
+    // Create a new appointment (Online booking or Walk-in)
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'PATIENT')") // Patients can book online, Staff can book walk-ins
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'PATIENT')")
     public ResponseEntity<AppointmentResponse> create(@Valid @RequestBody AppointmentRequest request) {
         return ResponseEntity.ok(appointmentService.create(request));
     }
 
-    // Update the status (e.g. from PENDING to CHECKED_IN)
+    // Staff or Doctor updates the status (e.g., CHECKED_IN, COMPLETED, WAITING_RESULT)
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
     public ResponseEntity<AppointmentResponse> updateStatus(
@@ -52,11 +51,21 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.updateStatus(id, status));
     }
 
-    // Cancel / Soft Delete the appointment
-    @DeleteMapping("/{id}")
+    // Patient cancels the appointment (System checks if < 3 hours to mark as SPAM)
+    @PatchMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'PATIENT')")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        appointmentService.softDelete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<AppointmentResponse> cancelByPatient(
+            @PathVariable Integer id,
+            @RequestParam String reason) {
+        return ResponseEntity.ok(appointmentService.cancelByPatient(id, reason));
+    }
+
+    // Staff transfers the appointment to another available doctor
+    @PatchMapping("/{id}/transfer")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<AppointmentResponse> transferDoctor(
+            @PathVariable Integer id,
+            @RequestParam Integer newDoctorId) {
+        return ResponseEntity.ok(appointmentService.transferDoctor(id, newDoctorId));
     }
 }

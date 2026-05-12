@@ -1,4 +1,5 @@
 package com.clinic.mapper.medical;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -9,9 +10,11 @@ import com.clinic.entity.medical.ServiceOrder;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ServiceOrderMapper {
+
     @Mapping(target = "medicalRecord", ignore = true)
     @Mapping(target = "service", ignore = true)
     @Mapping(target = "orderedBy", ignore = true)
+    @Mapping(target = "sampleCollectedBy", ignore = true)
     ServiceOrder toEntity(ServiceOrderRequest request);
 
     @Mapping(source = "medicalRecord.recordId", target = "recordId")
@@ -19,5 +22,7 @@ public interface ServiceOrderMapper {
     @Mapping(source = "service.serviceName", target = "serviceName")
     @Mapping(source = "orderedBy.staffId", target = "orderedById")
     @Mapping(source = "orderedBy.fullName", target = "orderedByName")
-    ServiceOrderResponse toResponse(ServiceOrder order);
+    @Mapping(source = "sampleCollectedBy.staffId", target = "sampleCollectedById")
+    @Mapping(source = "sampleCollectedBy.fullName", target = "sampleCollectedByName")
+    ServiceOrderResponse toResponse(ServiceOrder serviceOrder);
 }

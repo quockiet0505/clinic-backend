@@ -3,7 +3,9 @@ package com.clinic.dto.appointment;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.AppointmentType;
+import com.clinic.common.enums.CancelledByType;
 import com.clinic.common.enums.CreatedByType;
 
 import jakarta.validation.constraints.FutureOrPresent;
@@ -23,7 +25,6 @@ public class AppointmentRequest {
     @FutureOrPresent(message = "Appointment date cannot be in the past")
     private LocalDate appointmentDate;
 
-    // Optional for walk-in patients, but if provided, must be valid
     private LocalTime timeStart;
     private LocalTime timeEnd;
 
@@ -32,4 +33,9 @@ public class AppointmentRequest {
 
     @NotNull(message = "Creator type is required (PATIENT or STAFF)")
     private CreatedByType createdBy;
+
+    // Optional fields for update/cancel
+    private AppointmentStatus status;
+    private CancelledByType cancelledBy;
+    private String cancelReason;
 }

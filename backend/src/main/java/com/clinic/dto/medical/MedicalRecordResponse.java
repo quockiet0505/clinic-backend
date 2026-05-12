@@ -1,5 +1,4 @@
 package com.clinic.dto.medical;
-import java.time.LocalDateTime;
 
 import com.clinic.common.enums.MedicalRecordStatus;
 
@@ -12,10 +11,14 @@ public class MedicalRecordResponse {
     private String patientName;
     private Integer appointmentId;
     private Integer mainDoctorId;
-    private String doctorName;
+    private String mainDoctorName;
     private String diagnosis;
     private String treatment;
     private String note;
     private MedicalRecordStatus status;
-    private LocalDateTime createdAt;
+    
+    // Thêm lưu vết
+    private Integer updatedByDoctorId;
+    private String updatedByDoctorName;
+    private String editReason;
 }

@@ -3,6 +3,7 @@ package com.clinic.service.staff;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,7 @@ public class StaffScheduleService {
     private final StaffScheduleMapper scheduleMapper;
 
     @Transactional
-    public StaffScheduleResponse create(StaffScheduleRequest request) {
+    public StaffScheduleResponse create( StaffScheduleRequest request) {
         if (request.getStartTime().isAfter(request.getEndTime())) {
             throw new RuntimeException("Start time must be before end time");
         }
@@ -47,7 +48,7 @@ public class StaffScheduleService {
     }
 
     @Transactional
-    public StaffScheduleResponse update(Integer id, StaffScheduleRequest request) {
+    public StaffScheduleResponse update(@NonNull Integer id , StaffScheduleRequest request) {
         if (request.getStartTime().isAfter(request.getEndTime())) {
             throw new RuntimeException("Start time must be before end time");
         }
@@ -65,7 +66,7 @@ public class StaffScheduleService {
     }
 
     @Transactional
-    public void delete(Integer id) {
+    public void delete(@NonNull Integer id) {
         if (!scheduleRepository.existsById(id)) {
             throw new RuntimeException("Schedule not found");
         }

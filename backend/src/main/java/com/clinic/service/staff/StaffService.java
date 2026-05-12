@@ -3,6 +3,7 @@ package com.clinic.service.staff;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ public class StaffService {
     private final PasswordEncoder passwordEncoder;
     private final StaffMapper staffMapper;
 
+    @SuppressWarnings("null")
     @Transactional
     public StaffResponse create(StaffRequest request) {
         if (accountRepository.existsByEmail(request.getEmail())) {
@@ -71,7 +73,7 @@ public class StaffService {
     }
 
     @Transactional
-    public StaffResponse update(Integer id, StaffRequest request) {
+    public StaffResponse update(@NonNull Integer id, StaffRequest request) {
         Staff staff = staffRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Staff not found"));
 
@@ -85,6 +87,7 @@ public class StaffService {
         staff.setImageUrl(request.getImageUrl());
 
         if (request.getExpertiseId() != null) {
+            @SuppressWarnings("null")
             Expertise expertise = expertiseRepository.findById(request.getExpertiseId())
                     .orElseThrow(() -> new RuntimeException("Expertise not found"));
             staff.setExpertise(expertise);
@@ -96,7 +99,7 @@ public class StaffService {
     }
 
     @Transactional
-    public void softDelete(Integer id) {
+    public void softDelete(@NonNull Integer id) {
         Staff staff = staffRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Staff not found"));
         staff.setIsDeleted(1);
