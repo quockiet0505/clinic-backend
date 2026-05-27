@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.clinic.dto.medical.MedicalRecordDetailResponse;
 import com.clinic.dto.medical.MedicalRecordRequest;
 import com.clinic.dto.medical.MedicalRecordResponse;
 import com.clinic.service.medical.MedicalRecordService;
@@ -54,5 +55,17 @@ public class MedicalRecordController {
             @PathVariable Integer id,
             @Valid @RequestBody MedicalRecordRequest request) {
         return ResponseEntity.ok(medicalRecordService.update(id, request));
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<List<MedicalRecordResponse>> getMyRecords() {
+        return ResponseEntity.ok(medicalRecordService.getMyRecords());
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
+    public ResponseEntity<MedicalRecordDetailResponse> getRecordDetail(@PathVariable Integer id) {
+        return ResponseEntity.ok(medicalRecordService.getRecordDetail(id));
     }
 }

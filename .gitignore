@@ -15,3 +15,5 @@ build/
 # Bỏ qua các file log và file môi trường
 *.log
 .env
+
+public

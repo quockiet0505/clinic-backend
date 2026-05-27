@@ -45,4 +45,8 @@ public class MedicalRecordVital {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recorded_by")
     private Staff recordedBy; // Usually the Nurse/Staff taking vitals
+
+    
+    @Column(name = "status")
+    private String status; // hoặc enum MedicalRecordStatus
 }

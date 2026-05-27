@@ -26,7 +26,7 @@ public class ServiceController {
     private final ServiceService serviceService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    // @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
     public ResponseEntity<List<ServiceResponse>> getAll() {
         return ResponseEntity.ok(serviceService.getAllActive());
     }

@@ -49,4 +49,10 @@ public class StaffController {
         staffService.softDelete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/doctors")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<List<StaffResponse>> getAllDoctors() {
+        return ResponseEntity.ok(staffService.getAllDoctors());
+    }
 }

@@ -39,6 +39,23 @@ public class PatientService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public PatientResponse getProfileByEmail(String email) {
+
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        Patient patient = patientRepository.findByAccount_AccountId(
+                account.getAccountId()
+        ).orElseThrow(() -> new RuntimeException("Patient not found"));
+
+        PatientVitalProfile vp =
+                vitalRepository.findById(patient.getPatientId())
+                        .orElse(null);
+
+        return patientMapper.toResponse(patient, vp);
+    }
+
     @Transactional
     public PatientResponse create(PatientRequest request) {
         validatePatientData(request);
@@ -114,6 +131,8 @@ public class PatientService {
 
         return patientMapper.toResponse(savedPatient, savedVital);
     }
+
+    
 
     @Transactional
     public void softDelete(Integer id) {

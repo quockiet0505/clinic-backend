@@ -6,7 +6,12 @@ import lombok.Data;
 
 @Data
 public class ExpertiseResponse {
+
     private Integer expertiseId;
+
     private String expertiseName;
+
+    private String iconUrl;
+
     private LocalDateTime createdAt;
 }

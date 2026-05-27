@@ -21,6 +21,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Expertise {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "expertise_id")
@@ -28,6 +29,9 @@ public class Expertise {
 
     @Column(name = "expertise_name", nullable = false, length = 100)
     private String expertiseName;
+
+    @Column(name = "icon_url", length = 255)
+    private String iconUrl;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

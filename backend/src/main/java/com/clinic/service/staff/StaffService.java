@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.common.enums.StaffType;
 import com.clinic.dto.staff.StaffRequest;
 import com.clinic.dto.staff.StaffResponse;
 import com.clinic.entity.auth.Account;
@@ -109,4 +110,11 @@ public class StaffService {
         }
         staffRepository.save(staff);
     }
+
+    public List<StaffResponse> getAllDoctors() {
+    return staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0)
+            .stream()
+            .map(staffMapper::toResponse)
+            .collect(Collectors.toList());
+}
 }

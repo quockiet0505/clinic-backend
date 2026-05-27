@@ -3,17 +3,33 @@ package com.clinic.service.medical;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.dto.crm.FollowUpResponse;
+import com.clinic.dto.medical.MedicalRecordDetailResponse;
 import com.clinic.dto.medical.MedicalRecordRequest;
 import com.clinic.dto.medical.MedicalRecordResponse;
+import com.clinic.dto.medical.ServiceOrderResponse;
+import com.clinic.dto.prescription.PrescriptionResponse;
+import com.clinic.entity.auth.Account;
 import com.clinic.entity.medical.MedicalRecord;
 import com.clinic.entity.patient.Patient;
 import com.clinic.entity.staff.Staff;
+import com.clinic.mapper.crm.FollowUpMapper;
 import com.clinic.mapper.medical.MedicalRecordMapper;
+import com.clinic.mapper.medical.ServiceOrderMapper;
+import com.clinic.mapper.medical.ServiceResultMapper;
+import com.clinic.mapper.prescription.PrescriptionMapper;
+import com.clinic.repository.auth.AccountRepository;
+import com.clinic.repository.crm.FollowUpRepository;
 import com.clinic.repository.medical.MedicalRecordRepository;
+import com.clinic.repository.medical.ServiceOrderRepository;
+import com.clinic.repository.medical.ServiceResultRepository;
 import com.clinic.repository.patient.PatientRepository;
+import com.clinic.repository.prescription.PrescriptionRepository;
 import com.clinic.repository.staff.StaffRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -21,15 +37,23 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class MedicalRecordService {
-    
+
     private final MedicalRecordRepository medicalRecordRepository;
     private final PatientRepository patientRepository;
     private final StaffRepository staffRepository;
+    private final AccountRepository accountRepository;
     private final MedicalRecordMapper medicalRecordMapper;
+    
+    // Bổ sung các repository và mapper cho detail
+    private final PrescriptionRepository prescriptionRepository;
+    private final PrescriptionMapper prescriptionMapper;
+    private final ServiceOrderRepository serviceOrderRepository;
+    private final ServiceOrderMapper serviceOrderMapper;
+    private final ServiceResultRepository serviceResultRepository;
+    private final ServiceResultMapper serviceResultMapper;
+    private final FollowUpRepository followUpRepository;
+    private final FollowUpMapper followUpMapper;
 
-    /**
-     * Creates a new medical record for a patient.
-     */
     @Transactional
     public MedicalRecordResponse create(MedicalRecordRequest request) {
         Patient patient = patientRepository.findById(request.getPatientId())
@@ -44,9 +68,6 @@ public class MedicalRecordService {
         return medicalRecordMapper.toResponse(medicalRecordRepository.save(record));
     }
 
-    /**
-     * Retrieves all medical records.
-     */
     @Transactional(readOnly = true)
     public List<MedicalRecordResponse> getAll() {
         return medicalRecordRepository.findAll().stream()
@@ -54,9 +75,6 @@ public class MedicalRecordService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Updates an existing medical record and logs the doctor who made the changes.
-     */
     @Transactional
     public MedicalRecordResponse update(Integer recordId, MedicalRecordRequest request) {
         MedicalRecord record = medicalRecordRepository.findById(recordId)
@@ -70,7 +88,6 @@ public class MedicalRecordService {
             record.setStatus(request.getStatus());
         }
 
-        // Track which doctor updated the record and the reason for the edit
         if (request.getUpdatedByDoctorId() != null) {
             Staff updatedBy = staffRepository.findById(request.getUpdatedByDoctorId())
                     .orElseThrow(() -> new RuntimeException("Doctor tracking ID not found."));
@@ -79,5 +96,73 @@ public class MedicalRecordService {
         }
 
         return medicalRecordMapper.toResponse(medicalRecordRepository.save(record));
+    }
+
+    public List<MedicalRecordResponse> getMyRecords() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+        Patient patient = patientRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
+        List<MedicalRecord> records = medicalRecordRepository.findByPatient_PatientId(patient.getPatientId());
+        return records.stream()
+                .map(medicalRecordMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public MedicalRecordDetailResponse getRecordDetail(Integer recordId) {
+        MedicalRecord record = medicalRecordRepository.findById(recordId)
+                .orElseThrow(() -> new RuntimeException("Medical record not found"));
+        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"))) {
+            String email = auth.getName();
+            Account account = accountRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Account not found"));
+            Patient patient = patientRepository.findByAccount_AccountId(account.getAccountId())
+                    .orElseThrow(() -> new RuntimeException("Patient not found"));
+            if (!record.getPatient().getPatientId().equals(patient.getPatientId())) {
+                throw new RuntimeException("Access denied");
+            }
+        }
+        
+        PrescriptionResponse prescriptionResponse = null;
+        var prescriptionOpt = prescriptionRepository.findByMedicalRecordId(record.getRecordId());
+        if (prescriptionOpt.isPresent()) {
+            prescriptionResponse = prescriptionMapper.toResponse(prescriptionOpt.get());
+        }
+        
+        List<ServiceOrderResponse> orderResponses = serviceOrderRepository.findByMedicalRecordId(record.getRecordId())
+                .stream()
+                .map(order -> {
+                    ServiceOrderResponse resp = serviceOrderMapper.toResponse(order);
+                    serviceResultRepository.findByOrderId(order.getOrderId())
+                            .ifPresent(result -> resp.setResult(serviceResultMapper.toResponse(result)));
+                    return resp;
+                })
+                .collect(Collectors.toList());
+        
+        List<FollowUpResponse> followUpResponses = followUpRepository.findByMedicalRecordId(record.getRecordId())
+                .stream()
+                .map(followUpMapper::toResponse)
+                .collect(Collectors.toList());
+        
+        return MedicalRecordDetailResponse.builder()
+                .recordId(record.getRecordId())
+                .patientId(record.getPatient().getPatientId())
+                .appointmentId(record.getAppointment() != null ? record.getAppointment().getAppointmentId() : null)
+                .mainDoctorId(record.getMainDoctor().getStaffId())
+                .doctorName(record.getMainDoctor().getFullName())
+                .diagnosis(record.getDiagnosis())
+                .treatment(record.getTreatment())
+                .note(record.getNote())
+                .status(record.getStatus() != null ? record.getStatus().name() : null)
+                .createdAt(record.getCreatedAt())
+                .updatedAt(record.getUpdatedAt())
+                .prescription(prescriptionResponse)
+                .serviceOrders(orderResponses)
+                .followUps(followUpResponses)
+                .build();
     }
 }

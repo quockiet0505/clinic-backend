@@ -42,6 +42,12 @@ public class Service {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "discount_price", precision = 10, scale = 2)
+    private BigDecimal discountPrice;
+
+    @Column(name = "image_url", length = 255)
+    private String imageUrl;
+
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;
 

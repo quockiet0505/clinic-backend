@@ -21,7 +21,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/expertises")
+@RequestMapping("/api/v1/expertise")
 @RequiredArgsConstructor
 public class ExpertiseController {
     private final ExpertiseService expertiseService;

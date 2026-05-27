@@ -50,7 +50,7 @@ public class ServiceResultService {
 
     @Transactional(readOnly = true)
     public ServiceResultResponse getByOrderId(Integer orderId) {
-        ServiceResult result = resultRepository.findByServiceOrder_OrderId(orderId)
+        ServiceResult result = resultRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new RuntimeException("Result not found for this order"));
         return resultMapper.toResponse(result);
     }
