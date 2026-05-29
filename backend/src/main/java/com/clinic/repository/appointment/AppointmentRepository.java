@@ -3,6 +3,7 @@ package com.clinic.repository.appointment;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -10,7 +11,7 @@ import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.entity.appointment.Appointment;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Integer> {
-    
+
     // Find all appointments by deletion status
     List<Appointment> findByIsDeleted(Integer isDeleted);
 
@@ -29,4 +30,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     // Count the number of times a patient has been marked as SPAM or NO_SHOW
     long countByPatient_PatientIdAndStatusAndCancelReasonContainingAndIsDeleted(
             Integer patientId, AppointmentStatus status, String cancelReasonKeyword, Integer isDeleted);
+
+    // Get all appointments by patient, ordered by appointment date descending
+    List<Appointment> findByPatient_PatientIdAndIsDeletedOrderByAppointmentDateDesc(
+            Integer patientId, Integer isDeleted);
+
+    // Optional: find by id and not deleted (for detail with security)
+    Optional<Appointment> findByAppointmentIdAndIsDeleted(Integer id, Integer isDeleted);
 }

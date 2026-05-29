@@ -2,7 +2,6 @@ package com.clinic.controller.medical;
 
 import java.util.List;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,10 +11,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.clinic.dto.common.ApiResponse;
 import com.clinic.dto.medical.MedicalRecordDetailResponse;
 import com.clinic.dto.medical.MedicalRecordRequest;
 import com.clinic.dto.medical.MedicalRecordResponse;
 import com.clinic.service.medical.MedicalRecordService;
+import com.clinic.util.ResponseUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,45 +28,55 @@ public class MedicalRecordController {
 
     private final MedicalRecordService medicalRecordService;
 
-    /**
-     * Create a new medical record for a patient
-     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
-    public ResponseEntity<MedicalRecordResponse> create(@Valid @RequestBody MedicalRecordRequest request) {
-        return ResponseEntity.ok(medicalRecordService.create(request));
+    public ApiResponse<MedicalRecordResponse> create(
+            @Valid @RequestBody MedicalRecordRequest request
+    ) {
+        return ResponseUtil.success(
+                "Medical record created successfully",
+                medicalRecordService.create(request)
+        ).getBody();
     }
 
-    /**
-     * Retrieve all medical records
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<List<MedicalRecordResponse>> getAll() {
-        return ResponseEntity.ok(medicalRecordService.getAll());
+    public ApiResponse<List<MedicalRecordResponse>> getAll() {
+        return ResponseUtil.success(
+                "Medical records fetched successfully",
+                medicalRecordService.getAll()
+        ).getBody();
     }
 
-    /**
-     * Update an existing medical record.
-     * The request body includes tracking details (updatedByDoctorId, editReason).
-     */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
-    public ResponseEntity<MedicalRecordResponse> update(
+    public ApiResponse<MedicalRecordResponse> update(
             @PathVariable Integer id,
-            @Valid @RequestBody MedicalRecordRequest request) {
-        return ResponseEntity.ok(medicalRecordService.update(id, request));
+            @Valid @RequestBody MedicalRecordRequest request
+    ) {
+        return ResponseUtil.success(
+                "Medical record updated successfully",
+                medicalRecordService.update(id, request)
+        ).getBody();
     }
 
     @GetMapping("/my")
     @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<List<MedicalRecordResponse>> getMyRecords() {
-        return ResponseEntity.ok(medicalRecordService.getMyRecords());
+    public ApiResponse<List<MedicalRecordResponse>> getMyRecords() {
+        return ResponseUtil.success(
+                "My medical records fetched successfully",
+                medicalRecordService.getMyRecords()
+        ).getBody();
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
-    public ResponseEntity<MedicalRecordDetailResponse> getRecordDetail(@PathVariable Integer id) {
-        return ResponseEntity.ok(medicalRecordService.getRecordDetail(id));
+    public ApiResponse<MedicalRecordDetailResponse> getRecordDetail(
+            @PathVariable Integer id
+    ) {
+        return ResponseUtil.success(
+                "Medical record detail fetched successfully",
+                medicalRecordService.getRecordDetail(id)
+        ).getBody();
     }
 }

@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.dto.appointment.AppointmentRequest;
 import com.clinic.dto.appointment.AppointmentResponse;
+import com.clinic.dto.common.ApiResponse;
 import com.clinic.service.appointment.AppointmentService;
+import com.clinic.util.ResponseUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,44 +30,51 @@ public class AppointmentController {
 
     private final AppointmentService appointmentService;
 
-    // Retrieve all active appointments
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<List<AppointmentResponse>> getAll() {
-        return ResponseEntity.ok(appointmentService.getAllActive());
+    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getAll() {
+        return ResponseUtil.success("Appointments retrieved successfully", appointmentService.getAllActive());
     }
 
-    // Create a new appointment (Online booking or Walk-in)
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'PATIENT')")
-    public ResponseEntity<AppointmentResponse> create(@Valid @RequestBody AppointmentRequest request) {
-        return ResponseEntity.ok(appointmentService.create(request));
+    public ResponseEntity<ApiResponse<AppointmentResponse>> create(@Valid @RequestBody AppointmentRequest request) {
+        return ResponseUtil.success("Appointment created successfully", appointmentService.create(request));
     }
 
-    // Staff or Doctor updates the status (e.g., CHECKED_IN, COMPLETED, WAITING_RESULT)
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<AppointmentResponse> updateStatus(
-            @PathVariable Integer id, 
+    public ResponseEntity<ApiResponse<AppointmentResponse>> updateStatus(
+            @PathVariable Integer id,
             @RequestParam AppointmentStatus status) {
-        return ResponseEntity.ok(appointmentService.updateStatus(id, status));
+        return ResponseUtil.success("Appointment status updated successfully", appointmentService.updateStatus(id, status));
     }
 
-    // Patient cancels the appointment (System checks if < 3 hours to mark as SPAM)
     @PatchMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'PATIENT')")
-    public ResponseEntity<AppointmentResponse> cancelByPatient(
+    public ResponseEntity<ApiResponse<AppointmentResponse>> cancelByPatient(
             @PathVariable Integer id,
             @RequestParam String reason) {
-        return ResponseEntity.ok(appointmentService.cancelByPatient(id, reason));
+        return ResponseUtil.success("Appointment cancelled successfully", appointmentService.cancelByPatient(id, reason));
     }
 
-    // Staff transfers the appointment to another available doctor
     @PatchMapping("/{id}/transfer")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
-    public ResponseEntity<AppointmentResponse> transferDoctor(
+    public ResponseEntity<ApiResponse<AppointmentResponse>> transferDoctor(
             @PathVariable Integer id,
             @RequestParam Integer newDoctorId) {
-        return ResponseEntity.ok(appointmentService.transferDoctor(id, newDoctorId));
+        return ResponseUtil.success("Doctor transferred successfully", appointmentService.transferDoctor(id, newDoctorId));
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getMyAppointments() {
+        return ResponseUtil.success("My appointments retrieved successfully", appointmentService.getMyAppointments());
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> getDetail(@PathVariable Integer id) {
+        return ResponseUtil.success("Appointment detail retrieved successfully", appointmentService.getDetail(id));
     }
 }

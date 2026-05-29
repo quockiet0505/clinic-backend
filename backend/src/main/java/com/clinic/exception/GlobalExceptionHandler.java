@@ -5,28 +5,83 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@ControllerAdvice
+import com.clinic.dto.common.ApiResponse;
+
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Handles logic errors (e.g., Email already exists, Wrong role)
+    // Runtime errors
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    public ResponseEntity<ApiResponse<Object>> handleRuntimeException(
+            RuntimeException ex
+    ) {
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ApiResponse.builder()
+                        .success(false)
+                        .message(ex.getMessage())
+                        .build()
+        );
     }
 
-    // Handles validation errors from @Valid (e.g., password < 6 chars)
+    // Validation errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<Map<String, String>>>
+    handleValidationExceptions(
+            MethodArgumentNotValidException ex
+    ) {
+
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error -> 
-            errors.put(error.getField(), error.getDefaultMessage())
+
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(error ->
+                        errors.put(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
+                );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ApiResponse.<Map<String, String>>builder()
+                        .success(false)
+                        .message("Validation failed")
+                        .data(errors)
+                        .build()
         );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    }
+
+    // Access denied
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Object>>
+    handleAccessDeniedException(
+            AccessDeniedException ex
+    ) {
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ApiResponse.builder()
+                        .success(false)
+                        .message("Access denied")
+                        .build()
+        );
+    }
+
+    // Fallback
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Object>> handleException(
+            Exception ex
+    ) {
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ApiResponse.builder()
+                        .success(false)
+                        .message(ex.getMessage())
+                        .build()
+        );
     }
 }

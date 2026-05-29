@@ -132,21 +132,42 @@ CREATE TABLE patient_vital_profile (
 CREATE TABLE appointment (
     appointment_id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id INT NOT NULL,
-    main_doctor_id INT NOT NULL,
+    main_doctor_id INT NULL,
+    service_id INT NULL,
     appointment_date DATE NOT NULL,
     time_start TIME NULL,
     time_end TIME NULL,
     appointment_type ENUM('ONLINE','WALK_IN') NOT NULL,
-    status ENUM('PENDING','CONFIRMED','CHECKED_IN','IN_PROGRESS', 'WAITING_RESULT', 'COMPLETED', 'SKIPPED', 'CANCELLED','NO_SHOW') DEFAULT 'PENDING',
+    status ENUM(
+        'PENDING',
+        'CONFIRMED',
+        'CHECKED_IN',
+        'IN_PROGRESS',
+        'WAITING_RESULT',
+        'COMPLETED',
+        'SKIPPED',
+        'CANCELLED',
+        'NO_SHOW'
+    ) DEFAULT 'PENDING',
     created_by ENUM('PATIENT','STAFF') NOT NULL,
     checkin_time DATETIME NULL,
+    checkout_time DATETIME NULL,
     queue_number INT NULL,
-    cancelled_by ENUM('PATIENT', 'CLINIC') NULL, 
-    cancel_reason TEXT,                          
+    cancelled_by ENUM('PATIENT', 'CLINIC') NULL,
+    cancel_reason TEXT,
+     note TEXT NULL,
     is_deleted TINYINT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (patient_id) REFERENCES patient(patient_id) ON DELETE CASCADE,
-    FOREIGN KEY (main_doctor_id) REFERENCES staff(staff_id)
+
+    FOREIGN KEY (patient_id)
+        REFERENCES patient(patient_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (main_doctor_id)
+        REFERENCES staff(staff_id),
+
+    FOREIGN KEY (service_id)
+        REFERENCES service(service_id)
 );
 
 -- [NHÓM 5: DỊCH VỤ XÉT NGHIỆM & GIÁ]
@@ -181,7 +202,7 @@ CREATE TABLE medical_record (
     record_id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id INT NOT NULL,
     appointment_id INT,
-    main_doctor_id INT NOT NULL,
+    main_doctor_id INT  NULL,
     diagnosis TEXT,
     treatment TEXT,
     note TEXT,

@@ -96,11 +96,11 @@ INSERT INTO staff (staff_id, staff_type, full_name, expertise_id, gender, image_
 TRUNCATE TABLE service;
 
 -- Dịch vụ mặc định để gắn giá cho chức năng "Đặt khám Bác sĩ"
-INSERT INTO service (service_id, service_name, service_type, original_price, discount_price) VALUES 
+INSERT INTO service (service_id, service_name, service_type, price, discount_price) VALUES 
 (1, 'Khám Bệnh Chuyên Khoa Cơ Bản', 'EXAM', 0, 0);
 
 -- Các gói xét nghiệm từ JSON (Bắt đầu từ ID 2)
-INSERT INTO service (service_name, service_type, original_price, discount_price, image_url) VALUES
+INSERT INTO service (service_name, service_type, price, discount_price, image_url) VALUES
 ('Gói Xét Nghiệm Sinh Hóa Cơ Bản Tại Nhà', 'LAB_TEST', 1015000, 885000, '/images/services/home/home-pkg-c09a907bb4fb4123913d67fd71b13bd1.jpg'),
 ('Gói xét nghiệm sức khỏe sinh sản nữ - nâng cao (6 test)', 'LAB_TEST', 1338000, 1338000, '/images/services/home/home-pkg-diag005_DV008.jpg'),
 ('Gói XN Viêm gan - cơ bản (3 test)', 'LAB_TEST', 420000, 420000, '/images/services/home/home-pkg-diag005_DV011.jpg'),

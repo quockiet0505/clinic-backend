@@ -18,6 +18,8 @@ public class AppointmentResponse {
     private String patientName;
     private Integer mainDoctorId;
     private String doctorName;
+    private Integer serviceId;         
+    private String serviceName;        
     private LocalDate appointmentDate;
     private LocalTime timeStart;
     private LocalTime timeEnd;
@@ -27,8 +29,9 @@ public class AppointmentResponse {
     private LocalDateTime checkinTime;
     private LocalDateTime checkoutTime;
     private Integer queueNumber;
-    
-    // New fields mapped from DB
     private CancelledByType cancelledBy;
     private String cancelReason;
+    private String note;        
+    private Integer expertiseId;
+    private String expertiseName;        
 }

@@ -8,7 +8,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.clinic.entity.auth.Account;
-import com.clinic.entity.auth.Role;
 
 public class CustomUserDetails implements UserDetails {
 
@@ -27,9 +26,7 @@ public class CustomUserDetails implements UserDetails {
 
         return account.getRoles()
                 .stream()
-                .map(Role::getRoleCode)
-                .map(role -> "ROLE_" + role)
-                .map(SimpleGrantedAuthority::new)
+                .map(role -> new SimpleGrantedAuthority(role.getRoleCode()))
                 .collect(Collectors.toList());
     }
 
@@ -50,7 +47,8 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return account.getLockedUntil() == null || account.getLockedUntil().isBefore(java.time.LocalDateTime.now());
+        return account.getLockedUntil() == null
+                || account.getLockedUntil().isBefore(java.time.LocalDateTime.now());
     }
 
     @Override

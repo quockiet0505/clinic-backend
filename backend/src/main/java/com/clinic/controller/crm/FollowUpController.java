@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.common.enums.FollowUpStatus;
+import com.clinic.dto.common.ApiResponse;
 import com.clinic.dto.crm.FollowUpRequest;
 import com.clinic.dto.crm.FollowUpResponse;
 import com.clinic.service.crm.FollowUpService;
+import com.clinic.util.ResponseUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,32 +30,47 @@ public class FollowUpController {
 
     private final FollowUpService followUpService;
 
-    /**
-     * Create a new follow-up schedule for a patient.
-     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
-    public ResponseEntity<FollowUpResponse> create(@Valid @RequestBody FollowUpRequest request) {
-        return ResponseEntity.ok(followUpService.create(request));
+    public ResponseEntity<ApiResponse<FollowUpResponse>> create(
+            @Valid @RequestBody FollowUpRequest request
+    ) {
+
+        FollowUpResponse response =
+                followUpService.create(request);
+
+        return ResponseUtil.success(
+                "Follow-up created successfully",
+                response
+        );
     }
 
-    /**
-     * Get all follow-up records.
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<List<FollowUpResponse>> getAll() {
-        return ResponseEntity.ok(followUpService.getAll());
+    public ResponseEntity<ApiResponse<List<FollowUpResponse>>> getAll() {
+
+        List<FollowUpResponse> followUps =
+                followUpService.getAll();
+
+        return ResponseUtil.success(
+                "Follow-ups retrieved successfully",
+                followUps
+        );
     }
 
-    /**
-     * Update the status of a follow-up (e.g., CONFIRMED, COMPLETED).
-     */
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<FollowUpResponse> updateStatus(
+    public ResponseEntity<ApiResponse<FollowUpResponse>> updateStatus(
             @PathVariable Integer id,
-            @RequestParam FollowUpStatus status) {
-        return ResponseEntity.ok(followUpService.updateStatus(id, status));
+            @RequestParam FollowUpStatus status
+    ) {
+
+        FollowUpResponse response =
+                followUpService.updateStatus(id, status);
+
+        return ResponseUtil.success(
+                "Follow-up status updated successfully",
+                response
+        );
     }
 }

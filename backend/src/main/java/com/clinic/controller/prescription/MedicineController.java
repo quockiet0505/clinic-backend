@@ -1,8 +1,8 @@
+
 package com.clinic.controller.prescription;
 
 import java.util.List;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.clinic.dto.common.ApiResponse;
 import com.clinic.dto.prescription.MedicineRequest;
 import com.clinic.dto.prescription.MedicineResponse;
 import com.clinic.service.prescription.MedicineService;
+import com.clinic.util.ResponseUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,27 +30,47 @@ public class MedicineController {
     private final MedicineService medicineService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')") // Doctors need to see meds to prescribe
-    public ResponseEntity<List<MedicineResponse>> getAll() {
-        return ResponseEntity.ok(medicineService.getAllActive());
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    public ApiResponse<List<MedicineResponse>> getAll() {
+        return ResponseUtil.success(
+                "Medicines fetched successfully",
+                medicineService.getAllActive()
+        ).getBody();
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')") // Only Admins/Staff manage inventory
-    public ResponseEntity<MedicineResponse> create(@Valid @RequestBody MedicineRequest request) {
-        return ResponseEntity.ok(medicineService.create(request));
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ApiResponse<MedicineResponse> create(
+            @Valid @RequestBody MedicineRequest request
+    ) {
+        return ResponseUtil.success(
+                "Medicine created successfully",
+                medicineService.create(request)
+        ).getBody();
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
-    public ResponseEntity<MedicineResponse> update(@PathVariable Integer id, @Valid @RequestBody MedicineRequest request) {
-        return ResponseEntity.ok(medicineService.update(id, request));
+    public ApiResponse<MedicineResponse> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody MedicineRequest request
+    ) {
+        return ResponseUtil.success(
+                "Medicine updated successfully",
+                medicineService.update(id, request)
+        ).getBody();
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')") // Deletion is strict
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Void> delete(@PathVariable Integer id) {
+
         medicineService.softDelete(id);
-        return ResponseEntity.noContent().build();
+
+        return ResponseUtil.<Void>success(
+                "Medicine deleted successfully",
+                null
+        ).getBody();
     }
 }
+

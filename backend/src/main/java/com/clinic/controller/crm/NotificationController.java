@@ -9,9 +9,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.clinic.dto.common.ApiResponse;
 import com.clinic.dto.crm.NotificationResponse;
 import com.clinic.security.CustomUserDetails;
 import com.clinic.service.crm.NotificationService;
+import com.clinic.util.ResponseUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,11 +24,22 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    // Get notifications for the currently logged-in user
     @GetMapping("/my-notifications")
-    @PreAuthorize("isAuthenticated()") // Any logged-in user can view their notifications
-    public ResponseEntity<List<NotificationResponse>> getMyNotifications(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        Integer accountId = userDetails.getAccount().getAccountId();
-        return ResponseEntity.ok(notificationService.getMyNotifications(accountId));
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>>
+    getMyNotifications(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+
+        Integer accountId =
+                userDetails.getAccount().getAccountId();
+
+        List<NotificationResponse> notifications =
+                notificationService.getMyNotifications(accountId);
+
+        return ResponseUtil.success(
+                "Notifications retrieved successfully",
+                notifications
+        );
     }
 }

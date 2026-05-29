@@ -117,4 +117,40 @@ public class StaffService {
             .map(staffMapper::toResponse)
             .collect(Collectors.toList());
 }
+
+    @Transactional(readOnly = true)
+    public StaffResponse getById(Integer id) {
+
+        Staff staff = staffRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Staff not found"));
+
+        return staffMapper.toResponse(staff);
+    }
+    
+    @Transactional(readOnly = true)
+    public List<StaffResponse> getAll(
+            Integer expertiseId,
+            StaffType staffType
+    ) {
+    
+        List<Staff> staffs = staffRepository.findByIsDeleted(0);
+    
+        if (staffType != null) {
+            staffs = staffs.stream()
+                    .filter(s -> s.getStaffType() == staffType)
+                    .toList();
+        }
+    
+        if (expertiseId != null) {
+            staffs = staffs.stream()
+                    .filter(s ->
+                            s.getExpertise() != null &&
+                            s.getExpertise().getExpertiseId().equals(expertiseId))
+                    .toList();
+        }
+    
+        return staffs.stream()
+                .map(staffMapper::toResponse)
+                .toList();
+    }
 }

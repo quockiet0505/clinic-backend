@@ -1,7 +1,7 @@
 package com.clinic.controller.medical;
+
 import java.util.List;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.clinic.dto.common.ApiResponse;
 import com.clinic.dto.medical.DoctorServicePriceRequest;
 import com.clinic.dto.medical.DoctorServicePriceResponse;
 import com.clinic.service.medical.DoctorServicePriceService;
+import com.clinic.util.ResponseUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,24 +24,38 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/doctor-prices")
 @RequiredArgsConstructor
 public class DoctorServicePriceController {
+
     private final DoctorServicePriceService priceService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<List<DoctorServicePriceResponse>> getAll() {
-        return ResponseEntity.ok(priceService.getAll());
+    public ApiResponse<List<DoctorServicePriceResponse>> getAll() {
+        return ResponseUtil.success(
+                "Doctor prices fetched successfully",
+                priceService.getAll()
+        ).getBody();
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DoctorServicePriceResponse> createOrUpdate(@Valid @RequestBody DoctorServicePriceRequest request) {
-        return ResponseEntity.ok(priceService.createOrUpdate(request));
+    public ApiResponse<DoctorServicePriceResponse> createOrUpdate(
+            @Valid @RequestBody DoctorServicePriceRequest request
+    ) {
+        return ResponseUtil.success(
+                "Doctor price saved successfully",
+                priceService.createOrUpdate(request)
+        ).getBody();
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    public ApiResponse<Void> delete(@PathVariable Integer id) {
+
         priceService.delete(id);
-        return ResponseEntity.noContent().build();
+
+        return ResponseUtil.<Void>success(
+            "Service deleted successfully",
+            null
+        ).getBody();
     }
 }

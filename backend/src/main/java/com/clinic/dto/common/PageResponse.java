@@ -1,5 +1,7 @@
 package com.clinic.dto.common;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,11 +11,15 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApiResponse<T> {
+public class PageResponse<T> {
 
-    private boolean success;
+    private List<T> content;
 
-    private String message;
+    private int page;
 
-    private T data;
+    private int size;
+
+    private long totalElements;
+
+    private int totalPages;
 }

@@ -62,13 +62,13 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
     account.setPassword(passwordEncoder.encode(request.getPassword()));
     account.setIsActive(1);
     
-    Role role = roleRepository.findByRoleCode("ROLE_PATIENT")
-            .orElseThrow(() -> new RuntimeException("ROLE_PATIENT role not found."));
+    Role role = roleRepository.findByRoleCode("PATIENT")
+            .orElseThrow(() -> new RuntimeException("PATIENT role not found."));
     account.getRoles().add(role);
     
     account = accountRepository.save(account);
 
-    // Tạo Patient (bắt buộc)
+    // Tạo Patient 
     Patient patient = new Patient();
     patient.setAccount(account);
     patient.setFullName(request.getFullName());
@@ -101,7 +101,7 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
         log.info("Login attempt for patient: {}", request.getEmail());
         try {
             AuthResponse authRes = processAuthentication(request);
-            if (!authRes.getRoles().contains("ROLE_PATIENT")) {
+            if (!authRes.getRoles().contains("PATIENT")) {
                 log.warn("Account {} is not patient", request.getEmail());
                 throw new RuntimeException("Access Denied: Not a patient account.");
             }
@@ -123,8 +123,8 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
         try {
             AuthResponse authRes = processAuthentication(request);
             boolean isStaff = authRes.getRoles().stream()
-                    .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_DOCTOR") ||
-                            role.equals("ROLE_STAFF") || role.equals("ROLE_LAB_TECH"));
+                    .anyMatch(role -> role.equals("ADMIN") || role.equals("DOCTOR") ||
+                            role.equals("STAFF") || role.equals("LAB_TECH"));
             if (!isStaff) {
                 log.warn("Account {} is not staff", request.getEmail());
                 throw new RuntimeException("Access Denied: Staff privileges required.");

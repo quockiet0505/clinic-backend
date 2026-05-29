@@ -1,8 +1,8 @@
+
 package com.clinic.controller.prescription;
 
 import java.util.List;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.clinic.dto.common.ApiResponse;
 import com.clinic.dto.prescription.PrescriptionRequest;
 import com.clinic.dto.prescription.PrescriptionResponse;
 import com.clinic.service.prescription.PrescriptionService;
+import com.clinic.util.ResponseUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,30 +27,33 @@ public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
 
-    /**
-     * Create a new prescription for a patient after a medical examination.
-     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
-    public ResponseEntity<PrescriptionResponse> create(@Valid @RequestBody PrescriptionRequest request) {
-        return ResponseEntity.ok(prescriptionService.create(request));
+    public ApiResponse<PrescriptionResponse> create(
+            @Valid @RequestBody PrescriptionRequest request
+    ) {
+        return ResponseUtil.success(
+                "Prescription created successfully",
+                prescriptionService.create(request)
+        ).getBody();
     }
 
-    /**
-     * Get prescription details by ID.
-     */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
-    public ResponseEntity<PrescriptionResponse> getById(@PathVariable Integer id) {
-        return ResponseEntity.ok(prescriptionService.getById(id));
+    public ApiResponse<PrescriptionResponse> getById(@PathVariable Integer id) {
+        return ResponseUtil.success(
+                "Prescription fetched successfully",
+                prescriptionService.getById(id)
+        ).getBody();
     }
 
-    /**
-     * List all prescriptions in the system.
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<List<PrescriptionResponse>> getAll() {
-        return ResponseEntity.ok(prescriptionService.getAll());
+    public ApiResponse<List<PrescriptionResponse>> getAll() {
+        return ResponseUtil.success(
+                "Prescriptions fetched successfully",
+                prescriptionService.getAll()
+        ).getBody();
     }
 }
+

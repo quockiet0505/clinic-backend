@@ -9,6 +9,7 @@ import com.clinic.common.enums.AppointmentType;
 import com.clinic.common.enums.CancelledByType;
 import com.clinic.common.enums.CreatedByType;
 import com.clinic.entity.base.BaseEntity;
+import com.clinic.entity.medical.Service;
 import com.clinic.entity.patient.Patient;
 import com.clinic.entity.staff.Staff;
 
@@ -24,7 +25,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,8 +34,6 @@ import lombok.Setter;
 @Table(name = "appointment", indexes = {
     @Index(name = "idx_appointment_date", columnList = "appointment_date"),
     @Index(name = "idx_appointment_doctor", columnList = "main_doctor_id")
-}, uniqueConstraints = {
-    @UniqueConstraint(name = "uq_doctor_time", columnNames = {"main_doctor_id", "appointment_date", "time_start"})
 })
 @Getter
 @Setter
@@ -52,8 +50,12 @@ public class Appointment extends BaseEntity {
     private Patient patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "main_doctor_id", nullable = false)
+    @JoinColumn(name = "main_doctor_id", nullable = true)
     private Staff mainDoctor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_id")
+    private Service service;
 
     @Column(name = "appointment_date", nullable = false)
     private LocalDate appointmentDate;
@@ -79,6 +81,9 @@ public class Appointment extends BaseEntity {
     @Column(name = "checkin_time")
     private LocalDateTime checkinTime;
 
+    @Column(name = "checkout_time")
+    private LocalDateTime checkoutTime;
+
     @Column(name = "queue_number")
     private Integer queueNumber;
 
@@ -88,6 +93,9 @@ public class Appointment extends BaseEntity {
 
     @Column(name = "cancel_reason", columnDefinition = "TEXT")
     private String cancelReason;
+
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;      
 
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;

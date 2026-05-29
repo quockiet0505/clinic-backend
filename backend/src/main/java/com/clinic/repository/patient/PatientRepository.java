@@ -10,4 +10,6 @@ import com.clinic.entity.patient.Patient;
 public interface PatientRepository extends JpaRepository<Patient, Integer> {
     List<Patient> findByIsDeleted(Integer isDeleted);
     Optional<Patient> findByAccount_AccountId(Integer accountId);
+
+    Optional<Patient> findByAccount_Email(String email);
 }
