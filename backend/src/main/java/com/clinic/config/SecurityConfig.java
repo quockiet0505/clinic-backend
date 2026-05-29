@@ -86,6 +86,7 @@ public class SecurityConfig {
                                 "/images/**",
                                 "/icons/**",
                                 "/api/v1/auth/**",
+                                "/api/v1/static/**",
                                 "/api/v1/expertise/**",
                                 "/api/v1/staffs/doctors",
                                 "/api/v1/services/**",
