@@ -99,14 +99,21 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
     @Transactional
     public AuthResponse loginPatient(LoginRequest request, HttpServletResponse response) {
         log.info("Login attempt for patient: {}", request.getEmail());
+
+       
         try {
             AuthResponse authRes = processAuthentication(request);
-            if (!authRes.getRoles().contains("PATIENT")) {
+            if (!authRes.getRoles().contains("ROLE_PATIENT")) {
                 log.warn("Account {} is not patient", request.getEmail());
+
+                log.warn("Roles after login = {}", authRes.getRoles());
+                
                 throw new RuntimeException("Access Denied: Not a patient account.");
             }
             setCookie(response, authRes.getToken());
             log.info("Patient login successful: {}", request.getEmail());
+            
+
             return authRes;
         } catch (BadCredentialsException e) {
             log.error("Bad credentials for email: {}", request.getEmail());
@@ -123,8 +130,11 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
         try {
             AuthResponse authRes = processAuthentication(request);
             boolean isStaff = authRes.getRoles().stream()
-                    .anyMatch(role -> role.equals("ADMIN") || role.equals("DOCTOR") ||
-                            role.equals("STAFF") || role.equals("LAB_TECH"));
+                .anyMatch(role ->
+                        role.equals("ROLE_ADMIN") ||
+                        role.equals("ROLE_DOCTOR") ||
+                        role.equals("ROLE_STAFF") ||
+                        role.equals("ROLE_LAB_TECH"));
             if (!isStaff) {
                 log.warn("Account {} is not staff", request.getEmail());
                 throw new RuntimeException("Access Denied: Staff privileges required.");
