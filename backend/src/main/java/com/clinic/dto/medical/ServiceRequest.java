@@ -18,7 +18,15 @@ public class ServiceRequest {
     @NotNull(message = "Service type is required (e.g., EXAM, LAB_TEST, IMAGING)")
     private ServiceType serviceType;
 
-    @NotNull(message = "Default price is required")
+    @NotNull(message = "Original price is required")
     @DecimalMin(value = "0.0", inclusive = true, message = "Price cannot be negative")
-    private BigDecimal price;
+    private BigDecimal originalPrice;
+
+    private BigDecimal discountPrice;
+
+    private String imageUrl;
+
+    private Boolean isFeatured;
+
+    private Integer featuredPriority;
 }

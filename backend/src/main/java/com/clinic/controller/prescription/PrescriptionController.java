@@ -55,5 +55,15 @@ public class PrescriptionController {
                 prescriptionService.getAll()
         ).getBody();
     }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<List<PrescriptionResponse>> getMyPrescriptions(org.springframework.security.core.Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseUtil.success(
+                "Prescriptions fetched successfully",
+                prescriptionService.getMyPrescriptions(email)
+        ).getBody();
+    }
 }
 

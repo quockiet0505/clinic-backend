@@ -33,4 +33,6 @@ public class StaffRequest {
     
     private String experience;
     private String imageUrl;
+    private Boolean isFeatured;
+    private Integer featuredPriority;
 }

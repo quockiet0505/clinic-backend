@@ -37,4 +37,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
 
     // Optional: find by id and not deleted (for detail with security)
     Optional<Appointment> findByAppointmentIdAndIsDeleted(Integer id, Integer isDeleted);
+
+    List<Appointment> findByMainDoctor_StaffIdAndAppointmentDateAndIsDeleted(Integer doctorId, LocalDate date, Integer isDeleted);
 }

@@ -159,4 +159,21 @@ public class AuthController {
 
         return null;
     }
+
+    @org.springframework.web.bind.annotation.PutMapping("/change-password")
+    public ResponseEntity<ApiResponse<Object>> changePassword(
+            @jakarta.validation.Valid @RequestBody com.clinic.dto.auth.ChangePasswordRequest request,
+            org.springframework.security.core.Authentication authentication
+    ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+        String email = authentication.getName();
+        authService.changePassword(email, request);
+
+        return ResponseUtil.success(
+                "Password changed successfully",
+                null
+        );
+    }
 }

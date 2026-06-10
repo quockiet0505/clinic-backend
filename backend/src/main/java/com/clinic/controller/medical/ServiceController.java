@@ -36,6 +36,15 @@ public class ServiceController {
         ).getBody();
     }
 
+    @GetMapping("/featured")
+    @PreAuthorize("permitAll()")
+    public ApiResponse<List<ServiceResponse>> getFeatured() {
+        return ResponseUtil.success(
+                "Featured services fetched successfully",
+                serviceService.getFeaturedServices()
+        ).getBody();
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<ServiceResponse> create(

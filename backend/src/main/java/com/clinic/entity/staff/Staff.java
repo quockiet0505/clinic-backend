@@ -71,6 +71,12 @@ public class Staff {
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
+    @Column(name = "is_featured")
+    private Boolean isFeatured = false;
+
+    @Column(name = "featured_priority")
+    private Integer featuredPriority = 0;
+
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;
 

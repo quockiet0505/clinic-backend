@@ -37,8 +37,19 @@ public class ServiceService {
                 .orElseThrow(() -> new RuntimeException("Service not found"));
         service.setServiceName(request.getServiceName());
         service.setServiceType(request.getServiceType());
-        service.setPrice(request.getPrice());
+        service.setOriginalPrice(request.getOriginalPrice());
+        service.setDiscountPrice(request.getDiscountPrice());
+        service.setImageUrl(request.getImageUrl());
+        service.setIsFeatured(request.getIsFeatured());
+        service.setFeaturedPriority(request.getFeaturedPriority());
         return serviceMapper.toResponse(serviceRepository.save(service));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ServiceResponse> getFeaturedServices() {
+        return serviceRepository.findByIsDeletedAndIsFeaturedOrderByFeaturedPriorityAsc(0, true).stream()
+                .map(serviceMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional

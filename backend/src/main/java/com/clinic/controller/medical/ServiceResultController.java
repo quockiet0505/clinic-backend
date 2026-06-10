@@ -47,4 +47,14 @@ public class ServiceResultController {
                 resultService.getByOrderId(orderId)
         ).getBody();
     }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<java.util.List<ServiceResultResponse>> getMyResults(org.springframework.security.core.Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseUtil.success(
+                "Service results fetched successfully",
+                resultService.getMyResults(email)
+        ).getBody();
+    }
 }

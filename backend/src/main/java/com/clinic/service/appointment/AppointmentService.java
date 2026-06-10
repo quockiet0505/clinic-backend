@@ -176,13 +176,14 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
         LocalDateTime appointmentDateTime = LocalDateTime.of(appointment.getAppointmentDate(), appointment.getTimeStart());
+        
+        if (LocalDateTime.now().isAfter(appointmentDateTime.minusHours(3))) {
+            throw new RuntimeException("Chỉ được phép hủy lịch trước thời gian khám ít nhất 3 tiếng.");
+        }
+        
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointment.setCancelledBy(CancelledByType.PATIENT);
-        if (LocalDateTime.now().isAfter(appointmentDateTime.minusHours(3))) {
-            appointment.setCancelReason(reason + " [SPAM: Cancelled less than 3 hours before start time]");
-        } else {
-            appointment.setCancelReason(reason);
-        }
+        appointment.setCancelReason(reason);
         return appointmentMapper.toResponse(appointmentRepository.save(appointment));
     }
 
@@ -223,5 +224,41 @@ public class AppointmentService {
             throw new RuntimeException("Access denied");
         }
         return appointmentMapper.toResponse(appointment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.clinic.dto.appointment.TimeSlotResponse> getAvailableSlots(Integer doctorId, java.time.LocalDate date) {
+        List<com.clinic.dto.appointment.TimeSlotResponse> slots = new java.util.ArrayList<>();
+        List<StaffSchedule> schedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(doctorId, date);
+        
+        if (schedules.isEmpty()) {
+            return slots;
+        }
+
+        List<Appointment> existingAppointments = appointmentRepository.findByMainDoctor_StaffIdAndAppointmentDateAndIsDeleted(doctorId, date, 0);
+
+        for (StaffSchedule schedule : schedules) {
+            if (schedule.getStatus() == ScheduleStatus.OFF) continue;
+
+            LocalTime start = schedule.getStartTime();
+            LocalTime end = schedule.getEndTime();
+            
+            // Assume 30 min slots
+            LocalTime current = start;
+            while (current.plusMinutes(30).isBefore(end) || current.plusMinutes(30).equals(end)) {
+                LocalTime slotStart = current;
+                LocalTime slotEnd = current.plusMinutes(30);
+                
+                boolean isAvailable = existingAppointments.stream().noneMatch(a -> 
+                    (a.getStatus() != AppointmentStatus.CANCELLED) && 
+                    ((a.getTimeStart() != null && a.getTimeStart().equals(slotStart)) || 
+                     (a.getTimeStart() != null && a.getTimeStart().isBefore(slotEnd) && a.getTimeEnd() != null && a.getTimeEnd().isAfter(slotStart)))
+                );
+
+                slots.add(new com.clinic.dto.appointment.TimeSlotResponse(slotStart, slotEnd, isAvailable));
+                current = current.plusMinutes(30);
+            }
+        }
+        return slots;
     }
 }

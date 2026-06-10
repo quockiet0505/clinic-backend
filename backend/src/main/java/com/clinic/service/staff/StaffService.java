@@ -112,11 +112,18 @@ public class StaffService {
     }
 
     public List<StaffResponse> getAllDoctors() {
-    return staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0)
-            .stream()
-            .map(staffMapper::toResponse)
-            .collect(Collectors.toList());
-}
+        return staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0)
+                .stream()
+                .map(staffMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<StaffResponse> getFeaturedDoctors() {
+        return staffRepository.findByStaffTypeAndIsDeletedAndIsFeaturedOrderByFeaturedPriorityAsc(StaffType.DOCTOR, 0, true)
+                .stream()
+                .map(staffMapper::toResponse)
+                .collect(Collectors.toList());
+    }
 
     @Transactional(readOnly = true)
     public StaffResponse getById(Integer id) {

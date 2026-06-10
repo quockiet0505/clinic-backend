@@ -39,14 +39,20 @@ public class Service {
     @Column(name = "service_type", nullable = false)
     private ServiceType serviceType;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
+    @Column(name = "original_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal originalPrice;
 
     @Column(name = "discount_price", precision = 10, scale = 2)
     private BigDecimal discountPrice;
 
     @Column(name = "image_url", length = 255)
     private String imageUrl;
+
+    @Column(name = "is_featured")
+    private Boolean isFeatured = false;
+
+    @Column(name = "featured_priority")
+    private Integer featuredPriority = 0;
 
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;

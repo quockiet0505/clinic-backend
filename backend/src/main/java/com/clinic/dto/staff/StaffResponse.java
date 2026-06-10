@@ -20,5 +20,7 @@ public class StaffResponse {
     private StaffType staffType;
     private String experience;
     private String imageUrl;
+    private Boolean isFeatured;
+    private Integer featuredPriority;
     private Integer isDeleted;
 }

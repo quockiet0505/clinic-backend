@@ -10,4 +10,5 @@ import com.clinic.entity.staff.Staff;
 public interface StaffRepository extends JpaRepository<Staff, Integer> {
     List<Staff> findByIsDeleted(Integer isDeleted);
     List<Staff> findByStaffTypeAndIsDeleted(StaffType staffType, Integer isDeleted);
+    List<Staff> findByStaffTypeAndIsDeletedAndIsFeaturedOrderByFeaturedPriorityAsc(StaffType staffType, Integer isDeleted, Boolean isFeatured);
 }

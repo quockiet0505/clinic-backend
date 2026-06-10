@@ -141,4 +141,15 @@ public class PatientService {
         patient.setIsDeleted(1);
         patientRepository.save(patient);
     }
+
+    @Transactional
+    public PatientResponse updateMyProfile(String email, PatientRequest request) {
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        Patient patient = patientRepository.findByAccount_AccountId(account.getAccountId())
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
+
+        return update(patient.getPatientId(), request);
+    }
 }

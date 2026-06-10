@@ -22,6 +22,7 @@ public class ServiceResultService {
     private final ServiceOrderRepository orderRepository;
     private final StaffRepository staffRepository;
     private final ServiceResultMapper resultMapper;
+    private final com.clinic.repository.patient.PatientRepository patientRepository;
 
     @Transactional
     public ServiceResultResponse submitResult(ServiceResultRequest request) {
@@ -53,5 +54,16 @@ public class ServiceResultService {
         ServiceResult result = resultRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new RuntimeException("Result not found for this order"));
         return resultMapper.toResponse(result);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<ServiceResultResponse> getMyResults(String email) {
+        com.clinic.entity.patient.Patient patient = patientRepository.findByAccount_Email(email)
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                
+        return resultRepository.findByServiceOrder_MedicalRecord_Patient_PatientId(patient.getPatientId())
+                .stream()
+                .map(resultMapper::toResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

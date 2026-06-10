@@ -30,6 +30,7 @@ public class PrescriptionService {
     private final MedicalRecordRepository medicalRecordRepository;
     private final MedicineRepository medicineRepository;
     private final PrescriptionMapper prescriptionMapper;
+    private final com.clinic.repository.patient.PatientRepository patientRepository;
 
     /**
      * Creates a new prescription linked to a medical record.
@@ -85,12 +86,20 @@ public class PrescriptionService {
         return prescriptionMapper.toResponse(prescription);
     }
     
-    /**
-     * Retrieves all prescriptions.
-     */
     @Transactional(readOnly = true)
     public List<PrescriptionResponse> getAll() {
         return prescriptionRepository.findAll().stream()
+                .map(prescriptionMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PrescriptionResponse> getMyPrescriptions(String email) {
+        com.clinic.entity.patient.Patient patient = patientRepository.findByAccount_Email(email)
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                
+        return prescriptionRepository.findByMedicalRecord_Patient_PatientId(patient.getPatientId())
+                .stream()
                 .map(prescriptionMapper::toResponse)
                 .collect(Collectors.toList());
     }

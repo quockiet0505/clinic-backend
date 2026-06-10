@@ -11,4 +11,6 @@ public interface ServiceResultRepository extends JpaRepository<ServiceResult, In
     
     @Query("SELECT r FROM ServiceResult r WHERE r.serviceOrder.orderId = :orderId")
     Optional<ServiceResult> findByOrderId(@Param("orderId") Integer orderId);
+
+    java.util.List<ServiceResult> findByServiceOrder_MedicalRecord_Patient_PatientId(Integer patientId);
 }

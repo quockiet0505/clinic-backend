@@ -96,5 +96,18 @@ public class PatientController {
                 patientService.getProfileByEmail(email)
         ).getBody();
     }
+
+    @PutMapping("/profile")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<PatientResponse> updateMyProfile(
+            Authentication authentication,
+            @Valid @RequestBody PatientRequest request
+    ) {
+        String email = authentication.getName();
+        return ResponseUtil.success(
+                "Profile updated successfully",
+                patientService.updateMyProfile(email, request)
+        ).getBody();
+    }
 }
 

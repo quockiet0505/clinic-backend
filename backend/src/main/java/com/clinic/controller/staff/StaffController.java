@@ -86,6 +86,15 @@ public class StaffController {
         ).getBody();
     }
 
+    @GetMapping("/doctors/featured")
+    @PreAuthorize("permitAll()")
+    public ApiResponse<List<StaffResponse>> getFeaturedDoctors() {
+        return ResponseUtil.success(
+                "Featured doctors fetched successfully",
+                staffService.getFeaturedDoctors()
+        ).getBody();
+    }
+
     @GetMapping("/{id}")
         public ApiResponse<StaffResponse> getById(
                 @PathVariable Integer id

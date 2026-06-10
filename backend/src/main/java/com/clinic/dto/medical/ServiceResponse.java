@@ -15,11 +15,15 @@ public class ServiceResponse {
 
     private ServiceType serviceType;
 
-    private BigDecimal price;
+    private BigDecimal originalPrice;
 
     private BigDecimal discountPrice;
 
     private String imageUrl;
+
+    private Boolean isFeatured;
+
+    private Integer featuredPriority;
 
     private ServiceResultResponse result;
 }
