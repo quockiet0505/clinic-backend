@@ -1,6 +1,7 @@
 package com.clinic.dto.medical;
 
 import com.clinic.common.enums.MedicalRecordStatus;
+import java.time.LocalDateTime;
 
 import lombok.Data;
 
@@ -16,6 +17,7 @@ public class MedicalRecordResponse {
     private String treatment;
     private String note;
     private MedicalRecordStatus status;
+    private LocalDateTime createdAt;
     
     // Thêm lưu vết
     private Integer updatedByDoctorId;

@@ -48,6 +48,25 @@ CREATE TABLE expertise (
 );
 
 -- 5. STAFF
+-- CREATE TABLE staff (
+--     staff_id INT AUTO_INCREMENT PRIMARY KEY,
+--     account_id INT UNIQUE,
+--     expertise_id INT,
+--     full_name VARCHAR(100) NOT NULL,
+--     gender VARCHAR(10),
+--     date_of_birth DATE,
+--     phone VARCHAR(20),
+--     address VARCHAR(255),
+--     staff_type ENUM('DOCTOR','STAFF', 'LAB_TECH','ADMIN') NOT NULL,
+--     experience VARCHAR(100),
+--     image_url VARCHAR(255),
+--     is_deleted TINYINT DEFAULT 0,
+--     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+--     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--     FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE,
+--     FOREIGN KEY (expertise_id) REFERENCES expertise(expertise_id)
+-- );
+
 CREATE TABLE staff (
     staff_id INT AUTO_INCREMENT PRIMARY KEY,
     account_id INT UNIQUE,
@@ -60,6 +79,8 @@ CREATE TABLE staff (
     staff_type ENUM('DOCTOR','STAFF', 'LAB_TECH','ADMIN') NOT NULL,
     experience VARCHAR(100),
     image_url VARCHAR(255),
+    is_featured BOOLEAN DEFAULT FALSE,
+    featured_priority INT DEFAULT 0,
     is_deleted TINYINT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -173,15 +194,29 @@ CREATE TABLE appointment (
 -- [NHÓM 5: DỊCH VỤ XÉT NGHIỆM & GIÁ]
 
 -- 11. SERVICE
+-- CREATE TABLE service (
+--     service_id INT AUTO_INCREMENT PRIMARY KEY,
+--     service_name VARCHAR(100) NOT NULL,
+--     service_type ENUM('EXAM','LAB_TEST','IMAGING') NOT NULL,
+--     price DECIMAL(10,2) NOT NULL,
+--     is_deleted TINYINT DEFAULT 0,
+--     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+-- 	image_url VARCHAR(255),
+-- 	discount_price DECIMAL(10,2)
+-- );
+
 CREATE TABLE service (
     service_id INT AUTO_INCREMENT PRIMARY KEY,
-    service_name VARCHAR(100) NOT NULL,
-    service_type ENUM('EXAM','LAB_TEST','IMAGING') NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
+    service_name VARCHAR(255) NOT NULL,
+    service_type ENUM('EXAM','LAB_TEST','IMAGING') NOT NULL DEFAULT 'LAB_TEST',
+    original_price DECIMAL(10,2) NOT NULL,
+    discount_price DECIMAL(10,2),
+    image_url VARCHAR(255),
+    is_featured BOOLEAN DEFAULT FALSE,
+    featured_priority INT DEFAULT 0,
     is_deleted TINYINT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-	image_url VARCHAR(255),
-	discount_price DECIMAL(10,2)
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- 12. DOCTOR SERVICE PRICE
