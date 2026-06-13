@@ -32,31 +32,31 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // 1. Initialize System Roles
-        seedRoleIfNotFound("ROLE_ADMIN", "Administrator");
-        seedRoleIfNotFound("ROLE_DOCTOR", "Doctor");
-        seedRoleIfNotFound("ROLE_STAFF", "Clinic Staff");
-        seedRoleIfNotFound("ROLE_PATIENT", "Patient");
+        // 1. Initialize System Roles (KHÔNG có tiền tố ROLE_)
+        seedRoleIfNotFound("ADMIN", "Administrator");
+        seedRoleIfNotFound("DOCTOR", "Doctor");
+        seedRoleIfNotFound("STAFF", "Clinic Staff");
+        seedRoleIfNotFound("PATIENT", "Patient");
 
         // 2. Initialize Master Admin Account
-        String adminEmail = "admin@gmail.com";
+        String adminEmail = "kiet@gmail.com";
         if (!accountRepository.existsByEmail(adminEmail)) {
             log.info("No admin account found. Seeding default Master Admin...");
 
             Account admin = new Account();
             admin.setEmail(adminEmail);
-            admin.setPassword(passwordEncoder.encode("Trustcare@2026"));
+            admin.setPassword(passwordEncoder.encode("12345678"));
             admin.setIsActive(1);
             admin.setFailedAttempt(0);
 
-            // Fetch the admin role and assign it
-            Role adminRole = roleRepository.findByRoleCode("ROLE_ADMIN")
-                    .orElseThrow(() -> new RuntimeException("ROLE_ADMIN not found during seeding"));
+            // Lấy role ADMIN (mã "ADMIN")
+            Role adminRole = roleRepository.findByRoleCode("ADMIN")
+                    .orElseThrow(() -> new RuntimeException("ADMIN role not found during seeding"));
             
             admin.getRoles().add(adminRole);
 
             accountRepository.save(admin);
-            log.info(" Master Admin account created successfully! Email: {} | Password: Trustcare@2026", adminEmail);
+            log.info(" Master Admin account created successfully! Email: {} | Password: 12345678", adminEmail);
         } else {
             log.info("Database already contains the admin account. Skipping seeder.");
         }

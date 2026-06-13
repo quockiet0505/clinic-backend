@@ -25,11 +25,13 @@ public class CustomUserDetails implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return account.getRoles()
                 .stream()
-                .map(role ->
-                    new SimpleGrantedAuthority(
-                        "ROLE_" + role.getRoleCode()
-                    )
-                )
+                .map(role -> {
+                    String roleName = role.getRoleCode();
+                    if (!roleName.startsWith("ROLE_")) {
+                        roleName = "ROLE_" + roleName;
+                    }
+                    return new SimpleGrantedAuthority(roleName);
+                })
                 .collect(Collectors.toList());
     }
 

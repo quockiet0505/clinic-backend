@@ -95,6 +95,9 @@ public class SecurityConfig {
                                 "/api/v1/services",
                                 "/api/v1/services/**",
                         
+                                "/api/v1/appointments/slots",
+                                "/api/v1/appointments/public/**",
+                        
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
