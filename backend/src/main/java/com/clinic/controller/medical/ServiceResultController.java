@@ -57,4 +57,13 @@ public class ServiceResultController {
                 resultService.getMyResults(email)
         ).getBody();
     }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'LAB_TECH')")
+    public ApiResponse<java.util.List<ServiceResultResponse>> getAll() {
+        return ResponseUtil.success(
+                "Service results fetched successfully",
+                resultService.getAll()
+        ).getBody();
+    }
 }

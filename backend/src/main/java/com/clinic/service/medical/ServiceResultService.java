@@ -66,4 +66,12 @@ public class ServiceResultService {
                 .map(resultMapper::toResponse)
                 .collect(java.util.stream.Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public java.util.List<ServiceResultResponse> getAll() {
+        return resultRepository.findAll()
+                .stream()
+                .map(resultMapper::toResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
 }

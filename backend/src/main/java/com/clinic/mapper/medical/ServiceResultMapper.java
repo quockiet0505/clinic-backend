@@ -19,6 +19,8 @@ public interface ServiceResultMapper {
 
     @Mapping(source = "serviceOrder.orderId", target = "orderId")
     @Mapping(source = "serviceOrder.service.serviceName", target = "serviceName")
+    @Mapping(source = "serviceOrder.medicalRecord.patient.fullName", target = "patientName")
+    @Mapping(source = "serviceOrder.orderedBy.fullName", target = "doctorName")
     @Mapping(source = "enteredBy.staffId", target = "enteredById")
     @Mapping(source = "enteredBy.fullName", target = "enteredByName")
     @Mapping(source = "createdAt", target = "enteredAt") 

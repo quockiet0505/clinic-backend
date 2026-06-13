@@ -8,6 +8,8 @@ public class ServiceResultResponse {
     private Integer resultId;
     private Integer orderId;
     private String serviceName; 
+    private String patientName;
+    private String doctorName;
     private String resultData;
     private String conclusion;
     private String attachmentUrl; 

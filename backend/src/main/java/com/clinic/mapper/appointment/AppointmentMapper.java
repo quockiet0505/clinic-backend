@@ -7,7 +7,7 @@ import com.clinic.dto.appointment.AppointmentRequest;
 import com.clinic.dto.appointment.AppointmentResponse;
 import com.clinic.entity.appointment.Appointment;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = org.mapstruct.ReportingPolicy.IGNORE)
 public interface AppointmentMapper {
 
     @Mapping(target = "patient", ignore = true)

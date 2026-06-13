@@ -18,10 +18,12 @@ public interface ServiceOrderMapper {
     ServiceOrder toEntity(ServiceOrderRequest request);
 
     @Mapping(source = "medicalRecord.recordId", target = "recordId")
+    @Mapping(source = "medicalRecord.patient.fullName", target = "patientName")
     @Mapping(source = "service.serviceId", target = "serviceId")
     @Mapping(source = "service.serviceName", target = "serviceName")
     @Mapping(source = "orderedBy.staffId", target = "orderedById")
     @Mapping(source = "orderedBy.fullName", target = "orderedByName")
+    @Mapping(source = "orderedBy.fullName", target = "doctorName")
     @Mapping(source = "sampleCollectedBy.staffId", target = "sampleCollectedById")
     @Mapping(source = "sampleCollectedBy.fullName", target = "sampleCollectedByName")
     ServiceOrderResponse toResponse(ServiceOrder serviceOrder);

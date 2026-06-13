@@ -15,6 +15,7 @@ public interface DoctorServicePriceMapper {
 
     @Mapping(source = "staff.staffId", target = "staffId")
     @Mapping(source = "staff.fullName", target = "doctorName")
+    @Mapping(source = "staff.imageUrl", target = "imageUrl")
     @Mapping(source = "service.serviceId", target = "serviceId")
     @Mapping(source = "service.serviceName", target = "serviceName")
     DoctorServicePriceResponse toResponse(DoctorServicePrice entity);

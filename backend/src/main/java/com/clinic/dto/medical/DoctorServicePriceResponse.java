@@ -12,4 +12,5 @@ public class DoctorServicePriceResponse {
     private Integer serviceId;
     private String serviceName;
     private BigDecimal price;
+    private String imageUrl;
 }
