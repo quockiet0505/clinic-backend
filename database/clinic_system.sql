@@ -48,24 +48,6 @@ CREATE TABLE expertise (
 );
 
 -- 5. STAFF
--- CREATE TABLE staff (
---     staff_id INT AUTO_INCREMENT PRIMARY KEY,
---     account_id INT UNIQUE,
---     expertise_id INT,
---     full_name VARCHAR(100) NOT NULL,
---     gender VARCHAR(10),
---     date_of_birth DATE,
---     phone VARCHAR(20),
---     address VARCHAR(255),
---     staff_type ENUM('DOCTOR','STAFF', 'LAB_TECH','ADMIN') NOT NULL,
---     experience VARCHAR(100),
---     image_url VARCHAR(255),
---     is_deleted TINYINT DEFAULT 0,
---     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
---     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
---     FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE,
---     FOREIGN KEY (expertise_id) REFERENCES expertise(expertise_id)
--- );
 
 CREATE TABLE staff (
     staff_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -193,18 +175,6 @@ CREATE TABLE appointment (
 
 -- [NHÓM 5: DỊCH VỤ XÉT NGHIỆM & GIÁ]
 
--- 11. SERVICE
--- CREATE TABLE service (
---     service_id INT AUTO_INCREMENT PRIMARY KEY,
---     service_name VARCHAR(100) NOT NULL,
---     service_type ENUM('EXAM','LAB_TEST','IMAGING') NOT NULL,
---     price DECIMAL(10,2) NOT NULL,
---     is_deleted TINYINT DEFAULT 0,
---     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
--- 	image_url VARCHAR(255),
--- 	discount_price DECIMAL(10,2)
--- );
-
 CREATE TABLE service (
     service_id INT AUTO_INCREMENT PRIMARY KEY,
     service_name VARCHAR(255) NOT NULL,
@@ -224,7 +194,8 @@ CREATE TABLE doctor_service_price (
     id INT AUTO_INCREMENT PRIMARY KEY,
     staff_id INT NOT NULL,
     service_id INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
+    original_price DECIMAL(10,2) NOT NULL,
+    discount_price DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (staff_id) REFERENCES staff(staff_id),
     FOREIGN KEY (service_id) REFERENCES service(service_id),
     UNIQUE(staff_id, service_id)
@@ -366,6 +337,22 @@ CREATE TABLE feedback (
     FOREIGN KEY (record_id) REFERENCES medical_record(record_id)
 );
 
+
+-- feed back doctor
+
+CREATE TABLE IF NOT EXISTS doctor_review (
+    review_id INT AUTO_INCREMENT PRIMARY KEY,
+    doctor_id INT NOT NULL,
+    patient_id INT NOT NULL,
+    rating TINYINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (doctor_id) REFERENCES staff(staff_id) ON DELETE CASCADE,
+    FOREIGN KEY (patient_id) REFERENCES patient(patient_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_review (doctor_id, patient_id)
+);
+
+
 -- [NHÓM 9: CHATBOT AI]
 
 -- 23. CHAT SESSION
@@ -384,4 +371,30 @@ CREATE TABLE chat_message (
     message_content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (session_id) REFERENCES chat_session(session_id) ON DELETE CASCADE
+);
+
+
+-- [ NHÓM 10: LOGO AND QUICK ICON]
+	-- ---------------------------
+-- 25. TẠO BẢNG QUICK_ACTION (ICON TRUY CẬP NHANH)
+-- ---------------------------
+CREATE TABLE IF NOT EXISTS quick_action (
+    action_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) NOT NULL UNIQUE,
+    icon_url VARCHAR(255),
+    display_order INT DEFAULT 0,
+    is_active TINYINT DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- ---------------------------
+-- 26. TẠO BẢNG LOGO_SETTING
+-- ---------------------------
+CREATE TABLE IF NOT EXISTS logo_setting (
+    logo_id INT AUTO_INCREMENT PRIMARY KEY,
+    logo_key VARCHAR(50) NOT NULL UNIQUE,   -- 'main', 'favicon', 'login'
+    image_url VARCHAR(255) NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

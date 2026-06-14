@@ -20,6 +20,7 @@ import com.clinic.repository.auth.AccountRepository;
 import com.clinic.repository.auth.RoleRepository;
 import com.clinic.repository.staff.ExpertiseRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.repository.staff.DoctorReviewRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,8 +31,17 @@ public class StaffService {
     private final AccountRepository accountRepository;
     private final RoleRepository roleRepository;
     private final ExpertiseRepository expertiseRepository;
+    private final DoctorReviewRepository doctorReviewRepository;
     private final PasswordEncoder passwordEncoder;
     private final StaffMapper staffMapper;
+
+    private StaffResponse mapToResponseWithRating(Staff staff) {
+        StaffResponse response = staffMapper.toResponse(staff);
+        if (staff.getStaffType() == StaffType.DOCTOR) {
+            response.setRating(doctorReviewRepository.getAverageRatingByDoctorId(staff.getStaffId()));
+        }
+        return response;
+    }
 
     @SuppressWarnings("null")
     @Transactional
@@ -63,13 +73,13 @@ public class StaffService {
             staff.setExpertise(expertise);
         }
 
-        return staffMapper.toResponse(staffRepository.save(staff));
+        return mapToResponseWithRating(staffRepository.save(staff));
     }
 
     @Transactional(readOnly = true)
     public List<StaffResponse> getAllActive() {
         return staffRepository.findByIsDeleted(0).stream()
-                .map(staffMapper::toResponse)
+                .map(this::mapToResponseWithRating)
                 .collect(Collectors.toList());
     }
 
@@ -96,7 +106,7 @@ public class StaffService {
             staff.setExpertise(null);
         }
 
-        return staffMapper.toResponse(staffRepository.save(staff));
+        return mapToResponseWithRating(staffRepository.save(staff));
     }
 
     @Transactional
@@ -114,14 +124,14 @@ public class StaffService {
     public List<StaffResponse> getAllDoctors() {
         return staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0)
                 .stream()
-                .map(staffMapper::toResponse)
+                .map(this::mapToResponseWithRating)
                 .collect(Collectors.toList());
     }
 
     public List<StaffResponse> getFeaturedDoctors() {
         return staffRepository.findByStaffTypeAndIsDeletedAndIsFeaturedOrderByFeaturedPriorityAsc(StaffType.DOCTOR, 0, true)
                 .stream()
-                .map(staffMapper::toResponse)
+                .map(this::mapToResponseWithRating)
                 .collect(Collectors.toList());
     }
 
@@ -131,7 +141,7 @@ public class StaffService {
         Staff staff = staffRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Staff not found"));
 
-        return staffMapper.toResponse(staff);
+        return mapToResponseWithRating(staff);
     }
     
     @Transactional(readOnly = true)
@@ -157,7 +167,7 @@ public class StaffService {
         }
     
         return staffs.stream()
-                .map(staffMapper::toResponse)
+                .map(this::mapToResponseWithRating)
                 .toList();
     }
 }

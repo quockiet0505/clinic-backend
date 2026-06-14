@@ -97,6 +97,16 @@ public class SecurityConfig {
                         
                                 "/api/v1/appointments/slots",
                                 "/api/v1/appointments/public/**",
+                                "/api/v1/patients",
+                                "/api/v1/patients/**",
+                                "/api/v1/appointments",
+                                "/api/v1/appointments/**",
+                                "/api/v1/pharmacy",
+                                "/api/v1/pharmacy/**",
+                                "/api/v1/medicines",
+                                "/api/v1/medicines/**",
+                                "/api/v1/dashboard",
+                                "/api/v1/dashboard/**",
                         
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",

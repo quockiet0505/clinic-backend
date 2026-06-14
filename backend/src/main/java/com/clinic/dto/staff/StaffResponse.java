@@ -23,4 +23,5 @@ public class StaffResponse {
     private Boolean isFeatured;
     private Integer featuredPriority;
     private Integer isDeleted;
+    private Double rating;
 }
