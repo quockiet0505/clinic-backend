@@ -21,4 +21,18 @@ public class ResponseUtil {
                         .build()
         );
     }
+
+    public static <T> ResponseEntity<ApiResponse<T>> error(
+            String message,
+            T data
+    ) {
+
+        return ResponseEntity.badRequest().body(
+                ApiResponse.<T>builder()
+                        .success(false)
+                        .message(message)
+                        .data(data)
+                        .build()
+        );
+    }
 }

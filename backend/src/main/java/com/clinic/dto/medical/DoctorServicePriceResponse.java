@@ -6,11 +6,18 @@ import lombok.Data;
 
 @Data
 public class DoctorServicePriceResponse {
+
     private Integer id;
+
     private Integer staffId;
     private String doctorName;
+
     private Integer serviceId;
     private String serviceName;
-    private BigDecimal price;
+
+    private BigDecimal originalPrice;
+    private BigDecimal discountPrice;
+    private BigDecimal finalPrice;
+
     private String imageUrl;
 }

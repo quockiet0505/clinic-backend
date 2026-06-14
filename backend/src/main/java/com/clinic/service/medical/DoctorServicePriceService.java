@@ -25,21 +25,40 @@ public class DoctorServicePriceService {
     private final DoctorServicePriceMapper priceMapper;
 
     @Transactional
-    public DoctorServicePriceResponse createOrUpdate(DoctorServicePriceRequest request) {
-        Staff staff = staffRepository.findById(request.getStaffId())
+    public DoctorServicePriceResponse createOrUpdate(
+            DoctorServicePriceRequest request
+    ) {
+
+        Staff staff = staffRepository
+                .findById(request.getStaffId())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
-        Service service = serviceRepository.findById(request.getServiceId())
+
+        Service service = serviceRepository
+                .findById(request.getServiceId())
                 .orElseThrow(() -> new RuntimeException("Service not found"));
 
-        DoctorServicePrice priceConfig = priceRepository
-                .findByStaff_StaffIdAndService_ServiceId(staff.getStaffId(), service.getServiceId())
-                .orElse(new DoctorServicePrice());
+        DoctorServicePrice priceConfig =
+                priceRepository
+                        .findByStaff_StaffIdAndService_ServiceId(
+                                staff.getStaffId(),
+                                service.getServiceId()
+                        )
+                        .orElse(new DoctorServicePrice());
 
         priceConfig.setStaff(staff);
         priceConfig.setService(service);
-        priceConfig.setPrice(request.getPrice());
 
-        return priceMapper.toResponse(priceRepository.save(priceConfig));
+        priceConfig.setOriginalPrice(
+                request.getOriginalPrice()
+        );
+
+        priceConfig.setDiscountPrice(
+                request.getDiscountPrice()
+        );
+
+        return priceMapper.toResponse(
+                priceRepository.save(priceConfig)
+        );
     }
 
     @Transactional(readOnly = true)
