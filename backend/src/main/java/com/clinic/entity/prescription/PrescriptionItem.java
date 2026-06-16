@@ -45,6 +45,4 @@ public class PrescriptionItem {
     @Column(length = 255)
     private String dosage;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal price;
 }

@@ -1,4 +1,3 @@
-
 package com.clinic.controller.prescription;
 
 import java.util.List;
@@ -15,7 +14,9 @@ import com.clinic.dto.common.ApiResponse;
 import com.clinic.dto.prescription.PrescriptionRequest;
 import com.clinic.dto.prescription.PrescriptionResponse;
 import com.clinic.service.prescription.PrescriptionService;
+import org.springframework.web.bind.annotation.PutMapping;
 import com.clinic.util.ResponseUtil;
+
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,46 +25,38 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/prescriptions")
 @RequiredArgsConstructor
 public class PrescriptionController {
-
     private final PrescriptionService prescriptionService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
-    public ApiResponse<PrescriptionResponse> create(
-            @Valid @RequestBody PrescriptionRequest request
-    ) {
+    public ApiResponse<PrescriptionResponse> create(@Valid @RequestBody PrescriptionRequest request) {
         return ResponseUtil.success(
-                "Prescription created successfully",
+                "Prescription created", 
                 prescriptionService.create(request)
-        ).getBody();
+        ).getBody(); 
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
     public ApiResponse<PrescriptionResponse> getById(@PathVariable Integer id) {
         return ResponseUtil.success(
-                "Prescription fetched successfully",
+                "Prescription fetched", 
                 prescriptionService.getById(id)
-        ).getBody();
+        ).getBody(); 
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
     public ApiResponse<List<PrescriptionResponse>> getAll() {
         return ResponseUtil.success(
-                "Prescriptions fetched successfully",
+                "All prescriptions", 
                 prescriptionService.getAll()
-        ).getBody();
+        ).getBody(); 
     }
 
-    @GetMapping("/my")
-    @PreAuthorize("hasRole('PATIENT')")
-    public ApiResponse<List<PrescriptionResponse>> getMyPrescriptions(org.springframework.security.core.Authentication authentication) {
-        String email = authentication.getName();
+    @PutMapping("/{id}/dispense")
+    public ApiResponse<Void> dispense(@PathVariable Integer id) {
+        prescriptionService.dispense(id);
         return ResponseUtil.success(
-                "Prescriptions fetched successfully",
-                prescriptionService.getMyPrescriptions(email)
-        ).getBody();
+                "Prescription dispensed", 
+                (Void) null
+        ).getBody(); 
     }
 }
-

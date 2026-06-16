@@ -214,7 +214,9 @@ CREATE TABLE medical_record (
     note TEXT,
     status ENUM('IN_PROGRESS','WAITING_RESULT','DONE','CANCELLED') DEFAULT 'IN_PROGRESS',
     updated_by_doctor_id INT NULL,  
-    edit_reason TEXT,               
+    edit_reason TEXT,
+    consultation_fee DECIMAL(10,2) DEFAULT 0,
+    service_fee DECIMAL(10,2) DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (patient_id) REFERENCES patient(patient_id),
@@ -273,7 +275,7 @@ CREATE TABLE medicine (
     active_element VARCHAR(255), 
     packing_standard VARCHAR(100), -- VD: Hộp 10 vỉ
     base_unit VARCHAR(50),         -- VD: Viên, Lọ
-    sell_price DECIMAL(10,2),    
+--     sell_price DECIMAL(10,2),    
     usage_note VARCHAR(255),
     is_deleted TINYINT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -283,6 +285,7 @@ CREATE TABLE medicine (
 CREATE TABLE prescription (
     prescription_id INT AUTO_INCREMENT PRIMARY KEY,
     record_id INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'PENDING',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (record_id) REFERENCES medical_record(record_id)
 );
@@ -294,7 +297,6 @@ CREATE TABLE prescription_item (
     unit VARCHAR(50) NOT NULL,        -- Đơn vị kê (VD: Vỉ, Viên)
     quantity DECIMAL(8,2) NOT NULL,   -- Số lượng lẻ (1.5 viên)
     dosage VARCHAR(255),              -- Cách dùng
-    price DECIMAL(10,2),
     PRIMARY KEY (prescription_id, medicine_id),
     FOREIGN KEY (prescription_id) REFERENCES prescription(prescription_id),
     FOREIGN KEY (medicine_id) REFERENCES medicine(medicine_id)

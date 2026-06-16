@@ -105,6 +105,10 @@ public class SecurityConfig {
                                 "/api/v1/pharmacy/**",
                                 "/api/v1/medicines",
                                 "/api/v1/medicines/**",
+
+                                "/api/v1/prescriptions",
+                                "/api/v1/prescriptions/**",
+                                
                                 "/api/v1/dashboard",
                                 "/api/v1/dashboard/**",
                         

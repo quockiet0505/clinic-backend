@@ -56,7 +56,6 @@ public class MedicineService {
         medicine.setActiveElement(request.getActiveElement());
         medicine.setPackingStandard(request.getPackingStandard());
         medicine.setBaseUnit(request.getBaseUnit());
-        medicine.setSellPrice(request.getSellPrice());
         medicine.setUsageNote(request.getUsageNote());
 
         return medicineMapper.toResponse(medicineRepository.save(medicine));

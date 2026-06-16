@@ -1,7 +1,5 @@
 package com.clinic.entity.prescription;
 
-import java.math.BigDecimal;
-
 import com.clinic.entity.base.BaseEntity;
 
 import jakarta.persistence.Column;
@@ -14,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.math.BigDecimal; 
 
 @Entity
 @Table(name = "medicine")
@@ -39,12 +38,21 @@ public class Medicine extends BaseEntity {
     @Column(name = "base_unit", length = 50)
     private String baseUnit;
 
-    @Column(name = "sell_price", precision = 10, scale = 2)
-    private BigDecimal sellPrice;
-
     @Column(name = "usage_note")
     private String usageNote;
 
+    @Column(name = "consultation_fee")
+    private BigDecimal consultationFee;
+
+    @Column(name = "service_fee")
+    private BigDecimal serviceFee;
+
+    
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;
+
+   
+    public Integer getIsDeleted() {
+        return this.isDeleted == null ? 0 : this.isDeleted;
+    }
 }

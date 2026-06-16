@@ -43,6 +43,9 @@ public class Prescription {
     @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PrescriptionItem> items = new ArrayList<>();
 
+    @Column(name = "status", length = 20)
+    private String status = "PENDING";
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -55,5 +58,6 @@ public class Prescription {
     public void addItem(PrescriptionItem item) {
         items.add(item);
         item.setPrescription(this);
+        
     }
 }

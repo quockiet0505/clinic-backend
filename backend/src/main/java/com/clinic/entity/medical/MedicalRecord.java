@@ -5,6 +5,7 @@ import com.clinic.entity.appointment.Appointment;
 import com.clinic.entity.base.BaseEntity;
 import com.clinic.entity.patient.Patient;
 import com.clinic.entity.staff.Staff;
+import java.math.BigDecimal;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -58,6 +59,12 @@ public class MedicalRecord extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private MedicalRecordStatus status = MedicalRecordStatus.IN_PROGRESS;
+
+    @Column(name = "consultation_fee")
+    private BigDecimal consultationFee = BigDecimal.ZERO;
+
+    @Column(name = "service_fee")
+    private BigDecimal serviceFee = BigDecimal.ZERO;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by_doctor_id")

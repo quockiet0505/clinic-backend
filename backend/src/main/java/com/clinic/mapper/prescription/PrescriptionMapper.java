@@ -11,21 +11,22 @@ import com.clinic.dto.prescription.PrescriptionItemResponse;
 import com.clinic.entity.prescription.Prescription;
 import com.clinic.entity.prescription.PrescriptionItem;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring")
 public interface PrescriptionMapper {
-
-    // --- MAPPING CHO ĐƠN THUỐC (VỎ) ---
     @Mapping(target = "medicalRecord", ignore = true)
     Prescription toEntity(PrescriptionRequest request);
 
     @Mapping(source = "medicalRecord.recordId", target = "recordId")
+    @Mapping(source = "medicalRecord.patient.fullName", target = "patientName")
+    @Mapping(source = "medicalRecord.mainDoctor.fullName", target = "doctorName")
+    @Mapping(source = "medicalRecord.diagnosis", target = "diagnosis")
+    @Mapping(source = "medicalRecord.consultationFee", target = "consultationFee")
+    @Mapping(source = "medicalRecord.serviceFee", target = "serviceFee")
     PrescriptionResponse toResponse(Prescription prescription);
 
-
-    // --- MAPPING CHO CHI TIẾT ĐƠN THUỐC (ITEM) ---
     @Mapping(target = "prescription", ignore = true)
     @Mapping(target = "medicine", ignore = true)
-    @Mapping(target = "id", ignore = true) // Bỏ qua khóa phức hợp, sẽ set thủ công ở Service
+    @Mapping(target = "id", ignore = true)
     PrescriptionItem toItemEntity(PrescriptionItemRequest request);
 
     @Mapping(source = "medicine.medicineId", target = "medicineId")

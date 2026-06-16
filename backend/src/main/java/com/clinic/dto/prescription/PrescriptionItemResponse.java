@@ -12,5 +12,4 @@ public class PrescriptionItemResponse {
     private String unit;
     private BigDecimal quantity;
     private String dosage;
-    private BigDecimal price;
 }

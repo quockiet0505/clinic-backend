@@ -17,5 +17,4 @@ public class PrescriptionItemRequest {
     private BigDecimal quantity; 
     
     private String dosage;
-    private BigDecimal price;
 }
