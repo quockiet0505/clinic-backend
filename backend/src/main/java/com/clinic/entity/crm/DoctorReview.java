@@ -1,23 +1,26 @@
 package com.clinic.entity.crm;
 
-import com.clinic.entity.medical.MedicalRecord; 
+import com.clinic.entity.patient.Patient;
 import com.clinic.entity.staff.Staff;
-import jakarta.persistence.*; 
 import lombok.Data;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class Feedback {
-
+public class DoctorReview {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer feedbackId;
+    private Integer reviewId;
 
     @ManyToOne
-    @JoinColumn(name = "record_id")
-    private MedicalRecord medicalRecord;
+    @JoinColumn(name = "doctor_id")
+    private Staff doctor;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id")
+    private Patient patient;
 
     private Integer rating;
     private String comment;

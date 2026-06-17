@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class FeedbackRequest {
+public class ClinicFeedbackRequest {
     @NotNull(message = "Record ID is required")
     private Integer recordId;
 

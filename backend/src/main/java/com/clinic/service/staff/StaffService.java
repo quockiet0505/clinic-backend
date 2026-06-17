@@ -20,7 +20,7 @@ import com.clinic.repository.auth.AccountRepository;
 import com.clinic.repository.auth.RoleRepository;
 import com.clinic.repository.staff.ExpertiseRepository;
 import com.clinic.repository.staff.StaffRepository;
-import com.clinic.repository.staff.DoctorReviewRepository;
+import com.clinic.repository.staff.StaffDoctorReviewRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,14 +31,14 @@ public class StaffService {
     private final AccountRepository accountRepository;
     private final RoleRepository roleRepository;
     private final ExpertiseRepository expertiseRepository;
-    private final DoctorReviewRepository doctorReviewRepository;
+    private final StaffDoctorReviewRepository staffDoctorReviewRepository;
     private final PasswordEncoder passwordEncoder;
     private final StaffMapper staffMapper;
 
     private StaffResponse mapToResponseWithRating(Staff staff) {
         StaffResponse response = staffMapper.toResponse(staff);
         if (staff.getStaffType() == StaffType.DOCTOR) {
-            response.setRating(doctorReviewRepository.getAverageRatingByDoctorId(staff.getStaffId()));
+            response.setRating(staffDoctorReviewRepository.getAverageRatingByDoctorId(staff.getStaffId()));
         }
         return response;
     }

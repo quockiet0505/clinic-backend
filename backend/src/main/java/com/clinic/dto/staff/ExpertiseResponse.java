@@ -13,5 +13,8 @@ public class ExpertiseResponse {
 
     private String iconUrl;
 
+    // ExpertiseResponse.java
+    private Integer doctorCount;
+
     private LocalDateTime createdAt;
 }

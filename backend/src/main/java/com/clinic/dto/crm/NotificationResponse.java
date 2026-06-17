@@ -1,16 +1,14 @@
 package com.clinic.dto.crm;
 
-import java.time.LocalDateTime;
-
-import com.clinic.common.enums.NotificationType;
-
 import lombok.Data;
+import java.time.LocalDateTime;
 
 @Data
 public class NotificationResponse {
     private Integer notificationId;
     private Integer accountId;
-    private NotificationType type;
+    private String accountName;
+    private String type;
     private String content;
     private LocalDateTime sentAt;
 }

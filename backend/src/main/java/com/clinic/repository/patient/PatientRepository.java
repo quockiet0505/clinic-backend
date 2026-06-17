@@ -12,4 +12,5 @@ public interface PatientRepository extends JpaRepository<Patient, Integer> {
     Optional<Patient> findByAccount_AccountId(Integer accountId);
 
     Optional<Patient> findByAccount_Email(String email);
+   
 }

@@ -6,11 +6,13 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.common.enums.StaffType;
 import com.clinic.dto.staff.ExpertiseRequest;
 import com.clinic.dto.staff.ExpertiseResponse;
 import com.clinic.entity.staff.Expertise;
 import com.clinic.mapper.staff.ExpertiseMapper;
 import com.clinic.repository.staff.ExpertiseRepository;
+import com.clinic.repository.staff.StaffRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 public class ExpertiseService {
     private final ExpertiseRepository expertiseRepository;
     private final ExpertiseMapper expertiseMapper;
+    private final StaffRepository staffRepository; // thêm repository này
 
     @Transactional
     public ExpertiseResponse create(ExpertiseRequest request) {
@@ -26,11 +29,17 @@ public class ExpertiseService {
         return expertiseMapper.toResponse(expertiseRepository.save(expertise));
     }
 
+    // CHỈ GIỮ LẠI MỘT METHOD getAll() có tính doctorCount
     @Transactional(readOnly = true)
     public List<ExpertiseResponse> getAll() {
         return expertiseRepository.findAll().stream()
-                .map(expertiseMapper::toResponse)
-                .collect(Collectors.toList());
+            .map(expertise -> {
+                ExpertiseResponse response = expertiseMapper.toResponse(expertise);
+                long doctorCount = staffRepository.countByExpertiseAndStaffType(expertise, StaffType.DOCTOR);
+                response.setDoctorCount((int) doctorCount);
+                return response;
+            })
+            .collect(Collectors.toList());
     }
 
     @Transactional

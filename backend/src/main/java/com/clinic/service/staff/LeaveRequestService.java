@@ -1,5 +1,6 @@
 package com.clinic.service.staff;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,10 +27,6 @@ public class LeaveRequestService {
     private final StaffRepository staffRepository;
     private final LeaveRequestMapper leaveRequestMapper;
 
-    /**
-     * Creates a new leave request for a staff member.
-     * The default status is set to PENDING.
-     */
     @Transactional
     public LeaveRequestResponse create(LeaveRequestRequest request) {
         Staff staff = staffRepository.findById(request.getStaffId())
@@ -37,14 +34,11 @@ public class LeaveRequestService {
 
         LeaveRequest leaveRequest = leaveRequestMapper.toEntity(request);
         leaveRequest.setStaff(staff);
-        leaveRequest.setStatus(LeaveStatus.PENDING); // Always pending on creation
+        leaveRequest.setStatus(LeaveStatus.PENDING);
 
         return leaveRequestMapper.toResponse(leaveRequestRepository.save(leaveRequest));
     }
 
-    /**
-     * Retrieves all leave requests in the system.
-     */
     @Transactional(readOnly = true)
     public List<LeaveRequestResponse> getAll() {
         return leaveRequestRepository.findAll().stream()
@@ -52,9 +46,6 @@ public class LeaveRequestService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Admin or Manager reviews the leave request (APPROVE or REJECT).
-     */
     @Transactional
     public LeaveRequestResponse reviewLeaveRequest(Integer leaveId, LeaveStatus newStatus, Integer approverId, String rejectionReason) {
         LeaveRequest leaveRequest = leaveRequestRepository.findById(leaveId)
@@ -67,11 +58,35 @@ public class LeaveRequestService {
         leaveRequest.setApprovedBy(approver);
         leaveRequest.setReviewedAt(LocalDateTime.now());
         
-        // Log the reason if the request is rejected
         if (newStatus == LeaveStatus.REJECTED) {
             leaveRequest.setRejectionReason(rejectionReason);
         }
 
         return leaveRequestMapper.toResponse(leaveRequestRepository.save(leaveRequest));
+    }
+
+    @Transactional
+    public void delete(Integer id) {
+        LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Leave request not found"));
+
+        // Chỉ cho phép hủy khi trạng thái PENDING
+        if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
+            throw new RuntimeException("Không thể hủy đơn đã được xử lý");
+        }
+
+        // Kiểm tra điều kiện thời gian: chỉ được hủy trước 12h ngày hôm trước (so với fromDate)
+        LocalDate fromDate = leaveRequest.getFromDate();
+        LocalDateTime now = LocalDateTime.now();
+
+        // Hạn chót: 12:00 của ngày trước ngày bắt đầu nghỉ
+        LocalDateTime deadline = fromDate.atStartOfDay().minusDays(1).withHour(12).withMinute(0).withSecond(0);
+
+        if (now.isAfter(deadline)) {
+            throw new RuntimeException("Chỉ có thể hủy đơn trước 12h ngày hôm trước ngày bắt đầu nghỉ");
+        }
+
+        // Nếu tất cả điều kiện thỏa mãn, thực hiện xóa
+        leaveRequestRepository.deleteById(id);
     }
 }

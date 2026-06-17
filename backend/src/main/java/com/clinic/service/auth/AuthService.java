@@ -193,16 +193,5 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
-    @Transactional
-    public void changePassword(String email, com.clinic.dto.auth.ChangePasswordRequest request) {
-        Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
-
-        if (!passwordEncoder.matches(request.getOldPassword(), account.getPassword())) {
-            throw new RuntimeException("Old password does not match");
-        }
-
-        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        accountRepository.save(account);
-    }
+    
 }
