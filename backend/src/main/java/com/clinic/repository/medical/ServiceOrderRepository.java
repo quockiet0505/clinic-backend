@@ -1,5 +1,6 @@
 package com.clinic.repository.medical;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,4 +14,10 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Inte
 
     @Query("SELECT s FROM ServiceOrder s WHERE s.medicalRecord.recordId = :recordId")
     List<ServiceOrder> findByMedicalRecordId(@Param("recordId") Integer recordId);
+
+    @Query("SELECT so FROM ServiceOrder so WHERE so.service.serviceId = :serviceId AND so.createdAt BETWEEN :start AND :end")
+    List<ServiceOrder> findByServiceIdAndCreatedAtBetween(
+            @Param("serviceId") Integer serviceId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }

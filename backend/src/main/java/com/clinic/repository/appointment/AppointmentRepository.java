@@ -1,42 +1,57 @@
 package com.clinic.repository.appointment;
 
+import com.clinic.common.enums.AppointmentStatus;
+import com.clinic.entity.appointment.Appointment;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+public interface AppointmentRepository extends JpaRepository<Appointment, Integer>, JpaSpecificationExecutor<Appointment> {
 
-import com.clinic.common.enums.AppointmentStatus;
-import com.clinic.entity.appointment.Appointment;
-
-public interface AppointmentRepository extends JpaRepository<Appointment, Integer> {
-
-    // Find all appointments by deletion status
     List<Appointment> findByIsDeleted(Integer isDeleted);
 
-    // Check for doctor double booking at a specific date and time
     boolean existsByMainDoctor_StaffIdAndAppointmentDateAndTimeStartAndIsDeleted(
             Integer doctorId, LocalDate date, LocalTime timeStart, Integer isDeleted);
 
-    // Check for patient double booking (Cannot be in two places at once)
     boolean existsByPatient_PatientIdAndAppointmentDateAndTimeStartAndIsDeleted(
             Integer patientId, LocalDate date, LocalTime timeStart, Integer isDeleted);
 
-    // Get appointments for a specific date and status (Used for automated background jobs)
     List<Appointment> findByAppointmentDateAndStatusAndIsDeleted(
             LocalDate date, AppointmentStatus status, Integer isDeleted);
 
-    // Count the number of times a patient has been marked as SPAM or NO_SHOW
     long countByPatient_PatientIdAndStatusAndCancelReasonContainingAndIsDeleted(
             Integer patientId, AppointmentStatus status, String cancelReasonKeyword, Integer isDeleted);
 
-    // Get all appointments by patient, ordered by appointment date descending
     List<Appointment> findByPatient_PatientIdAndIsDeletedOrderByAppointmentDateDesc(
             Integer patientId, Integer isDeleted);
 
-    // Optional: find by id and not deleted (for detail with security)
     Optional<Appointment> findByAppointmentIdAndIsDeleted(Integer id, Integer isDeleted);
 
-    List<Appointment> findByMainDoctor_StaffIdAndAppointmentDateAndIsDeleted(Integer doctorId, LocalDate date, Integer isDeleted);
+    List<Appointment> findByMainDoctor_StaffIdAndAppointmentDateAndIsDeleted(
+            Integer doctorId, LocalDate date, Integer isDeleted);
+
+    
+    List<Appointment> findByAppointmentDateBetweenAndIsDeleted(
+            LocalDate startDate, LocalDate endDate, Integer isDeleted);
+
+    List<Appointment> findByMainDoctor_StaffIdAndAppointmentDateBetweenAndIsDeleted(
+            Integer doctorId, LocalDate startDate, LocalDate endDate, Integer isDeleted);
+
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.patient.patientId = :patientId AND a.appointmentDate BETWEEN :start AND :end AND a.isDeleted = 0")
+    long countByPatientIdAndAppointmentDateBetween(
+            @Param("patientId") Integer patientId,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end);
+
+    @Query("SELECT COALESCE(SUM(s.originalPrice), 0) FROM Appointment a JOIN a.service s WHERE a.patient.patientId = :patientId AND a.appointmentDate BETWEEN :start AND :end AND a.status = 'COMPLETED' AND a.isDeleted = 0")
+    double sumServicePriceByPatientIdAndAppointmentDateBetween(
+            @Param("patientId") Integer patientId,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end);
 }

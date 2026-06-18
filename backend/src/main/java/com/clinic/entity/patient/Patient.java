@@ -43,6 +43,9 @@ public class Patient {
     @Column(length = 10)
     private String gender;
 
+    @Column(name = "avatar_url", length = 255)
+    private String avatarUrl;
+
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
