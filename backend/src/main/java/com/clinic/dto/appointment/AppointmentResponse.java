@@ -8,6 +8,7 @@ import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.AppointmentType;
 import com.clinic.common.enums.CancelledByType;
 import com.clinic.common.enums.CreatedByType;
+import com.clinic.common.enums.ServiceType;
 
 import lombok.Data;
 
@@ -20,6 +21,7 @@ public class AppointmentResponse {
     private String doctorName;
     private Integer serviceId;         
     private String serviceName;        
+    private ServiceType serviceType;
     private LocalDate appointmentDate;
     private LocalTime timeStart;
     private LocalTime timeEnd;

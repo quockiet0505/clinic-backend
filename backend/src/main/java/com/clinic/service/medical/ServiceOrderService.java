@@ -50,6 +50,10 @@ public class ServiceOrderService {
         Staff orderedBy = staffRepository.findById(request.getOrderedById())
                 .orElseThrow(() -> new RuntimeException("Staff member not found."));
 
+        if (service.getServiceType() == com.clinic.common.enums.ServiceType.EXAM) {
+            throw new RuntimeException("Lỗi: Không được phép chỉ định dịch vụ Khám bệnh trong bệnh án. Chỉ được chỉ định Xét nghiệm (LAB_TEST) hoặc Chẩn đoán hình ảnh (IMAGING).");
+        }
+
         ServiceOrder order = serviceOrderMapper.toEntity(request);
         order.setMedicalRecord(record);
         order.setService(service);

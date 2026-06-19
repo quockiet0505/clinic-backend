@@ -54,4 +54,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
             @Param("patientId") Integer patientId,
             @Param("start") LocalDate start,
             @Param("end") LocalDate end);
+
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.mainDoctor.staffId = :staffId AND a.status = 'COMPLETED' AND a.isDeleted = 0")
+    Integer countCompletedAppointmentsByDoctorId(@Param("staffId") Integer staffId);
 }

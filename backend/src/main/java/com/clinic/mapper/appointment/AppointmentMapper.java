@@ -27,6 +27,7 @@ public interface AppointmentMapper {
 
     @Mapping(source = "service.serviceId", target = "serviceId")
     @Mapping(source = "service.serviceName", target = "serviceName")
+    @Mapping(source = "service.serviceType", target = "serviceType")
 
     AppointmentResponse toResponse(Appointment appointment);
 }

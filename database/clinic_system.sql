@@ -174,7 +174,7 @@ CREATE TABLE appointment (
         REFERENCES service(service_id)
 );
 
--- [NHÓM 5: DỊCH VỤ XÉT NGHIỆM & GIÁ]
+-- [NHÓM 5: DỊCH VỤ và XÉT NGHIỆM & GIÁ]
 
 CREATE TABLE service (
     service_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -420,3 +420,34 @@ CREATE TABLE IF NOT EXISTS banner_setting (
     is_active TINYINT DEFAULT 1,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+--
+-- ========================================================
+-- 27. TẠO BẢNG system_setting (Lưu cấu hình chung)
+-- ========================================================
+CREATE TABLE IF NOT EXISTS system_setting (
+    setting_key VARCHAR(50) NOT NULL PRIMARY KEY,
+    setting_value TEXT,
+    description VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ========================================================
+-- 28. TẠO BẢNG contact_message (Lưu tin nhắn liên hệ)
+-- ========================================================
+CREATE TABLE IF NOT EXISTS contact_message (
+    message_id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(100) NULL,
+    subject VARCHAR(100) DEFAULT 'Khác',
+    content TEXT NOT NULL,
+    status ENUM('PENDING', 'PROCESSING', 'RESOLVED', 'REJECTED') DEFAULT 'PENDING',
+    replied_at DATETIME NULL,
+    reply_content TEXT NULL,
+    replied_by INT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (replied_by) REFERENCES staff(staff_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
