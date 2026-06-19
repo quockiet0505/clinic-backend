@@ -13,8 +13,7 @@ public interface ServiceResultMapper {
 
     @Mapping(target = "serviceOrder", ignore = true)
     @Mapping(target = "enteredBy", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "enteredAt", ignore = true)
     ServiceResult toEntity(ServiceResultRequest request);
 
     @Mapping(source = "serviceOrder.orderId", target = "orderId")
@@ -23,6 +22,5 @@ public interface ServiceResultMapper {
     @Mapping(source = "serviceOrder.orderedBy.fullName", target = "doctorName")
     @Mapping(source = "enteredBy.staffId", target = "enteredById")
     @Mapping(source = "enteredBy.fullName", target = "enteredByName")
-    @Mapping(source = "createdAt", target = "enteredAt") 
     ServiceResultResponse toResponse(ServiceResult serviceResult);
 }

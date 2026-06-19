@@ -1,18 +1,18 @@
 package com.clinic.entity.prescription;
 
-import com.clinic.entity.base.BaseEntity;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.math.BigDecimal; 
 
 @Entity
 @Table(name = "medicine")
@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Medicine extends BaseEntity {
+public class Medicine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "medicine_id")
@@ -41,17 +41,22 @@ public class Medicine extends BaseEntity {
     @Column(name = "usage_note")
     private String usageNote;
 
-    @Column(name = "consultation_fee")
-    private BigDecimal consultationFee;
-
-    @Column(name = "service_fee")
-    private BigDecimal serviceFee;
-
-    
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;
 
-   
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.isDeleted == null) {
+            this.isDeleted = 0;
+        }
+    }
+
     public Integer getIsDeleted() {
         return this.isDeleted == null ? 0 : this.isDeleted;
     }

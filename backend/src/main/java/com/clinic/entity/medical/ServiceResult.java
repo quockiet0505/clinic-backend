@@ -1,6 +1,7 @@
 package com.clinic.entity.medical;
 
-import com.clinic.entity.base.BaseEntity;
+import java.time.LocalDateTime;
+
 import com.clinic.entity.staff.Staff;
 
 import jakarta.persistence.Column;
@@ -12,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +26,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceResult extends BaseEntity {
+public class ServiceResult {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "result_id")
@@ -46,4 +48,14 @@ public class ServiceResult extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entered_by", nullable = false)
     private Staff enteredBy;
+
+    @Column(name = "entered_at", updatable = false)
+    private LocalDateTime enteredAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.enteredAt == null) {
+            this.enteredAt = LocalDateTime.now();
+        }
+    }
 }

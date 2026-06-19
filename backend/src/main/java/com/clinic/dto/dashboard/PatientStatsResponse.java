@@ -1,15 +1,15 @@
 package com.clinic.dto.dashboard;
 
+import com.clinic.dto.common.PageResponse;
 import lombok.Builder;
 import lombok.Data;
-import java.util.List;
 
 @Data
 @Builder
 public class PatientStatsResponse {
     private long newPatients;
     private long returningPatients;
-    private List<TopPatient> topPatients;
+    private PageResponse<TopPatient> topPatients;
 
     @Data
     @Builder

@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.staff.LeaveRequestFilterRequest;
 import com.clinic.dto.staff.LeaveRequestRequest;
 import com.clinic.dto.staff.LeaveRequestResponse;
 import com.clinic.service.staff.LeaveRequestService;
@@ -30,8 +33,16 @@ public class LeaveRequestController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<ApiResponse<List<LeaveRequestResponse>>> getAll() {
-        return ResponseUtil.success("Success", leaveRequestService.getAll());
+    public ResponseEntity<ApiResponse<PageResponse<LeaveRequestResponse>>> getAll(
+            @ModelAttribute LeaveRequestFilterRequest filter
+    ) {
+        return ResponseUtil.success("Leave requests retrieved successfully", leaveRequestService.getAll(filter));
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<List<LeaveRequestResponse>>> getAllLegacy() {
+        return ResponseUtil.success("Leave requests retrieved successfully", leaveRequestService.getAllLegacy());
     }
 
     @PostMapping

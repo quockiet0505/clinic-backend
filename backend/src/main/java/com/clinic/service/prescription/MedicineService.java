@@ -3,14 +3,21 @@ package com.clinic.service.prescription;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.prescription.MedicineFilterRequest;
 import com.clinic.dto.prescription.MedicineRequest;
 import com.clinic.dto.prescription.MedicineResponse;
 import com.clinic.entity.prescription.Medicine;
 import com.clinic.mapper.prescription.MedicineMapper;
 import com.clinic.repository.prescription.MedicineRepository;
+import com.clinic.specification.prescription.MedicineSpecification;
+import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,6 +37,14 @@ public class MedicineService {
         medicine.setIsDeleted(0); // Ensure it's active upon creation
         
         return medicineMapper.toResponse(medicineRepository.save(medicine));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<MedicineResponse> getAll(MedicineFilterRequest filter) {
+        Specification<Medicine> spec = MedicineSpecification.filterBy(filter);
+        Pageable pageable = FilterUtils.buildPageable(filter);
+        Page<Medicine> page = medicineRepository.findAll(spec, pageable);
+        return FilterUtils.buildPageResponse(page.map(medicineMapper::toResponse));
     }
 
     /**

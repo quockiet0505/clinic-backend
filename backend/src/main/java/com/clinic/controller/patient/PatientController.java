@@ -3,10 +3,12 @@ package com.clinic.controller.patient;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.patient.PatientFilterRequest;
 import com.clinic.dto.patient.PatientRequest;
 import com.clinic.dto.patient.PatientResponse;
 import com.clinic.service.patient.PatientService;
@@ -32,11 +36,16 @@ public class PatientController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ApiResponse<List<PatientResponse>> getAll() {
-        return ResponseUtil.success(
-                "Patients fetched successfully",
-                patientService.getAllActive()
-        ).getBody();
+    public ResponseEntity<ApiResponse<PageResponse<PatientResponse>>> getAll(
+            @ModelAttribute PatientFilterRequest filter
+    ) {
+        return ResponseUtil.success("Patients fetched successfully", patientService.getAll(filter));
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<List<PatientResponse>>> getAllLegacy() {
+        return ResponseUtil.success("Patients fetched successfully", patientService.getAllActive());
     }
 
     @GetMapping("/{id}")

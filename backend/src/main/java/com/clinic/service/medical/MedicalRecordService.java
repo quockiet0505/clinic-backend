@@ -3,13 +3,18 @@ package com.clinic.service.medical;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.crm.FollowUpResponse;
 import com.clinic.dto.medical.MedicalRecordDetailResponse;
+import com.clinic.dto.medical.MedicalRecordFilterRequest;
 import com.clinic.dto.medical.MedicalRecordRequest;
 import com.clinic.dto.medical.MedicalRecordResponse;
 import com.clinic.dto.medical.ServiceOrderResponse;
@@ -31,6 +36,8 @@ import com.clinic.repository.medical.ServiceResultRepository;
 import com.clinic.repository.patient.PatientRepository;
 import com.clinic.repository.prescription.PrescriptionRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.specification.medical.MedicalRecordSpecification;
+import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -66,6 +73,14 @@ public class MedicalRecordService {
         record.setMainDoctor(mainDoctor);
 
         return medicalRecordMapper.toResponse(medicalRecordRepository.save(record));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<MedicalRecordResponse> getAll(MedicalRecordFilterRequest filter) {
+        Specification<MedicalRecord> spec = MedicalRecordSpecification.filterBy(filter);
+        Pageable pageable = FilterUtils.buildPageable(filter);
+        Page<MedicalRecord> page = medicalRecordRepository.findAll(spec, pageable);
+        return FilterUtils.buildPageResponse(page.map(medicalRecordMapper::toResponse));
     }
 
     @Transactional(readOnly = true)

@@ -5,9 +5,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.patient.PatientFilterRequest;
 import com.clinic.dto.patient.PatientRequest;
 import com.clinic.dto.patient.PatientResponse;
 import com.clinic.entity.auth.Account;
@@ -17,6 +22,8 @@ import com.clinic.mapper.patient.PatientMapper;
 import com.clinic.repository.auth.AccountRepository;
 import com.clinic.repository.patient.PatientRepository;
 import com.clinic.repository.patient.PatientVitalProfileRepository;
+import com.clinic.specification.patient.PatientSpecification;
+import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -79,6 +86,17 @@ public class PatientService {
         
         PatientVitalProfile savedVital = vitalRepository.save(vitalProfile);
         return patientMapper.toResponse(savedPatient, savedVital);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PatientResponse> getAll(PatientFilterRequest filter) {
+        Specification<Patient> spec = PatientSpecification.filterBy(filter);
+        Pageable pageable = FilterUtils.buildPageable(filter);
+        Page<Patient> page = patientRepository.findAll(spec, pageable);
+        return FilterUtils.buildPageResponse(page.map(patient -> {
+            PatientVitalProfile vp = vitalRepository.findById(patient.getPatientId()).orElse(null);
+            return patientMapper.toResponse(patient, vp);
+        }));
     }
 
     @Transactional(readOnly = true)

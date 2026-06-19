@@ -3,9 +3,11 @@ package com.clinic.controller.staff;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.common.enums.StaffType;
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.staff.StaffFilterRequest;
 import com.clinic.dto.staff.StaffRequest;
 import com.clinic.dto.staff.StaffResponse;
 import com.clinic.service.staff.StaffService;
@@ -32,14 +36,26 @@ public class StaffController {
     private final StaffService staffService;
 
         @GetMapping
-        public ApiResponse<List<StaffResponse>> getAll(
+        public ResponseEntity<ApiResponse<PageResponse<StaffResponse>>> getAll(
+                @ModelAttribute StaffFilterRequest filter
+        ) {
+        return ResponseUtil.success("Staffs fetched successfully", staffService.getAll(filter));
+        }
+
+        @GetMapping("/all")
+        public ResponseEntity<ApiResponse<List<StaffResponse>>> getAllLegacy() {
+        return ResponseUtil.success("Staffs fetched successfully", staffService.getAllActive());
+        }
+
+        @GetMapping("/filter")
+        public ResponseEntity<ApiResponse<List<StaffResponse>>> getAllByFilters(
                 @RequestParam(required = false) Integer expertiseId,
                 @RequestParam(required = false) StaffType staffType
         ) {
         return ResponseUtil.success(
                 "Staffs fetched successfully",
                 staffService.getAll(expertiseId, staffType)
-        ).getBody();
+        );
         }
 
     @PostMapping

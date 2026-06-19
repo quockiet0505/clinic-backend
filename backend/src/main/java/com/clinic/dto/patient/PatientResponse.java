@@ -14,6 +14,7 @@ public class PatientResponse {
     private LocalDate dateOfBirth;
     private String phone;
     private String address;
+    private String avatarUrl;
     
     // Vitals data
     private Integer height;

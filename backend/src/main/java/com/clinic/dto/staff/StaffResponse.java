@@ -19,9 +19,11 @@ public class StaffResponse {
     private String address;
     private StaffType staffType;
     private String experience;
+    private String specialtyTreatment;
     private String imageUrl;
     private Boolean isFeatured;
     private Integer featuredPriority;
     private Integer isDeleted;
     private Double rating;
+    private Integer isActive;
 }

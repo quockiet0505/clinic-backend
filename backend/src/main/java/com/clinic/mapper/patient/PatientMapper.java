@@ -24,6 +24,7 @@ public interface PatientMapper {
     @Mapping(source = "patient.dateOfBirth", target = "dateOfBirth")
     @Mapping(source = "patient.phone", target = "phone")
     @Mapping(source = "patient.address", target = "address")
+    @Mapping(source = "patient.avatarUrl", target = "avatarUrl")
     @Mapping(source = "vitalProfile.height", target = "height")
     @Mapping(source = "vitalProfile.bloodType", target = "bloodType")
     @Mapping(source = "vitalProfile.allergies", target = "allergies")

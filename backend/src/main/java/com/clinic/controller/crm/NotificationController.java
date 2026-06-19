@@ -1,10 +1,14 @@
 package com.clinic.controller.crm;
 
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.crm.NotificationFilterRequest;
 import com.clinic.dto.crm.NotificationResponse;
 import com.clinic.dto.crm.NotificationRequest;
 import com.clinic.service.crm.NotificationService;
+import com.clinic.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,18 +21,15 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
-    public ApiResponse<List<NotificationResponse>> getNotifications(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate
+    public ResponseEntity<ApiResponse<PageResponse<NotificationResponse>>> getAll(
+            @ModelAttribute NotificationFilterRequest filter
     ) {
-        List<NotificationResponse> data = notificationService.getNotifications(search, type, fromDate, toDate);
-        return ApiResponse.<List<NotificationResponse>>builder()
-                .success(true)
-                .message("Success")
-                .data(data)
-                .build();
+        return ResponseUtil.success("Notifications retrieved successfully", notificationService.getAll(filter));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAllLegacy() {
+        return ResponseUtil.success("Notifications retrieved successfully", notificationService.getAllLegacy());
     }
 
     @PostMapping

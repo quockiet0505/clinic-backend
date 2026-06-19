@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.common.enums.FollowUpStatus;
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.crm.FollowUpFilterRequest;
 import com.clinic.dto.crm.FollowUpRequest;
 import com.clinic.dto.crm.FollowUpResponse;
 import com.clinic.service.crm.FollowUpService;
@@ -47,15 +50,16 @@ public class FollowUpController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<ApiResponse<List<FollowUpResponse>>> getAll() {
+    public ResponseEntity<ApiResponse<PageResponse<FollowUpResponse>>> getAll(
+            @ModelAttribute FollowUpFilterRequest filter
+    ) {
+        return ResponseUtil.success("Follow-ups retrieved successfully", followUpService.getAll(filter));
+    }
 
-        List<FollowUpResponse> followUps =
-                followUpService.getAll();
-
-        return ResponseUtil.success(
-                "Follow-ups retrieved successfully",
-                followUps
-        );
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<List<FollowUpResponse>>> getAllLegacy() {
+        return ResponseUtil.success("Follow-ups retrieved successfully", followUpService.getAll());
     }
 
     @PatchMapping("/{id}/status")

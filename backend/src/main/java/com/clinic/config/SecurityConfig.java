@@ -108,13 +108,20 @@ public class SecurityConfig {
 
                                 "/api/v1/prescriptions",
                                 "/api/v1/prescriptions/**",
+
+                                "/api/v1/service-orders",
+                                "/api/v1/service-orders/**",
+                                "/api/v1/service-results",
+                                "/api/v1/service-results/**",
                                 
                                 "/api/v1/dashboard",
                                 "/api/v1/dashboard/**",
                         
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/api/v1/public/**"    
+                              
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

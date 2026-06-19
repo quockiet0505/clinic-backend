@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.medical.DoctorServicePriceFilterRequest;
 import com.clinic.dto.medical.DoctorServicePriceRequest;
 import com.clinic.dto.medical.DoctorServicePriceResponse;
 import com.clinic.service.medical.DoctorServicePriceService;
@@ -29,10 +32,21 @@ public class DoctorServicePriceController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ApiResponse<List<DoctorServicePriceResponse>> getAll() {
+    public ApiResponse<PageResponse<DoctorServicePriceResponse>> getAll(
+            @ModelAttribute DoctorServicePriceFilterRequest filter
+    ) {
         return ResponseUtil.success(
                 "Doctor prices fetched successfully",
-                priceService.getAll()
+                priceService.getAll(filter)
+        ).getBody();
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    public ApiResponse<List<DoctorServicePriceResponse>> getAllLegacy() {
+        return ResponseUtil.success(
+                "Doctor prices fetched successfully",
+                priceService.getAllLegacy()
         ).getBody();
     }
 

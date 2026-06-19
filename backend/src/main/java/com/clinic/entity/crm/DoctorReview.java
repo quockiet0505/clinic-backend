@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "doctor_review")
 @Data
 public class DoctorReview {
     @Id

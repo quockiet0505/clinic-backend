@@ -60,6 +60,7 @@ CREATE TABLE staff (
     address VARCHAR(255),
     staff_type ENUM('DOCTOR','STAFF', 'LAB_TECH','ADMIN') NOT NULL,
     experience VARCHAR(100),
+    specialty_treatment VARCHAR(255),
     image_url VARCHAR(255),
     is_featured BOOLEAN DEFAULT FALSE,
     featured_priority INT DEFAULT 0,
@@ -406,5 +407,16 @@ CREATE TABLE IF NOT EXISTS logo_setting (
     logo_id INT AUTO_INCREMENT PRIMARY KEY,
     logo_key VARCHAR(50) NOT NULL UNIQUE,   -- 'main', 'favicon', 'login'
     image_url VARCHAR(255) NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE IF NOT EXISTS banner_setting (
+    banner_id INT AUTO_INCREMENT PRIMARY KEY,
+    banner_key VARCHAR(50) NOT NULL UNIQUE,   -- ví dụ: 'main', 'home', 'about'
+    image_url VARCHAR(255) NOT NULL,
+    link_url VARCHAR(255) NULL,               -- nếu muốn click vào banner
+    display_order INT DEFAULT 0,
+    is_active TINYINT DEFAULT 1,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

@@ -5,9 +5,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.prescription.PrescriptionFilterRequest;
 import com.clinic.dto.prescription.PrescriptionItemRequest;
 import com.clinic.dto.prescription.PrescriptionRequest;
 import com.clinic.dto.prescription.PrescriptionResponse;
@@ -20,6 +25,8 @@ import com.clinic.mapper.prescription.PrescriptionMapper;
 import com.clinic.repository.medical.MedicalRecordRepository;
 import com.clinic.repository.prescription.MedicineRepository;
 import com.clinic.repository.prescription.PrescriptionRepository;
+import com.clinic.specification.prescription.PrescriptionSpecification;
+import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -64,6 +71,14 @@ public class PrescriptionService {
         return prescriptionRepository.findById(id)
                 .map(prescriptionMapper::toResponse)
                 .orElseThrow(() -> new RuntimeException("Prescription not found."));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PrescriptionResponse> getAll(PrescriptionFilterRequest filter) {
+        Specification<Prescription> spec = PrescriptionSpecification.filterBy(filter);
+        Pageable pageable = FilterUtils.buildPageable(filter);
+        Page<Prescription> page = prescriptionRepository.findAll(spec, pageable);
+        return FilterUtils.buildPageResponse(page.map(prescriptionMapper::toResponse));
     }
 
     @Transactional(readOnly = true)

@@ -3,16 +3,23 @@ package com.clinic.service.staff;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.clinic.common.enums.StaffType;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.staff.ExpertiseFilterRequest;
 import com.clinic.dto.staff.ExpertiseRequest;
 import com.clinic.dto.staff.ExpertiseResponse;
 import com.clinic.entity.staff.Expertise;
 import com.clinic.mapper.staff.ExpertiseMapper;
 import com.clinic.repository.staff.ExpertiseRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.specification.staff.ExpertiseSpecification;
+import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class ExpertiseService {
     private final ExpertiseRepository expertiseRepository;
     private final ExpertiseMapper expertiseMapper;
-    private final StaffRepository staffRepository; // thêm repository này
+    private final StaffRepository staffRepository;
 
     @Transactional
     public ExpertiseResponse create(ExpertiseRequest request) {
@@ -29,9 +36,21 @@ public class ExpertiseService {
         return expertiseMapper.toResponse(expertiseRepository.save(expertise));
     }
 
-    // CHỈ GIỮ LẠI MỘT METHOD getAll() có tính doctorCount
     @Transactional(readOnly = true)
-    public List<ExpertiseResponse> getAll() {
+    public PageResponse<ExpertiseResponse> getAll(ExpertiseFilterRequest filter) {
+        Specification<Expertise> spec = ExpertiseSpecification.filterBy(filter);
+        Pageable pageable = FilterUtils.buildPageable(filter);
+        Page<Expertise> page = expertiseRepository.findAll(spec, pageable);
+        return FilterUtils.buildPageResponse(page.map(expertise -> {
+            ExpertiseResponse response = expertiseMapper.toResponse(expertise);
+            long doctorCount = staffRepository.countByExpertiseAndStaffType(expertise, StaffType.DOCTOR);
+            response.setDoctorCount((int) doctorCount);
+            return response;
+        }));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExpertiseResponse> getAllLegacy() {
         return expertiseRepository.findAll().stream()
             .map(expertise -> {
                 ExpertiseResponse response = expertiseMapper.toResponse(expertise);

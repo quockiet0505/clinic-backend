@@ -3,10 +3,15 @@ package com.clinic.service.crm;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.clinic.common.enums.FollowUpStatus;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.crm.FollowUpFilterRequest;
 import com.clinic.dto.crm.FollowUpRequest;
 import com.clinic.dto.crm.FollowUpResponse;
 import com.clinic.entity.crm.FollowUp;
@@ -18,6 +23,8 @@ import com.clinic.repository.crm.FollowUpRepository;
 import com.clinic.repository.medical.MedicalRecordRepository;
 import com.clinic.repository.patient.PatientRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.specification.crm.FollowUpSpecification;
+import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -50,6 +57,14 @@ public class FollowUpService {
         followUp.setStatus(FollowUpStatus.PENDING);
 
         return followUpMapper.toResponse(followUpRepository.save(followUp));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<FollowUpResponse> getAll(FollowUpFilterRequest filter) {
+        Specification<FollowUp> spec = FollowUpSpecification.filterBy(filter);
+        Pageable pageable = FilterUtils.buildPageable(filter);
+        Page<FollowUp> page = followUpRepository.findAll(spec, pageable);
+        return FilterUtils.buildPageResponse(page.map(followUpMapper::toResponse));
     }
 
     /**

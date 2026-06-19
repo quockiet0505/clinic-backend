@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.staff.ExpertiseFilterRequest;
 import com.clinic.dto.staff.ExpertiseRequest;
 import com.clinic.dto.staff.ExpertiseResponse;
 import com.clinic.service.staff.ExpertiseService;
@@ -29,11 +32,18 @@ public class ExpertiseController {
     private final ExpertiseService expertiseService;
 
     @GetMapping
-    public ApiResponse<List<ExpertiseResponse>> getAll() {
-
+    public ApiResponse<PageResponse<ExpertiseResponse>> getAll(@ModelAttribute ExpertiseFilterRequest filter) {
         return ResponseUtil.success(
                 "Expertise list fetched successfully",
-                expertiseService.getAll()
+                expertiseService.getAll(filter)
+        ).getBody();
+    }
+
+    @GetMapping("/all")
+    public ApiResponse<List<ExpertiseResponse>> getAllLegacy() {
+        return ResponseUtil.success(
+                "Expertise list fetched successfully",
+                expertiseService.getAllLegacy()
         ).getBody();
     }
 
@@ -42,7 +52,6 @@ public class ExpertiseController {
     public ApiResponse<ExpertiseResponse> create(
             @Valid @RequestBody ExpertiseRequest request
     ) {
-
         return ResponseUtil.success(
                 "Expertise created successfully",
                 expertiseService.create(request)
@@ -55,7 +64,6 @@ public class ExpertiseController {
             @PathVariable Integer id,
             @Valid @RequestBody ExpertiseRequest request
     ) {
-
         return ResponseUtil.success(
                 "Expertise updated successfully",
                 expertiseService.update(id, request)

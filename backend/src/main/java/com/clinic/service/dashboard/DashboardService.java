@@ -3,7 +3,12 @@ package com.clinic.service.dashboard;
 import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.ServiceOrderStatus;
 import com.clinic.common.enums.StaffType;
+import com.clinic.dto.appointment.AppointmentFilterRequest;
+import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.dashboard.*;
+import com.clinic.dto.medical.ServiceFilterRequest;
+import com.clinic.dto.patient.PatientFilterRequest;
+import com.clinic.dto.staff.StaffFilterRequest;
 import com.clinic.entity.appointment.Appointment;
 import com.clinic.entity.medical.ServiceOrder;
 import com.clinic.entity.patient.Patient;
@@ -15,7 +20,17 @@ import com.clinic.repository.medical.ServiceRepository;
 import com.clinic.repository.patient.PatientRepository;
 import com.clinic.repository.staff.StaffDoctorReviewRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.specification.appointment.AppointmentSpecification;
+import com.clinic.specification.medical.ServiceSpecification;
+import com.clinic.specification.patient.PatientSpecification;
+import com.clinic.specification.staff.StaffSpecification;
+import com.clinic.util.FilterUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -91,81 +106,149 @@ public class DashboardService {
                 .build();
     }
 
-    public List<DoctorStatResponse> getDoctorStats(int month, int year) {
+    public DoctorStatsPageResponse getDoctorStats(DashboardPeriodFilterRequest request) {
+        int month = resolveMonth(request.getMonth());
+        int year = resolveYear(request.getYear());
         YearMonth ym = YearMonth.of(year, month);
         LocalDate startDate = ym.atDay(1);
         LocalDate endDate = ym.atEndOfMonth();
 
-        List<Staff> doctors = staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0);
+        StaffFilterRequest staffFilter = new StaffFilterRequest();
+        staffFilter.setSearch(request.getSearch());
+        staffFilter.setStaffType(StaffType.DOCTOR);
 
-        return doctors.stream().map(doctor -> {
-            List<Appointment> appointments = appointmentRepository
-                    .findByMainDoctor_StaffIdAndAppointmentDateBetweenAndIsDeleted(
-                            doctor.getStaffId(), startDate, endDate, 0);
+        Specification<Staff> spec = StaffSpecification.filterBy(staffFilter);
+        List<Staff> doctors = staffRepository.findAll(spec);
 
-            long total = appointments.size();
-            long completed = appointments.stream()
-                    .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
-                    .count();
+        List<Appointment> monthAppointments = appointmentRepository
+                .findByAppointmentDateBetweenAndIsDeleted(startDate, endDate, 0);
+        Map<Integer, List<Appointment>> apptsByDoctor = monthAppointments.stream()
+                .filter(a -> a.getMainDoctor() != null)
+                .collect(Collectors.groupingBy(a -> a.getMainDoctor().getStaffId()));
 
-            double revenue = appointments.stream()
-                    .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
-                    .mapToDouble(a -> a.getService() != null ? a.getService().getOriginalPrice().doubleValue() : 0)
-                    .sum();
+        List<DoctorStatResponse> ranked = doctors.stream()
+                .map(doctor -> buildDoctorStat(doctor,
+                        apptsByDoctor.getOrDefault(doctor.getStaffId(), List.of())))
+                .sorted((a, b) -> Double.compare(b.getCompletionRate(), a.getCompletionRate()))
+                .collect(Collectors.toList());
 
-            double completionRate = total > 0 ? (completed * 100.0 / total) : 0;
-            Double avgRating = doctorReviewRepository.getAverageRatingByDoctorId(doctor.getStaffId());
-            if (avgRating == null) avgRating = 0.0;
+        PageResponse<DoctorStatResponse> page = paginateList(ranked, request.getPage(), request.getSize());
 
-            return DoctorStatResponse.builder()
-                    .doctorId(doctor.getStaffId())
-                    .doctorName(doctor.getFullName())
-                    .imageUrl(doctor.getImageUrl())
-                    .totalAppointments(total)
-                    .completedAppointments(completed)
-                    .completionRate(Math.round(completionRate * 10) / 10.0)
-                    .revenue(Math.round(revenue * 100) / 100.0)
-                    .avgRating(Math.round(avgRating * 10) / 10.0)
-                    .build();
-        }).collect(Collectors.toList());
+        double totalRevenue = 0;
+        double completionSum = 0;
+        for (DoctorStatResponse stat : ranked) {
+            totalRevenue += stat.getRevenue();
+            completionSum += stat.getCompletionRate();
+        }
+
+        return DoctorStatsPageResponse.builder()
+                .totalDoctors(ranked.size())
+                .totalRevenue(Math.round(totalRevenue * 100) / 100.0)
+                .avgCompletionRate(ranked.isEmpty() ? 0
+                        : Math.round((completionSum / ranked.size()) * 10) / 10.0)
+                .page(page)
+                .build();
     }
 
-    public List<ServiceStatResponse> getServiceStats(int month, int year) {
+    private DoctorStatResponse buildDoctorStat(Staff doctor, List<Appointment> appointments) {
+        long total = appointments.size();
+        long completed = appointments.stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
+                .count();
+
+        double revenue = appointments.stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
+                .mapToDouble(a -> a.getService() != null ? a.getService().getOriginalPrice().doubleValue() : 0)
+                .sum();
+
+        double completionRate = total > 0 ? (completed * 100.0 / total) : 0;
+        Double avgRating = doctorReviewRepository.getAverageRatingByDoctorId(doctor.getStaffId());
+        if (avgRating == null) avgRating = 0.0;
+
+        return DoctorStatResponse.builder()
+                .doctorId(doctor.getStaffId())
+                .doctorName(doctor.getFullName())
+                .imageUrl(doctor.getImageUrl())
+                .totalAppointments(total)
+                .completedAppointments(completed)
+                .completionRate(Math.round(completionRate * 10) / 10.0)
+                .revenue(Math.round(revenue * 100) / 100.0)
+                .avgRating(Math.round(avgRating * 10) / 10.0)
+                .build();
+    }
+
+    public ServiceStatsPageResponse getServiceStats(DashboardPeriodFilterRequest request) {
+        int month = resolveMonth(request.getMonth());
+        int year = resolveYear(request.getYear());
         YearMonth ym = YearMonth.of(year, month);
         LocalDateTime startDateTime = ym.atDay(1).atStartOfDay();
         LocalDateTime endDateTime = ym.atEndOfMonth().atTime(23, 59, 59);
 
-        List<com.clinic.entity.medical.Service> services = serviceRepository.findByIsDeleted(0);
+        ServiceFilterRequest serviceFilter = new ServiceFilterRequest();
+        serviceFilter.setSearch(request.getSearch());
 
-        return services.stream().map(service -> {
-            List<ServiceOrder> orders = serviceOrderRepository
-                    .findByServiceIdAndCreatedAtBetween(service.getServiceId(), startDateTime, endDateTime);
+        Specification<com.clinic.entity.medical.Service> spec = ServiceSpecification.filterBy(serviceFilter);
+        List<com.clinic.entity.medical.Service> services = serviceRepository.findAll(spec);
 
-            long total = orders.size();
-            long completed = orders.stream()
-                    .filter(o -> o.getStatus() == ServiceOrderStatus.DONE)
-                    .count();
+        List<ServiceOrder> monthOrders = serviceOrderRepository
+                .findByCreatedAtBetween(startDateTime, endDateTime);
+        Map<Integer, List<ServiceOrder>> ordersByService = monthOrders.stream()
+                .filter(o -> o.getService() != null)
+                .collect(Collectors.groupingBy(o -> o.getService().getServiceId()));
 
-            double revenue = orders.stream()
-                    .filter(o -> o.getStatus() == ServiceOrderStatus.DONE)
-                    .mapToDouble(o -> service.getOriginalPrice().doubleValue())
-                    .sum();
+        List<ServiceStatResponse> ranked = services.stream()
+                .map(service -> buildServiceStat(service,
+                        ordersByService.getOrDefault(service.getServiceId(), List.of())))
+                .sorted((a, b) -> Double.compare(b.getCompletionRate(), a.getCompletionRate()))
+                .collect(Collectors.toList());
 
-            double completionRate = total > 0 ? (completed * 100.0 / total) : 0;
+        PageResponse<ServiceStatResponse> page = paginateList(ranked, request.getPage(), request.getSize());
 
-            return ServiceStatResponse.builder()
-                    .serviceId(service.getServiceId())
-                    .serviceName(service.getServiceName())
-                    .imageUrl(service.getImageUrl()) 
-                    .totalOrders(total)
-                    .completedOrders(completed)
-                    .completionRate(Math.round(completionRate * 10) / 10.0)
-                    .revenue(Math.round(revenue * 100) / 100.0)
-                    .build();
-        }).collect(Collectors.toList());
+        long totalOrders = 0;
+        double totalRevenue = 0;
+        for (ServiceStatResponse stat : ranked) {
+            totalOrders += stat.getTotalOrders();
+            totalRevenue += stat.getRevenue();
+        }
+
+        return ServiceStatsPageResponse.builder()
+                .totalServices(ranked.size())
+                .totalOrders(totalOrders)
+                .totalRevenue(Math.round(totalRevenue * 100) / 100.0)
+                .page(page)
+                .build();
     }
 
-    public PatientStatsResponse getPatientStats(int month, int year) {
+    private ServiceStatResponse buildServiceStat(
+            com.clinic.entity.medical.Service service,
+            List<ServiceOrder> orders) {
+
+        long total = orders.size();
+        long completed = orders.stream()
+                .filter(o -> o.getStatus() == ServiceOrderStatus.DONE)
+                .count();
+
+        double revenue = orders.stream()
+                .filter(o -> o.getStatus() == ServiceOrderStatus.DONE)
+                .mapToDouble(o -> service.getOriginalPrice().doubleValue())
+                .sum();
+
+        double completionRate = total > 0 ? (completed * 100.0 / total) : 0;
+
+        return ServiceStatResponse.builder()
+                .serviceId(service.getServiceId())
+                .serviceName(service.getServiceName())
+                .imageUrl(service.getImageUrl())
+                .totalOrders(total)
+                .completedOrders(completed)
+                .completionRate(Math.round(completionRate * 10) / 10.0)
+                .revenue(Math.round(revenue * 100) / 100.0)
+                .build();
+    }
+
+    public PatientStatsResponse getPatientStats(DashboardPeriodFilterRequest request) {
+        int month = resolveMonth(request.getMonth());
+        int year = resolveYear(request.getYear());
         YearMonth ym = YearMonth.of(year, month);
         LocalDate startDate = ym.atDay(1);
         LocalDate endDate = ym.atEndOfMonth();
@@ -181,14 +264,16 @@ public class DashboardService {
 
         List<Patient> allPatients = patientRepository.findByIsDeleted(0);
         long returningPatients = allPatients.stream()
-                .filter(p -> {
-                    long count = appointmentRepository.countByPatientIdAndAppointmentDateBetween(
-                            p.getPatientId(), startDate, endDate);
-                    return count >= 2;
-                })
+                .filter(p -> appointmentRepository.countByPatientIdAndAppointmentDateBetween(
+                        p.getPatientId(), startDate, endDate) >= 2)
                 .count();
 
-        List<PatientStatsResponse.TopPatient> topPatients = allPatients.stream()
+        PatientFilterRequest patientFilter = new PatientFilterRequest();
+        patientFilter.setSearch(request.getSearch());
+        Specification<Patient> spec = PatientSpecification.filterBy(patientFilter);
+        List<Patient> filteredPatients = patientRepository.findAll(spec);
+
+        List<PatientStatsResponse.TopPatient> ranked = filteredPatients.stream()
                 .map(p -> {
                     long count = appointmentRepository.countByPatientIdAndAppointmentDateBetween(
                             p.getPatientId(), startDate, endDate);
@@ -211,17 +296,32 @@ public class DashboardService {
                 })
                 .filter(p -> p.getVisitCount() > 0)
                 .sorted((a, b) -> Long.compare(b.getVisitCount(), a.getVisitCount()))
-                .limit(5)
                 .collect(Collectors.toList());
+
+        int page = request.getPage() != null ? request.getPage() : 0;
+        int size = request.getSize() != null ? request.getSize() : 20;
+        int from = page * size;
+        int to = Math.min(from + size, ranked.size());
+        List<PatientStatsResponse.TopPatient> pageContent =
+                from >= ranked.size() ? List.of() : ranked.subList(from, to);
+        int totalPages = size > 0 ? (int) Math.ceil((double) ranked.size() / size) : 0;
 
         return PatientStatsResponse.builder()
                 .newPatients(newPatients)
                 .returningPatients(returningPatients)
-                .topPatients(topPatients)
+                .topPatients(PageResponse.<PatientStatsResponse.TopPatient>builder()
+                        .content(pageContent)
+                        .totalElements(ranked.size())
+                        .page(page)
+                        .size(size)
+                        .totalPages(totalPages)
+                        .build())
                 .build();
     }
 
-    public RevenueStatsResponse getRevenueStats(int month, int year) {
+    public RevenueStatsResponse getRevenueStats(DashboardPeriodFilterRequest request) {
+        int month = resolveMonth(request.getMonth());
+        int year = resolveYear(request.getYear());
         YearMonth ym = YearMonth.of(year, month);
         LocalDate startDate = ym.atDay(1);
         LocalDate endDate = ym.atEndOfMonth();
@@ -268,7 +368,7 @@ public class DashboardService {
                         Collectors.summingDouble(a -> a.getService().getOriginalPrice().doubleValue())
                 ));
 
-        List<RevenueStatsResponse.ServiceRevenue> byService = serviceRevenueMap.entrySet().stream()
+        List<RevenueStatsResponse.ServiceRevenue> byServiceAll = serviceRevenueMap.entrySet().stream()
                 .map(e -> RevenueStatsResponse.ServiceRevenue.builder()
                         .serviceName(e.getKey())
                         .revenue(Math.round(e.getValue() * 100) / 100.0)
@@ -277,12 +377,33 @@ public class DashboardService {
                 .sorted((a, b) -> Double.compare(b.getRevenue(), a.getRevenue()))
                 .collect(Collectors.toList());
 
+        if (request.getSearch() != null && !request.getSearch().isEmpty()) {
+            String q = request.getSearch().toLowerCase();
+            byServiceAll = byServiceAll.stream()
+                    .filter(s -> s.getServiceName().toLowerCase().contains(q))
+                    .collect(Collectors.toList());
+        }
+
+        int page = request.getPage() != null ? request.getPage() : 0;
+        int size = request.getSize() != null ? request.getSize() : 10;
+        int from = page * size;
+        int to = Math.min(from + size, byServiceAll.size());
+        List<RevenueStatsResponse.ServiceRevenue> pageContent =
+                from >= byServiceAll.size() ? List.of() : byServiceAll.subList(from, to);
+        int totalPages = size > 0 ? (int) Math.ceil((double) byServiceAll.size() / size) : 0;
+
         return RevenueStatsResponse.builder()
                 .totalRevenue(Math.round(totalRevenue * 100) / 100.0)
                 .consultationRevenue(Math.round(consultationRevenue * 100) / 100.0)
                 .serviceRevenue(Math.round(serviceRevenue * 100) / 100.0)
                 .monthlyTrend(monthlyTrend)
-                .byService(byService)
+                .byService(PageResponse.<RevenueStatsResponse.ServiceRevenue>builder()
+                        .content(pageContent)
+                        .totalElements(byServiceAll.size())
+                        .page(page)
+                        .size(size)
+                        .totalPages(totalPages)
+                        .build())
                 .build();
     }
 
@@ -324,18 +445,67 @@ public class DashboardService {
 
     // ====== RECENT APPOINTMENTS ======
     public List<RecentAppointmentResponse> getRecentAppointments(int limit) {
-        return appointmentRepository.findByIsDeleted(0)
-                .stream()
-                .sorted((a, b) -> b.getAppointmentDate().compareTo(a.getAppointmentDate()))
-                .limit(limit)
+        AppointmentFilterRequest filter = new AppointmentFilterRequest();
+        filter.setPage(0);
+        filter.setSize(limit);
+        filter.setSortBy("appointmentDate");
+        filter.setSortDir("DESC");
+
+        Specification<Appointment> spec = AppointmentSpecification.filterBy(filter);
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "appointmentDate"));
+        Page<Appointment> page = appointmentRepository.findAll(spec, pageable);
+
+        return page.getContent().stream()
                 .map(a -> RecentAppointmentResponse.builder()
                         .appointmentId(a.getAppointmentId())
                         .patientName(a.getPatient() != null ? a.getPatient().getFullName() : "Unknown")
                         .appointmentDate(a.getAppointmentDate().toString())
                         .status(a.getStatus().name())
-                        .patientAvatarUrl(a.getPatient().getAvatarUrl())
+                        .patientAvatarUrl(a.getPatient() != null ? a.getPatient().getAvatarUrl() : null)
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    private int resolveMonth(Integer month) {
+        return month != null ? month : LocalDate.now().getMonthValue();
+    }
+
+    private int resolveYear(Integer year) {
+        return year != null ? year : LocalDate.now().getYear();
+    }
+
+    private <T> PageResponse<T> paginateList(List<T> list, Integer page, Integer size) {
+        int p = page != null ? page : 0;
+        int s = size != null ? size : 20;
+        int from = p * s;
+        int total = list.size();
+        int totalPages = s > 0 ? (int) Math.ceil((double) total / s) : 0;
+        List<T> content = from >= total ? List.of() : list.subList(from, Math.min(from + s, total));
+        return PageResponse.<T>builder()
+                .content(content)
+                .totalElements(total)
+                .page(p)
+                .size(s)
+                .totalPages(totalPages)
+                .build();
+    }
+
+    private List<DoctorStatResponse> getAllDoctorStatsForReport(int month, int year) {
+        DashboardPeriodFilterRequest req = new DashboardPeriodFilterRequest();
+        req.setMonth(month);
+        req.setYear(year);
+        req.setPage(0);
+        req.setSize(10_000);
+        return getDoctorStats(req).getPage().getContent();
+    }
+
+    private List<ServiceStatResponse> getAllServiceStatsForReport(int month, int year) {
+        DashboardPeriodFilterRequest req = new DashboardPeriodFilterRequest();
+        req.setMonth(month);
+        req.setYear(year);
+        req.setPage(0);
+        req.setSize(10_000);
+        return getServiceStats(req).getPage().getContent();
     }
 
     // ====== REPORT PREVIEW ======
@@ -365,7 +535,7 @@ public class DashboardService {
         if ("all".equals(type) || "doctors".equals(type)) {
             int month = filter.getMonth() != null ? filter.getMonth() : 1;
             int year = filter.getYear() != null ? filter.getYear() : LocalDate.now().getYear();
-            List<DoctorStatResponse> doctors = getDoctorStats(month, year);
+            List<DoctorStatResponse> doctors = getAllDoctorStatsForReport(month, year);
             preview.append("--- THỐNG KÊ BÁC SĨ ---\n");
             doctors.forEach(d -> preview.append(d.getDoctorName())
                     .append(": ").append(d.getTotalAppointments())
@@ -377,7 +547,7 @@ public class DashboardService {
         if ("all".equals(type) || "services".equals(type)) {
             int month = filter.getMonth() != null ? filter.getMonth() : 1;
             int year = filter.getYear() != null ? filter.getYear() : LocalDate.now().getYear();
-            List<ServiceStatResponse> services = getServiceStats(month, year);
+            List<ServiceStatResponse> services = getAllServiceStatsForReport(month, year);
             preview.append("--- THỐNG KÊ DỊCH VỤ ---\n");
             services.forEach(s -> preview.append(s.getServiceName())
                     .append(": ").append(s.getTotalOrders())
@@ -389,12 +559,12 @@ public class DashboardService {
         if ("all".equals(type) || "patients".equals(type)) {
             int month = filter.getMonth() != null ? filter.getMonth() : 1;
             int year = filter.getYear() != null ? filter.getYear() : LocalDate.now().getYear();
-            PatientStatsResponse patients = getPatientStats(month, year);
+            PatientStatsResponse patients = getPatientStats(buildReportPatientFilter(filter));
             preview.append("--- THỐNG KÊ BỆNH NHÂN ---\n");
             preview.append("Bệnh nhân mới: ").append(patients.getNewPatients()).append("\n");
             preview.append("Bệnh nhân quay lại: ").append(patients.getReturningPatients()).append("\n");
             preview.append("Top bệnh nhân:\n");
-            patients.getTopPatients().forEach(p -> preview.append("  - ").append(p.getPatientName())
+            patients.getTopPatients().getContent().forEach(p -> preview.append("  - ").append(p.getPatientName())
                     .append(": ").append(p.getVisitCount()).append(" lần, chi ").append(String.format("%.0f", p.getTotalSpent())).append("đ\n"));
             preview.append("\n");
         }
@@ -402,17 +572,35 @@ public class DashboardService {
         if ("all".equals(type) || "revenue".equals(type)) {
             int month = filter.getMonth() != null ? filter.getMonth() : 1;
             int year = filter.getYear() != null ? filter.getYear() : LocalDate.now().getYear();
-            RevenueStatsResponse revenue = getRevenueStats(month, year);
+            RevenueStatsResponse revenue = getRevenueStats(buildReportRevenueFilter(filter));
             preview.append("--- THỐNG KÊ DOANH THU ---\n");
             preview.append("Tổng doanh thu: ").append(String.format("%.0f", revenue.getTotalRevenue())).append("đ\n");
             preview.append("Tiền khám: ").append(String.format("%.0f", revenue.getConsultationRevenue())).append("đ\n");
             preview.append("Tiền dịch vụ: ").append(String.format("%.0f", revenue.getServiceRevenue())).append("đ\n");
             preview.append("Doanh thu theo dịch vụ:\n");
-            revenue.getByService().forEach(s -> preview.append("  - ").append(s.getServiceName())
+            revenue.getByService().getContent().forEach(s -> preview.append("  - ").append(s.getServiceName())
                     .append(": ").append(String.format("%.0f", s.getRevenue())).append("đ (").append(s.getPercentage()).append("%)\n"));
         }
 
         return preview.toString();
+    }
+
+    private DashboardPeriodFilterRequest buildReportPatientFilter(ReportFilterRequest filter) {
+        DashboardPeriodFilterRequest req = new DashboardPeriodFilterRequest();
+        req.setMonth(filter.getMonth() != null ? filter.getMonth() : 1);
+        req.setYear(filter.getYear() != null ? filter.getYear() : LocalDate.now().getYear());
+        req.setPage(0);
+        req.setSize(10_000);
+        return req;
+    }
+
+    private DashboardPeriodFilterRequest buildReportRevenueFilter(ReportFilterRequest filter) {
+        DashboardPeriodFilterRequest req = new DashboardPeriodFilterRequest();
+        req.setMonth(filter.getMonth() != null ? filter.getMonth() : 1);
+        req.setYear(filter.getYear() != null ? filter.getYear() : LocalDate.now().getYear());
+        req.setPage(0);
+        req.setSize(10_000);
+        return req;
     }
 
     // ====== GENERATE REPORT ======

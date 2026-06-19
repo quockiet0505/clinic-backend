@@ -1,6 +1,8 @@
 package com.clinic.controller.crm;
 
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.crm.DoctorFeedbackFilterRequest;
 import com.clinic.dto.crm.DoctorFeedbackReplyRequest;
 import com.clinic.dto.crm.DoctorFeedbackResponse;
 import com.clinic.service.crm.DoctorFeedbackService;
@@ -20,14 +22,15 @@ public class DoctorFeedbackController {
     private final DoctorFeedbackService doctorFeedbackService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<DoctorFeedbackResponse>>> getDoctorFeedbacks(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) Integer rating,
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate
+    public ResponseEntity<ApiResponse<PageResponse<DoctorFeedbackResponse>>> getAll(
+            @ModelAttribute DoctorFeedbackFilterRequest filter
     ) {
-        List<DoctorFeedbackResponse> data = doctorFeedbackService.getDoctorFeedbacks(search, rating, fromDate, toDate);
-        return ResponseUtil.success("Success", data);
+        return ResponseUtil.success("Doctor feedbacks retrieved successfully", doctorFeedbackService.getAll(filter));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<DoctorFeedbackResponse>>> getAllLegacy() {
+        return ResponseUtil.success("Doctor feedbacks retrieved successfully", doctorFeedbackService.getAllLegacy());
     }
 
     @PostMapping("/{id}/reply")

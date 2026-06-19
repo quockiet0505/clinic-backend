@@ -2,13 +2,20 @@ package com.clinic.service.medical;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.medical.ServiceFilterRequest;
 import com.clinic.dto.medical.ServiceRequest;
 import com.clinic.dto.medical.ServiceResponse;
 import com.clinic.entity.medical.Service;
 import com.clinic.mapper.medical.ServiceMapper;
 import com.clinic.repository.medical.ServiceRepository;
+import com.clinic.specification.medical.ServiceSpecification;
+import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -17,6 +24,14 @@ import lombok.RequiredArgsConstructor;
 public class ServiceService {
     private final ServiceRepository serviceRepository;
     private final ServiceMapper serviceMapper;
+
+    @Transactional(readOnly = true)
+    public PageResponse<ServiceResponse> getAll(ServiceFilterRequest filter) {
+        Specification<Service> spec = ServiceSpecification.filterBy(filter);
+        Pageable pageable = FilterUtils.buildPageable(filter);
+        Page<Service> page = serviceRepository.findAll(spec, pageable);
+        return FilterUtils.buildPageResponse(page.map(serviceMapper::toResponse));
+    }
 
     @Transactional
     public ServiceResponse create(ServiceRequest request) {

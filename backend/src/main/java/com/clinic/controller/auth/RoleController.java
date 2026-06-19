@@ -1,9 +1,12 @@
 package com.clinic.controller.auth;
 
+import com.clinic.dto.auth.RoleFilterRequest;
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
 import com.clinic.entity.auth.Role;
 import com.clinic.service.auth.RoleService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.clinic.util.ResponseUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,15 +14,19 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/roles")
+@RequiredArgsConstructor
 public class RoleController {
 
-    @Autowired
-    private RoleService roleService;
+    private final RoleService roleService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Role>>> getAllRoles() {
-        List<Role> roles = roleService.getAllRoles();
-        return ResponseEntity.ok(ApiResponse.success(roles));
+    public ResponseEntity<ApiResponse<PageResponse<Role>>> getAll(@ModelAttribute RoleFilterRequest filter) {
+        return ResponseUtil.success("Roles retrieved successfully", roleService.getAll(filter));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<Role>>> getAllLegacy() {
+        return ResponseUtil.success("Roles retrieved successfully", roleService.getAllRoles());
     }
 
     @PostMapping

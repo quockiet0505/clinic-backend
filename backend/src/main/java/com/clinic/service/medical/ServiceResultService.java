@@ -1,8 +1,13 @@
 package com.clinic.service.medical;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.clinic.common.enums.ServiceOrderStatus;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.medical.ServiceResultFilterRequest;
 import com.clinic.dto.medical.ServiceResultRequest;
 import com.clinic.dto.medical.ServiceResultResponse;
 import com.clinic.entity.medical.ServiceOrder;
@@ -12,6 +17,8 @@ import com.clinic.mapper.medical.ServiceResultMapper;
 import com.clinic.repository.medical.ServiceOrderRepository;
 import com.clinic.repository.medical.ServiceResultRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.specification.medical.ServiceResultSpecification;
+import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -65,6 +72,23 @@ public class ServiceResultService {
                 .stream()
                 .map(resultMapper::toResponse)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ServiceResultResponse> getAll(ServiceResultFilterRequest filter) {
+        Specification<ServiceResult> spec = ServiceResultSpecification.filterBy(filter);
+        Pageable pageable = buildPageable(filter);
+        Page<ServiceResult> page = resultRepository.findAll(spec, pageable);
+        return FilterUtils.buildPageResponse(page.map(resultMapper::toResponse));
+    }
+
+    private Pageable buildPageable(ServiceResultFilterRequest filter) {
+        String sortBy = filter.getSortBy() != null ? filter.getSortBy() : "enteredAt";
+        if ("createdAt".equals(sortBy)) {
+            sortBy = "enteredAt";
+        }
+        filter.setSortBy(sortBy);
+        return FilterUtils.buildPageable(filter);
     }
 
     @Transactional(readOnly = true)

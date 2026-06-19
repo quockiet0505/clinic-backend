@@ -3,12 +3,17 @@ package com.clinic.service.staff;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.clinic.common.enums.StaffType;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.staff.StaffFilterRequest;
 import com.clinic.dto.staff.StaffRequest;
 import com.clinic.dto.staff.StaffResponse;
 import com.clinic.entity.auth.Account;
@@ -21,6 +26,8 @@ import com.clinic.repository.auth.RoleRepository;
 import com.clinic.repository.staff.ExpertiseRepository;
 import com.clinic.repository.staff.StaffRepository;
 import com.clinic.repository.staff.StaffDoctorReviewRepository;
+import com.clinic.specification.staff.StaffSpecification;
+import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,6 +47,11 @@ public class StaffService {
         if (staff.getStaffType() == StaffType.DOCTOR) {
             response.setRating(staffDoctorReviewRepository.getAverageRatingByDoctorId(staff.getStaffId()));
         }
+        if (staff.getIsDeleted() != null && staff.getIsDeleted() == 0) {
+            response.setIsActive(1);
+        } else {
+            response.setIsActive(0);
+        }
         return response;
     }
 
@@ -51,6 +63,9 @@ public class StaffService {
         }
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new RuntimeException("Password is required for new staff");
+        }
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new RuntimeException("Email is required for new staff");
         }
 
         // 1. Create Account
@@ -77,6 +92,14 @@ public class StaffService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<StaffResponse> getAll(StaffFilterRequest filter) {
+        Specification<Staff> spec = StaffSpecification.filterBy(filter);
+        Pageable pageable = FilterUtils.buildPageable(filter);
+        Page<Staff> page = staffRepository.findAll(spec, pageable);
+        return FilterUtils.buildPageResponse(page.map(this::mapToResponseWithRating));
+    }
+
+    @Transactional(readOnly = true)
     public List<StaffResponse> getAllActive() {
         return staffRepository.findByIsDeleted(0).stream()
                 .map(this::mapToResponseWithRating)
@@ -95,7 +118,14 @@ public class StaffService {
         staff.setAddress(request.getAddress());
         staff.setStaffType(request.getStaffType());
         staff.setExperience(request.getExperience());
+        staff.setSpecialtyTreatment(request.getSpecialtyTreatment());
         staff.setImageUrl(request.getImageUrl());
+        if (request.getIsFeatured() != null) {
+            staff.setIsFeatured(request.getIsFeatured());
+        }
+        if (request.getFeaturedPriority() != null) {
+            staff.setFeaturedPriority(request.getFeaturedPriority());
+        }
 
         if (request.getExpertiseId() != null) {
             @SuppressWarnings("null")
@@ -104,6 +134,10 @@ public class StaffService {
             staff.setExpertise(expertise);
         } else {
             staff.setExpertise(null);
+        }
+
+        if (staff.getAccount() != null && request.getEmail() != null && !request.getEmail().isBlank()) {
+            staff.getAccount().setEmail(request.getEmail());
         }
 
         return mapToResponseWithRating(staffRepository.save(staff));
@@ -149,25 +183,11 @@ public class StaffService {
             Integer expertiseId,
             StaffType staffType
     ) {
-    
-        List<Staff> staffs = staffRepository.findByIsDeleted(0);
-    
-        if (staffType != null) {
-            staffs = staffs.stream()
-                    .filter(s -> s.getStaffType() == staffType)
-                    .toList();
-        }
-    
-        if (expertiseId != null) {
-            staffs = staffs.stream()
-                    .filter(s ->
-                            s.getExpertise() != null &&
-                            s.getExpertise().getExpertiseId().equals(expertiseId))
-                    .toList();
-        }
-    
-        return staffs.stream()
-                .map(this::mapToResponseWithRating)
-                .toList();
+        StaffFilterRequest filter = new StaffFilterRequest();
+        filter.setExpertiseId(expertiseId);
+        filter.setStaffType(staffType);
+        filter.setPage(0);
+        filter.setSize(10_000);
+        return getAll(filter).getContent();
     }
 }

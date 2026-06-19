@@ -16,6 +16,7 @@ public interface StaffMapper {
     Staff toEntity(StaffRequest request);
 
     @Mapping(source = "account.email", target = "email")
+    @Mapping(source = "account.isActive", target = "isActive")
     @Mapping(source = "expertise.expertiseId", target = "expertiseId")
     @Mapping(source = "expertise.expertiseName", target = "expertiseName")
     StaffResponse toResponse(Staff staff);

@@ -1,27 +1,20 @@
 package com.clinic.controller.appointment;
 
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.clinic.common.enums.AppointmentStatus;
+import com.clinic.dto.appointment.AppointmentFilterRequest;
 import com.clinic.dto.appointment.AppointmentRequest;
 import com.clinic.dto.appointment.AppointmentResponse;
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
 import com.clinic.service.appointment.AppointmentService;
 import com.clinic.util.ResponseUtil;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/appointments")
@@ -32,7 +25,13 @@ public class AppointmentController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getAll() {
+    public ResponseEntity<ApiResponse<PageResponse<AppointmentResponse>>> getAll(@ModelAttribute AppointmentFilterRequest filter) {
+        return ResponseUtil.success("Appointments retrieved successfully", appointmentService.getAll(filter));
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getAllLegacy() {
         return ResponseUtil.success("Appointments retrieved successfully", appointmentService.getAllActive());
     }
 

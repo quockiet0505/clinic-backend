@@ -1,6 +1,8 @@
 package com.clinic.controller.crm;
 
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.crm.ClinicFeedbackFilterRequest;
 import com.clinic.dto.crm.ClinicFeedbackReplyRequest;
 import com.clinic.dto.crm.ClinicFeedbackResponse;
 import com.clinic.service.crm.ClinicFeedbackService;
@@ -20,14 +22,15 @@ public class ClinicFeedbackController {
     private final ClinicFeedbackService clinicFeedbackService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ClinicFeedbackResponse>>> getClinicFeedbacks(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) Integer rating,
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate
+    public ResponseEntity<ApiResponse<PageResponse<ClinicFeedbackResponse>>> getAll(
+            @ModelAttribute ClinicFeedbackFilterRequest filter
     ) {
-        List<ClinicFeedbackResponse> data = clinicFeedbackService.getClinicFeedbacks(search, rating, fromDate, toDate);
-        return ResponseUtil.success("Success", data);
+        return ResponseUtil.success("Clinic feedbacks retrieved successfully", clinicFeedbackService.getAll(filter));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<ClinicFeedbackResponse>>> getAllLegacy() {
+        return ResponseUtil.success("Clinic feedbacks retrieved successfully", clinicFeedbackService.getAllLegacy());
     }
 
     @PostMapping("/{id}/reply")
@@ -42,7 +45,6 @@ public class ClinicFeedbackController {
     }
 
     private Integer getStaffIdFromAuth(Authentication authentication) {
-        // TODO: lấy staffId từ authentication
         return 1;
     }
 }

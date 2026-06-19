@@ -68,6 +68,9 @@ public class Staff {
     @Column(length = 100)
     private String experience;
 
+    @Column(name = "specialty_treatment", length = 255)
+    private String specialtyTreatment;
+
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
@@ -95,15 +98,5 @@ public class Staff {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    public void setEmail(String string) {
-     // TODO Auto-generated method stub
-     throw new UnsupportedOperationException("Unimplemented method 'setEmail'");
-    }
-
-    public void setPassword(String encode) {
-     // TODO Auto-generated method stub
-     throw new UnsupportedOperationException("Unimplemented method 'setPassword'");
     }
 }

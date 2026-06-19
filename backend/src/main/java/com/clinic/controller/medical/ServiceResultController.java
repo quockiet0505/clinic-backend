@@ -2,6 +2,7 @@ package com.clinic.controller.medical;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.medical.ServiceResultFilterRequest;
 import com.clinic.dto.medical.ServiceResultRequest;
 import com.clinic.dto.medical.ServiceResultResponse;
 import com.clinic.service.medical.ServiceResultService;
@@ -60,7 +63,18 @@ public class ServiceResultController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'LAB_TECH')")
-    public ApiResponse<java.util.List<ServiceResultResponse>> getAll() {
+    public ApiResponse<PageResponse<ServiceResultResponse>> getAll(
+            @ModelAttribute ServiceResultFilterRequest filter
+    ) {
+        return ResponseUtil.success(
+                "Service results fetched successfully",
+                resultService.getAll(filter)
+        ).getBody();
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'LAB_TECH')")
+    public ApiResponse<java.util.List<ServiceResultResponse>> getAllLegacy() {
         return ResponseUtil.success(
                 "Service results fetched successfully",
                 resultService.getAll()

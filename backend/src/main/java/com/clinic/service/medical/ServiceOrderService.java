@@ -4,10 +4,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.clinic.common.enums.ServiceOrderStatus;
+import com.clinic.dto.common.PageResponse;
+import com.clinic.dto.medical.ServiceOrderFilterRequest;
 import com.clinic.dto.medical.ServiceOrderRequest;
 import com.clinic.dto.medical.ServiceOrderResponse;
 import com.clinic.entity.medical.MedicalRecord;
@@ -18,6 +23,8 @@ import com.clinic.repository.medical.MedicalRecordRepository;
 import com.clinic.repository.medical.ServiceOrderRepository;
 import com.clinic.repository.medical.ServiceRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.specification.medical.ServiceOrderSpecification;
+import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -50,6 +57,14 @@ public class ServiceOrderService {
         order.setStatus(ServiceOrderStatus.ORDERED);
 
         return serviceOrderMapper.toResponse(serviceOrderRepository.save(order));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ServiceOrderResponse> getAll(ServiceOrderFilterRequest filter) {
+        Specification<ServiceOrder> spec = ServiceOrderSpecification.filterBy(filter);
+        Pageable pageable = FilterUtils.buildPageable(filter);
+        Page<ServiceOrder> page = serviceOrderRepository.findAll(spec, pageable);
+        return FilterUtils.buildPageResponse(page.map(serviceOrderMapper::toResponse));
     }
 
     /**
