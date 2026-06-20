@@ -9,6 +9,11 @@ import com.clinic.mapper.crm.DoctorFeedbackMapper;
 import com.clinic.repository.crm.DoctorReviewRepository;
 import com.clinic.repository.staff.StaffRepository;
 import com.clinic.specification.crm.DoctorFeedbackSpecification;
+import com.clinic.dto.crm.DoctorFeedbackSubmitRequest;
+import com.clinic.entity.appointment.Appointment;
+import com.clinic.entity.patient.Patient;
+import com.clinic.repository.appointment.AppointmentRepository;
+import com.clinic.repository.patient.PatientRepository;
 import com.clinic.util.FilterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,6 +33,8 @@ public class DoctorFeedbackService {
     private final DoctorReviewRepository doctorReviewRepository;
     private final StaffRepository staffRepository;
     private final DoctorFeedbackMapper doctorFeedbackMapper;
+    private final PatientRepository patientRepository;
+    private final AppointmentRepository appointmentRepository;
 
     @Transactional(readOnly = true)
     public PageResponse<DoctorFeedbackResponse> getAll(DoctorFeedbackFilterRequest filter) {
@@ -45,12 +52,57 @@ public class DoctorFeedbackService {
     }
 
     @Transactional
-    public void replyDoctorFeedback(Integer reviewId, String reply, Integer staffId) {
+    public void submitDoctorFeedback(String email, DoctorFeedbackSubmitRequest request) {
+        if (doctorReviewRepository.existsByAppointment_AppointmentId(request.getAppointmentId())) {
+            throw new RuntimeException("Bạn đã gửi đánh giá cho lịch khám này rồi.");
+        }
+
+        Patient patient = patientRepository.findByAccount_Email(email)
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
+
+        Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        if (!appointment.getPatient().getPatientId().equals(patient.getPatientId())) {
+            throw new RuntimeException("Không có quyền đánh giá lịch khám này.");
+        }
+
+        if (!"COMPLETED".equals(appointment.getStatus().name())) {
+            throw new RuntimeException("Chỉ có thể đánh giá sau khi hoàn thành khám.");
+        }
+
+        Staff doctor = staffRepository.findById(request.getDoctorId())
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        DoctorReview review = new DoctorReview();
+        review.setDoctor(doctor);
+        review.setPatient(patient);
+        review.setAppointment(appointment);
+        review.setRating(request.getRating());
+        review.setComment(request.getComment());
+        review.setIsAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false);
+        review.setCreatedAt(LocalDateTime.now());
+
+        doctorReviewRepository.save(review);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DoctorFeedbackResponse> getMyDoctorFeedbacks(String email) {
+        return doctorReviewRepository.findByPatient_Account_EmailOrderByCreatedAtDesc(email).stream()
+                .map(doctorFeedbackMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void replyDoctorFeedback(Integer reviewId, String reply, String email) {
         DoctorReview review = doctorReviewRepository.findById(reviewId)
                 .orElseThrow(() -> new RuntimeException("Doctor review not found"));
         review.setReply(reply);
         review.setRepliedAt(LocalDateTime.now());
-        Staff staff = staffRepository.findById(staffId)
+        // Simple logic for staff fetching (in real app, map email to Staff)
+        Staff staff = staffRepository.findAll().stream()
+                .filter(s -> s.getAccount() != null && s.getAccount().getEmail().equals(email))
+                .findFirst()
                 .orElseThrow(() -> new RuntimeException("Staff not found"));
         review.setRepliedBy(staff);
         doctorReviewRepository.save(review);

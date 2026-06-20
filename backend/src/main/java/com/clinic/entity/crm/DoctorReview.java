@@ -1,5 +1,6 @@
 package com.clinic.entity.crm;
 
+import com.clinic.entity.appointment.Appointment;
 import com.clinic.entity.patient.Patient;
 import com.clinic.entity.staff.Staff;
 import lombok.Data;
@@ -23,8 +24,15 @@ public class DoctorReview {
     @JoinColumn(name = "patient_id")
     private Patient patient;
 
+    @ManyToOne
+    @JoinColumn(name = "appointment_id")
+    private Appointment appointment;
+
     private Integer rating;
     private String comment;
+    
+    @Column(name = "is_anonymous")
+    private Boolean isAnonymous = false;
     private LocalDateTime createdAt;
 
     private String reply;

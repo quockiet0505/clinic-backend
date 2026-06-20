@@ -24,5 +24,6 @@ public class ServiceOrderResponse {
     private Integer sampleCollectedById;    
     private String sampleCollectedByName;  
     private LocalDateTime createdAt;
+    private java.math.BigDecimal price;
     private ServiceResultResponse result;  
 }

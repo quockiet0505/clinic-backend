@@ -47,4 +47,11 @@ public class MedicalRecordVitalService {
                 .orElseThrow(() -> new RuntimeException("Vitals not found for this record"));
         return vitalMapper.toResponse(vital);
     }
+
+    @Transactional(readOnly = true)
+    public MedicalRecordVitalResponse getLatestByEmail(String email) {
+        MedicalRecordVital vital = vitalRepository.findLatestByPatientEmail(email)
+                .orElseThrow(() -> new RuntimeException("No vitals found for patient"));
+        return vitalMapper.toResponse(vital);
+    }
 }

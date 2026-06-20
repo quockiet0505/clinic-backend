@@ -21,6 +21,7 @@ public interface ServiceOrderMapper {
     @Mapping(source = "medicalRecord.patient.fullName", target = "patientName")
     @Mapping(source = "service.serviceId", target = "serviceId")
     @Mapping(source = "service.serviceName", target = "serviceName")
+    @Mapping(source = "service.originalPrice", target = "price")
     @Mapping(source = "orderedBy.staffId", target = "orderedById")
     @Mapping(source = "orderedBy.fullName", target = "orderedByName")
     @Mapping(source = "orderedBy.fullName", target = "doctorName")

@@ -9,4 +9,8 @@ import org.springframework.data.repository.query.Param;
 public interface DoctorReviewRepository extends JpaRepository<DoctorReview, Integer>, JpaSpecificationExecutor<DoctorReview> {
     @Query("SELECT COALESCE(AVG(r.rating), 0.0) FROM DoctorReview r WHERE r.doctor.staffId = :doctorId")
     Double getAverageRatingByDoctorId(@Param("doctorId") Integer doctorId);
+
+    boolean existsByAppointment_AppointmentId(Integer appointmentId);
+    
+    java.util.List<DoctorReview> findByPatient_Account_EmailOrderByCreatedAtDesc(String email);
 }

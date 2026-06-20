@@ -21,6 +21,10 @@ public class Feedback {
 
     private Integer rating;
     private String comment;
+    
+    @Column(name = "is_anonymous")
+    private Boolean isAnonymous = false;
+
     private LocalDateTime createdAt;
 
     private String reply;

@@ -5,12 +5,15 @@ import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.crm.DoctorFeedbackFilterRequest;
 import com.clinic.dto.crm.DoctorFeedbackReplyRequest;
 import com.clinic.dto.crm.DoctorFeedbackResponse;
+import com.clinic.dto.crm.DoctorFeedbackSubmitRequest;
 import com.clinic.service.crm.DoctorFeedbackService;
 import com.clinic.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -33,18 +36,32 @@ public class DoctorFeedbackController {
         return ResponseUtil.success("Doctor feedbacks retrieved successfully", doctorFeedbackService.getAllLegacy());
     }
 
+    @PostMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<Void>> submitDoctorFeedback(
+            @Valid @RequestBody DoctorFeedbackSubmitRequest request,
+            Authentication authentication
+    ) {
+        doctorFeedbackService.submitDoctorFeedback(authentication.getName(), request);
+        return ResponseUtil.success("Đánh giá của bạn đã được gửi thành công", null);
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<List<DoctorFeedbackResponse>>> getMyDoctorFeedbacks(
+            Authentication authentication
+    ) {
+        return ResponseUtil.success("Lấy danh sách đánh giá thành công", doctorFeedbackService.getMyDoctorFeedbacks(authentication.getName()));
+    }
+
     @PostMapping("/{id}/reply")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<Void>> replyDoctorFeedback(
             @PathVariable Integer id,
             @RequestBody DoctorFeedbackReplyRequest request,
             Authentication authentication
     ) {
-        Integer staffId = getStaffIdFromAuth(authentication);
-        doctorFeedbackService.replyDoctorFeedback(id, request.getReply(), staffId);
+        doctorFeedbackService.replyDoctorFeedback(id, request.getReply(), authentication.getName());
         return ResponseUtil.success("Reply sent successfully", null);
-    }
-
-    private Integer getStaffIdFromAuth(Authentication authentication) {
-        return 1;
     }
 }

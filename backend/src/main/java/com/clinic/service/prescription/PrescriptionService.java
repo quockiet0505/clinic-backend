@@ -26,6 +26,8 @@ import com.clinic.repository.medical.MedicalRecordRepository;
 import com.clinic.repository.prescription.MedicineRepository;
 import com.clinic.repository.prescription.PrescriptionRepository;
 import com.clinic.specification.prescription.PrescriptionSpecification;
+import com.clinic.entity.patient.Patient;
+import com.clinic.repository.patient.PatientRepository;
 import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class PrescriptionService {
     private final PrescriptionRepository prescriptionRepository;
     private final MedicalRecordRepository medicalRecordRepository;
     private final MedicineRepository medicineRepository;
+    private final PatientRepository patientRepository;
     private final PrescriptionMapper prescriptionMapper;
 
     @Transactional
@@ -84,6 +87,16 @@ public class PrescriptionService {
     @Transactional(readOnly = true)
     public List<PrescriptionResponse> getAll() {
         return prescriptionRepository.findAll().stream()
+                .map(prescriptionMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PrescriptionResponse> getMyPrescriptions(String email) {
+        Patient patient = patientRepository.findByAccount_Email(email)
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
+        return prescriptionRepository.findByMedicalRecord_Patient_PatientIdOrderByCreatedAtDesc(patient.getPatientId())
+                .stream()
                 .map(prescriptionMapper::toResponse)
                 .collect(Collectors.toList());
     }

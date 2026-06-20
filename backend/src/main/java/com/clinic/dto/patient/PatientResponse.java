@@ -1,5 +1,6 @@
 package com.clinic.dto.patient;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import lombok.Data;
@@ -18,6 +19,9 @@ public class PatientResponse {
     
     // Vitals data
     private Integer height;
+    private BigDecimal weight;
+    private String bloodPressure;
+    private Integer pulse;
     private String bloodType;
     private String allergies;
     private String medicalHistory;

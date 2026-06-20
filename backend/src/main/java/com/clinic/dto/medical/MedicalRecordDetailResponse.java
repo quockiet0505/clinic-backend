@@ -18,6 +18,11 @@ import lombok.NoArgsConstructor;
 public class MedicalRecordDetailResponse {
     private Integer recordId;
     private Integer patientId;
+    private String patientFullName;
+    private String patientGender;
+    private java.time.LocalDate patientDob;
+    private String patientPhone;
+    private String patientAddress;
     private Integer appointmentId;
     private Integer mainDoctorId;
     private String doctorName;

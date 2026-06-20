@@ -1,5 +1,6 @@
 package com.clinic.dto.patient;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import jakarta.validation.constraints.NotBlank;
@@ -19,6 +20,9 @@ public class PatientRequest {
     
     // Vitals 
     private Integer height;
+    private BigDecimal weight;
+    private String bloodPressure;
+    private Integer pulse;
     private String bloodType;
     private String allergies;
     private String medicalHistory;

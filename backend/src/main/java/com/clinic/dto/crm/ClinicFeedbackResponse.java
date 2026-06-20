@@ -14,4 +14,5 @@ public class ClinicFeedbackResponse {
     private String reply;
     private LocalDateTime repliedAt;
     private String repliedBy; // tên nhân viên phản hồi
+    private Boolean isAnonymous;
 }

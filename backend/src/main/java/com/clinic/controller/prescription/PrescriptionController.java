@@ -64,6 +64,16 @@ public class PrescriptionController {
         ).getBody(); 
     }
 
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<List<PrescriptionResponse>> getMyPrescriptions(org.springframework.security.core.Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseUtil.success(
+                "My prescriptions fetched",
+                prescriptionService.getMyPrescriptions(email)
+        ).getBody();
+    }
+
     @PutMapping("/{id}/dispense")
     public ApiResponse<Void> dispense(@PathVariable Integer id) {
         prescriptionService.dispense(id);

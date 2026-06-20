@@ -79,6 +79,9 @@ public class PatientService {
         PatientVitalProfile vitalProfile = new PatientVitalProfile();
         vitalProfile.setPatient(savedPatient);
         vitalProfile.setHeight(request.getHeight());
+        vitalProfile.setWeight(request.getWeight());
+        vitalProfile.setBloodPressure(request.getBloodPressure());
+        vitalProfile.setPulse(request.getPulse());
         vitalProfile.setBloodType(request.getBloodType());
         vitalProfile.setAllergies(request.getAllergies());
         vitalProfile.setMedicalHistory(request.getMedicalHistory());
@@ -140,6 +143,9 @@ public class PatientService {
         
         vitalProfile.setPatient(savedPatient);
         vitalProfile.setHeight(request.getHeight());
+        vitalProfile.setWeight(request.getWeight());
+        vitalProfile.setBloodPressure(request.getBloodPressure());
+        vitalProfile.setPulse(request.getPulse());
         vitalProfile.setBloodType(request.getBloodType());
         vitalProfile.setAllergies(request.getAllergies());
         vitalProfile.setMedicalHistory(request.getMedicalHistory());

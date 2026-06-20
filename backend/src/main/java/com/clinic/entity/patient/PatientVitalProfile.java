@@ -1,5 +1,6 @@
 package com.clinic.entity.patient;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -32,6 +33,14 @@ public class PatientVitalProfile {
     private Patient patient;
 
     private Integer height;
+
+    @Column(precision = 5, scale = 2)
+    private BigDecimal weight;
+
+    @Column(name = "blood_pressure", length = 20)
+    private String bloodPressure;
+
+    private Integer pulse;
 
     @Column(name = "blood_type", length = 5)
     private String bloodType;

@@ -1,6 +1,7 @@
 package com.clinic.controller.medical;
 
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,10 +42,18 @@ public class MedicalRecordVitalController {
     public ApiResponse<MedicalRecordVitalResponse> getByRecordId(
             @PathVariable Integer recordId
     ) {
-
         return ResponseUtil.success(
                 "Medical vital fetched successfully",
                 vitalService.getByRecordId(recordId)
+        ).getBody();
+    }
+
+    @GetMapping("/my/latest")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ApiResponse<MedicalRecordVitalResponse> getMyLatestVitals(Authentication authentication) {
+        return ResponseUtil.success(
+                "Latest vitals fetched successfully",
+                vitalService.getLatestByEmail(authentication.getName())
         ).getBody();
     }
 }

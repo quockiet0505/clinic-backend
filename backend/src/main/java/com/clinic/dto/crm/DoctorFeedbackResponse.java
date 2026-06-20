@@ -16,4 +16,5 @@ public class DoctorFeedbackResponse {
     private String reply;
     private LocalDateTime repliedAt;
     private String repliedBy;
+    private Boolean isAnonymous;
 }

@@ -15,3 +15,18 @@
 - `service_order`: Lưu các chỉ định dịch vụ của bác sĩ dành cho bệnh nhân trong quá trình khám.
 - `service_result`: Lưu kết quả thực hiện dịch vụ (ví dụ: kết quả xét nghiệm, file đính kèm).
 - `medical_record`: Hồ sơ bệnh án của bệnh nhân.
+- `patient_vital_profile`: Hồ sơ sức khoẻ bệnh nhân (chiều cao, cân nặng, huyết áp, mạch, nhóm máu, dị ứng, tiền sử bệnh). Bệnh nhân cập nhật qua API profile.
+- `feedback` / `doctor_review`: Đánh giá phòng khám và bác sĩ từ bệnh nhân.
+
+## Migration bổ sung
+
+Nếu database đã tạo trước khi có các cột vital mới, chạy:
+
+```sql
+-- database/migrations/add_patient_vital_profile_metrics.sql
+ALTER TABLE patient_vital_profile
+  ADD COLUMN IF NOT EXISTS weight DECIMAL(5,2) NULL AFTER height,
+  ADD COLUMN IF NOT EXISTS blood_pressure VARCHAR(20) NULL AFTER weight,
+  ADD COLUMN IF NOT EXISTS pulse INT NULL AFTER blood_pressure;
+```
+
