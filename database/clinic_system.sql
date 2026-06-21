@@ -185,6 +185,7 @@ CREATE TABLE service (
     service_type ENUM('EXAM','LAB_TEST','IMAGING') NOT NULL DEFAULT 'LAB_TEST',
     original_price DECIMAL(10,2) NOT NULL,
     discount_price DECIMAL(10,2),
+    description TEXT,
     image_url VARCHAR(255),
     is_featured BOOLEAN DEFAULT FALSE,
     featured_priority INT DEFAULT 0,

@@ -10,6 +10,7 @@ public class DoctorFeedbackResponse {
     private String doctorName;
     private Integer patientId;
     private String patientName;
+    private Integer appointmentId;
     private Integer rating;
     private String comment;
     private LocalDateTime createdAt;

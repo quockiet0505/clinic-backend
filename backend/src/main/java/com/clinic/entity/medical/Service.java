@@ -45,6 +45,9 @@ public class Service {
     @Column(name = "discount_price", precision = 10, scale = 2)
     private BigDecimal discountPrice;
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 

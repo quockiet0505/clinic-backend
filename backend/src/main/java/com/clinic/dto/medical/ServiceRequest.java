@@ -24,6 +24,8 @@ public class ServiceRequest {
 
     private BigDecimal discountPrice;
 
+    private String description;
+
     private String imageUrl;
 
     private Boolean isFeatured;

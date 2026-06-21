@@ -13,5 +13,6 @@ public interface DoctorFeedbackMapper {
     @Mapping(target = "doctorName", source = "doctor.fullName")
     @Mapping(target = "patientId", source = "patient.patientId")
     @Mapping(target = "patientName", source = "patient.fullName")
+    @Mapping(target = "appointmentId", source = "appointment.appointmentId")
     DoctorFeedbackResponse toResponse(DoctorReview doctorReview);
 }
