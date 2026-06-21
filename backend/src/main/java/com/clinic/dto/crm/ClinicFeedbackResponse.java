@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class ClinicFeedbackResponse {
     private Integer feedbackId;
     private Integer recordId;
+    private Integer appointmentId;
     private String patientName;
     private Integer rating;
     private String comment;

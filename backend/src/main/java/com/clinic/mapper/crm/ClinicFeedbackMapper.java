@@ -10,6 +10,7 @@ public interface ClinicFeedbackMapper {
 
     @Mapping(target = "repliedBy", source = "repliedBy.fullName")
     @Mapping(target = "recordId", source = "medicalRecord.recordId")
+    @Mapping(target = "appointmentId", source = "medicalRecord.appointment.appointmentId")
     @Mapping(target = "patientName", source = "medicalRecord.patient.fullName")
     ClinicFeedbackResponse toResponse(Feedback feedback);
 }

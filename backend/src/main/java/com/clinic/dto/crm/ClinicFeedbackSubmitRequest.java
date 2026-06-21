@@ -7,8 +7,8 @@ import jakarta.validation.constraints.NotNull;
 
 @Data
 public class ClinicFeedbackSubmitRequest {
-    @NotNull(message = "Record ID is required")
     private Integer recordId;
+    private Integer appointmentId;
 
     @NotNull(message = "Rating is required")
     @Min(value = 1, message = "Rating must be between 1 and 5")

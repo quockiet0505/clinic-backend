@@ -15,5 +15,16 @@ public class UserProfileResponse {
     private String email;
     private String address;
     private String roleName;
+    private String avatarUrl;
     private LocalDateTime createdAt;
+    
+    // Medical fields
+    private Integer height;
+    private java.math.BigDecimal weight;
+    private String bloodPressure;
+    private Integer pulse;
+    private String bloodType;
+    private String allergies;
+    private String chronicDiseases;
+    private String medicalHistory;
 }

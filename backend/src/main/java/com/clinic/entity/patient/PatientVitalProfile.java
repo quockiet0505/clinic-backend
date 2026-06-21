@@ -48,6 +48,9 @@ public class PatientVitalProfile {
     @Column(columnDefinition = "TEXT")
     private String allergies;
 
+    @Column(name = "chronic_diseases", columnDefinition = "TEXT")
+    private String chronicDiseases;
+
     @Column(name = "medical_history", columnDefinition = "TEXT")
     private String medicalHistory;
 

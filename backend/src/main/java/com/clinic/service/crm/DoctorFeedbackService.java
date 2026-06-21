@@ -86,6 +86,27 @@ public class DoctorFeedbackService {
         doctorReviewRepository.save(review);
     }
 
+    @Transactional
+    public void updateDoctorFeedback(String email, Integer id, DoctorFeedbackSubmitRequest request) {
+        DoctorReview review = doctorReviewRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Đánh giá không tồn tại"));
+
+        if (review.getPatient() == null || review.getPatient().getAccount() == null || 
+            !review.getPatient().getAccount().getEmail().equals(email)) {
+            throw new RuntimeException("Bạn không có quyền sửa đánh giá này");
+        }
+
+        long hours = java.time.temporal.ChronoUnit.HOURS.between(review.getCreatedAt(), LocalDateTime.now());
+        if (hours >= 24) {
+            throw new RuntimeException("Chỉ có thể sửa đánh giá trong vòng 24 giờ sau khi gửi");
+        }
+
+        review.setRating(request.getRating());
+        review.setComment(request.getComment());
+        review.setIsAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false);
+        doctorReviewRepository.save(review);
+    }
+
     @Transactional(readOnly = true)
     public List<DoctorFeedbackResponse> getMyDoctorFeedbacks(String email) {
         return doctorReviewRepository.findByPatient_Account_EmailOrderByCreatedAtDesc(email).stream()

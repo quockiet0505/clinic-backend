@@ -122,6 +122,9 @@ CREATE TABLE patient (
 CREATE TABLE patient_vital_profile (
     patient_id INT PRIMARY KEY,
     height INT,
+    weight DECIMAL(5,2) NULL,
+    blood_pressure VARCHAR(20) NULL,
+    pulse INT NULL,
     blood_type VARCHAR(5),
     allergies TEXT,
     chronic_diseases TEXT, 

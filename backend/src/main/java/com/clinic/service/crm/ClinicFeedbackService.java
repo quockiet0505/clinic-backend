@@ -53,15 +53,23 @@ public class ClinicFeedbackService {
 
     @Transactional
     public void submitClinicFeedback(String email, ClinicFeedbackSubmitRequest request) {
-        if (feedbackRepository.existsByMedicalRecord_RecordId(request.getRecordId())) {
+        MedicalRecord record;
+        if (request.getRecordId() != null) {
+            record = medicalRecordRepository.findById(request.getRecordId())
+                    .orElseThrow(() -> new RuntimeException("Medical record not found"));
+        } else if (request.getAppointmentId() != null) {
+            record = medicalRecordRepository.findByAppointment_AppointmentId(request.getAppointmentId())
+                    .orElseThrow(() -> new RuntimeException("Medical record not found for this appointment"));
+        } else {
+            throw new RuntimeException("Either Record ID or Appointment ID is required");
+        }
+
+        if (feedbackRepository.existsByMedicalRecord_RecordId(record.getRecordId())) {
             throw new RuntimeException("Bạn đã gửi đánh giá phòng khám cho hồ sơ này rồi.");
         }
 
         Patient patient = patientRepository.findByAccount_Email(email)
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
-
-        MedicalRecord record = medicalRecordRepository.findById(request.getRecordId())
-                .orElseThrow(() -> new RuntimeException("Medical record not found"));
 
         if (!record.getPatient().getPatientId().equals(patient.getPatientId())) {
             throw new RuntimeException("Không có quyền đánh giá hồ sơ này.");
@@ -74,6 +82,28 @@ public class ClinicFeedbackService {
         feedback.setIsAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false);
         feedback.setCreatedAt(LocalDateTime.now());
 
+        feedbackRepository.save(feedback);
+    }
+
+    @Transactional
+    public void updateClinicFeedback(String email, Integer id, ClinicFeedbackSubmitRequest request) {
+        Feedback feedback = feedbackRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Đánh giá không tồn tại"));
+
+        if (feedback.getMedicalRecord() == null || feedback.getMedicalRecord().getPatient() == null || 
+            feedback.getMedicalRecord().getPatient().getAccount() == null || 
+            !feedback.getMedicalRecord().getPatient().getAccount().getEmail().equals(email)) {
+            throw new RuntimeException("Bạn không có quyền sửa đánh giá này");
+        }
+
+        long hours = java.time.temporal.ChronoUnit.HOURS.between(feedback.getCreatedAt(), LocalDateTime.now());
+        if (hours >= 24) {
+            throw new RuntimeException("Chỉ có thể sửa đánh giá trong vòng 24 giờ sau khi gửi");
+        }
+
+        feedback.setRating(request.getRating());
+        feedback.setComment(request.getComment());
+        feedback.setIsAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false);
         feedbackRepository.save(feedback);
     }
 

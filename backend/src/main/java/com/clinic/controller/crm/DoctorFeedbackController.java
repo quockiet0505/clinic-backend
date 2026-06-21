@@ -46,6 +46,17 @@ public class DoctorFeedbackController {
         return ResponseUtil.success("Đánh giá của bạn đã được gửi thành công", null);
     }
 
+    @PutMapping("/my/{id}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<Void>> updateDoctorFeedback(
+            @PathVariable Integer id,
+            @Valid @RequestBody DoctorFeedbackSubmitRequest request,
+            Authentication authentication
+    ) {
+        doctorFeedbackService.updateDoctorFeedback(authentication.getName(), id, request);
+        return ResponseUtil.success("Sửa đánh giá bác sĩ thành công", null);
+    }
+
     @GetMapping("/my")
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<List<DoctorFeedbackResponse>>> getMyDoctorFeedbacks(

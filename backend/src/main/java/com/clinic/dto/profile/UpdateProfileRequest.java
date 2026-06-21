@@ -10,5 +10,15 @@ public class UpdateProfileRequest {
     private LocalDate dateOfBirth;
     private String phone;
     private String address;
-    // email không update ở đây (nếu cần thì thêm, nhưng thường không cho đổi email)
+    private String avatarUrl;
+    
+    // Medical fields
+    private Integer height;
+    private java.math.BigDecimal weight;
+    private String bloodPressure;
+    private Integer pulse;
+    private String bloodType;
+    private String allergies;
+    private String chronicDiseases;
+    private String medicalHistory;
 }

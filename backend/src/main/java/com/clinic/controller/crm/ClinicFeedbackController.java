@@ -46,6 +46,17 @@ public class ClinicFeedbackController {
         return ResponseUtil.success("Đánh giá phòng khám của bạn đã được gửi thành công", null);
     }
 
+    @PutMapping("/my/{id}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<Void>> updateClinicFeedback(
+            @PathVariable Integer id,
+            @Valid @RequestBody ClinicFeedbackSubmitRequest request,
+            Authentication authentication
+    ) {
+        clinicFeedbackService.updateClinicFeedback(authentication.getName(), id, request);
+        return ResponseUtil.success("Sửa đánh giá phòng khám thành công", null);
+    }
+
     @GetMapping("/my")
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<List<ClinicFeedbackResponse>>> getMyClinicFeedbacks(

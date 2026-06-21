@@ -7,5 +7,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import com.clinic.entity.medical.MedicalRecord;
 public interface MedicalRecordRepository extends JpaRepository<MedicalRecord, Integer>, JpaSpecificationExecutor<MedicalRecord> {
     List<MedicalRecord> findByPatient_PatientId(Integer patientId);
+    java.util.Optional<MedicalRecord> findByAppointment_AppointmentId(Integer appointmentId);
 }
 // MedicalRecordVitalRepository extends JpaRepository<MedicalRecordVital, Integer> {}
