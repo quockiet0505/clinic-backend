@@ -1,28 +1,44 @@
-# Hướng dẫn cài đặt Backend
+# 🚀 Hướng dẫn Cài đặt & Khởi chạy (Setup Guide)
 
-## Yêu cầu môi trường
-- Java 17+
-- Maven 3.8+
-- MySQL 8.0+
+Tài liệu này hướng dẫn chi tiết các bước thiết lập môi trường Backend trên máy tính cá nhân.
 
-## Các bước chạy dự án
+## 1. Yêu cầu hệ thống (Prerequisites)
+Để chạy dự án, máy tính của bạn phải cài đặt:
+- **Java Development Kit (JDK) 17:** Khuyến nghị dùng Eclipse Temurin hoặc Amazon Corretto. Cài biến môi trường `JAVA_HOME`.
+- **Maven 3.8.x trở lên:** Cài đặt và cấu hình `M2_HOME`.
+- **Database:** MySQL 8.0 (chạy qua Docker hoặc cài trực tiếp).
+- **IDE Khuyến nghị:** IntelliJ IDEA Ultimate / Community Edition.
 
-1. **Cấu hình Database**:
-   - Mở file `backend/src/main/resources/application.properties`.
-   - Cập nhật `spring.datasource.username` và `spring.datasource.password` cho phù hợp với MySQL local của bạn.
-   - Đảm bảo database `clinic_system` đã được tạo (xem file `database.md`).
+## 2. Thiết lập Database
+Tạo database mới trong MySQL:
+```sql
+CREATE DATABASE clinic_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
 
-2. **Build và Chạy**:
-   - Mở terminal tại thư mục `backend`.
-   - Chạy lệnh để tải thư viện và build:
-     ```bash
-     mvn clean install
-     ```
-   - Chạy lệnh để khởi động server:
-     ```bash
-     mvn spring-boot:run
-     ```
+## 3. Cấu hình Môi trường (application.yml)
+Tạo file `src/main/resources/application-local.yml` (hoặc sao chép từ `application.yml`):
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=UTC
+    username: root
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update # Chỉ dùng cho DEV
+    show-sql: true
+```
 
-3. **Kiểm tra**:
-   - Server mặc định chạy tại: `http://localhost:8080`
-   - Các API bắt đầu với tiền tố `/api/v1/`
+## 4. Khởi chạy
+Mở Terminal tại thư mục `clinic-backend` và chạy:
+```bash
+# 1. Clean và tải thư viện
+mvn clean install -DskipTests
+
+# 2. Chạy ứng dụng
+mvn spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+## 5. Troubleshooting (Lỗi thường gặp)
+- **Port 8080 already in use:** Một ứng dụng khác đang chiếm cổng 8080. Kill process đó hoặc đổi cổng trong `server.port`.
+- **Access denied for user:** Kiểm tra lại username/password MySQL.
