@@ -1,36 +1,46 @@
 // src/main/java/com/clinic/service/appointment/AppointmentService.java
 package com.clinic.service.appointment;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.AppointmentType;
+import com.clinic.common.enums.BookingMode;
 import com.clinic.common.enums.CancelledByType;
 import com.clinic.common.enums.ScheduleStatus;
+import com.clinic.common.enums.ServiceType;
 import com.clinic.common.enums.StaffType;
 import com.clinic.dto.appointment.AppointmentFilterRequest;
 import com.clinic.dto.appointment.AppointmentRequest;
 import com.clinic.dto.appointment.AppointmentResponse;
+import com.clinic.dto.appointment.TimeSlotResponse;
 import com.clinic.dto.common.PageResponse;
 import com.clinic.entity.appointment.Appointment;
 import com.clinic.entity.patient.Patient;
+import com.clinic.entity.staff.Expertise;
 import com.clinic.entity.staff.Staff;
 import com.clinic.entity.staff.StaffSchedule;
 import com.clinic.mapper.appointment.AppointmentMapper;
 import com.clinic.repository.appointment.AppointmentRepository;
 import com.clinic.repository.medical.ServiceRepository;
 import com.clinic.repository.patient.PatientRepository;
+import com.clinic.repository.staff.ExpertiseRepository;
 import com.clinic.repository.staff.StaffRepository;
 import com.clinic.repository.staff.StaffScheduleRepository;
 import com.clinic.specification.appointment.AppointmentSpecification;
@@ -46,10 +56,10 @@ public class AppointmentService {
     private final PatientRepository patientRepository;
     private final StaffRepository staffRepository;
     private final ServiceRepository serviceRepository;
+    private final ExpertiseRepository expertiseRepository;
     private final StaffScheduleRepository scheduleRepository;
     private final AppointmentMapper appointmentMapper;
 
-    // ===== PHÂN TRANG & LỌC =====
     @Transactional(readOnly = true)
     public PageResponse<AppointmentResponse> getAll(AppointmentFilterRequest filter) {
         Specification<Appointment> spec = AppointmentSpecification.filterBy(filter);
@@ -58,7 +68,6 @@ public class AppointmentService {
         return FilterUtils.buildPageResponse(page.map(appointmentMapper::toResponse));
     }
 
-    // ===== GIỮ NGUYÊN CÁC METHOD CŨ =====
     private Patient getCurrentPatient() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
@@ -66,51 +75,99 @@ public class AppointmentService {
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
     }
 
-    private Staff autoAssignDoctor(Integer expertiseId) {
-        List<Staff> availableDoctors = staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0);
-        if (expertiseId != null) {
-            availableDoctors = availableDoctors.stream()
-                    .filter(d -> d.getExpertise() != null && d.getExpertise().getExpertiseId().equals(expertiseId))
-                    .collect(Collectors.toList());
+    private BookingMode resolveBookingMode(AppointmentRequest request) {
+        if (request.getBookingMode() != null) {
+            return request.getBookingMode();
         }
-        if (availableDoctors.isEmpty()) {
-            throw new RuntimeException("No doctor available for the selected criteria");
+        if (request.getMainDoctorId() != null) {
+            return BookingMode.DOCTOR;
         }
-        return availableDoctors.get(0);
+        if (request.getServiceId() != null) {
+            return BookingMode.SERVICE;
+        }
+        if (request.getExpertiseId() != null) {
+            return BookingMode.EXPERTISE;
+        }
+        return BookingMode.DIRECT;
     }
 
-    private void validateAppointmentLogic(AppointmentRequest request, Integer patientId, Integer doctorId) {
-        if (doctorId == null) {
-            boolean isPatientConflict = appointmentRepository.existsByPatient_PatientIdAndAppointmentDateAndTimeStartAndIsDeleted(
-                    patientId, request.getAppointmentDate(), request.getTimeStart(), 0);
-            if (isPatientConflict) {
-                throw new RuntimeException("You already have an appointment booked at this exact time.");
-            }
-            return;
+    private Expertise loadExpertise(Integer expertiseId) {
+        if (expertiseId == null) {
+            return null;
+        }
+        return expertiseRepository.findById(expertiseId)
+                .orElseThrow(() -> new RuntimeException("Expertise not found"));
+    }
+
+    private Staff loadDoctor(Integer doctorId) {
+        return staffRepository.findById(doctorId)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+    }
+
+    private Staff autoAssignDoctor(Integer expertiseId) {
+        List<Staff> doctors;
+        if (expertiseId != null) {
+            doctors = staffRepository.findByExpertise_ExpertiseIdAndStaffTypeAndIsDeleted(
+                    expertiseId, StaffType.DOCTOR, 0);
+        } else {
+            doctors = staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0);
+        }
+        if (doctors.isEmpty()) {
+            throw new RuntimeException("No doctor available for the selected criteria");
+        }
+        return doctors.get(0);
+    }
+
+    private boolean isSlotTakenByDoctor(Integer doctorId, LocalDate date, LocalTime slotStart, LocalTime slotEnd) {
+        List<Appointment> existing = appointmentRepository
+                .findByMainDoctor_StaffIdAndAppointmentDateAndIsDeleted(doctorId, date, 0);
+        return existing.stream().anyMatch(a ->
+                a.getStatus() != AppointmentStatus.CANCELLED
+                        && a.getStatus() != AppointmentStatus.NO_SHOW
+                        && a.getTimeStart() != null
+                        && (a.getTimeStart().equals(slotStart)
+                                || (a.getTimeEnd() != null
+                                        && a.getTimeStart().isBefore(slotEnd)
+                                        && a.getTimeEnd().isAfter(slotStart))));
+    }
+
+    private void validateAppointmentLogic(AppointmentRequest request, Integer patientId, Integer doctorId,
+            BookingMode mode) {
+        boolean isPatientConflict = appointmentRepository
+                .existsByPatient_PatientIdAndAppointmentDateAndTimeStartAndIsDeleted(
+                        patientId, request.getAppointmentDate(), request.getTimeStart(), 0);
+        if (isPatientConflict) {
+            throw new RuntimeException("You already have an appointment at this time.");
         }
 
         if (request.getAppointmentType() == AppointmentType.ONLINE) {
-            long spamCount = appointmentRepository.countByPatient_PatientIdAndStatusAndCancelReasonContainingAndIsDeleted(
-                    patientId, AppointmentStatus.CANCELLED, "[SPAM]", 0);
+            long spamCount = appointmentRepository
+                    .countByPatient_PatientIdAndStatusAndCancelReasonContainingAndIsDeleted(
+                            patientId, AppointmentStatus.CANCELLED, "[SPAM]", 0);
             if (spamCount >= 3) {
-                throw new RuntimeException("Account locked due to repeated late cancellations. Please book at clinic.");
+                throw new RuntimeException(
+                        "Account locked due to repeated late cancellations. Please book at clinic.");
             }
-            LocalDateTime requestedDateTime = LocalDateTime.of(request.getAppointmentDate(), request.getTimeStart());
+            LocalDateTime requestedDateTime = LocalDateTime.of(
+                    request.getAppointmentDate(), request.getTimeStart());
             if (requestedDateTime.isBefore(LocalDateTime.now().plusHours(24))) {
                 throw new RuntimeException("Online appointments must be booked at least 24 hours in advance.");
             }
         }
 
-        boolean isPatientConflict = appointmentRepository.existsByPatient_PatientIdAndAppointmentDateAndTimeStartAndIsDeleted(
-                patientId, request.getAppointmentDate(), request.getTimeStart(), 0);
-        if (isPatientConflict) {
-            throw new RuntimeException("You already have an appointment at this time.");
+        if (doctorId == null) {
+            return;
         }
 
         List<StaffSchedule> dailySchedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(
                 doctorId, request.getAppointmentDate());
         if (dailySchedules.isEmpty()) {
             throw new RuntimeException("Doctor is not scheduled on this date.");
+        }
+
+        if (isSlotTakenByDoctor(doctorId, request.getAppointmentDate(),
+                request.getTimeStart(), request.getTimeEnd())) {
+            throw new RuntimeException("Selected time slot is no longer available.");
         }
 
         if (request.getAppointmentType() == AppointmentType.WALK_IN && request.getTimeStart() != null) {
@@ -128,33 +185,80 @@ public class AppointmentService {
     @Transactional
     public AppointmentResponse create(AppointmentRequest request) {
         Patient patient = getCurrentPatient();
+        BookingMode mode = resolveBookingMode(request);
 
+        Expertise expertise = loadExpertise(request.getExpertiseId());
+        Expertise suggestedExpertise = loadExpertise(request.getSuggestedExpertiseId());
         Staff doctor = null;
-        if (request.getMainDoctorId() != null) {
-            doctor = staffRepository.findById(request.getMainDoctorId())
-                    .orElseThrow(() -> new RuntimeException("Doctor not found"));
-        } else {
-            doctor = autoAssignDoctor(request.getExpertiseId());
-            request.setMainDoctorId(doctor.getStaffId());
-        }
-
-        validateAppointmentLogic(request, patient.getPatientId(), request.getMainDoctorId());
-
         com.clinic.entity.medical.Service service = null;
-        if (request.getServiceId() != null) {
-            service = serviceRepository.findById(request.getServiceId())
-                    .orElseThrow(() -> new RuntimeException("Service not found"));
+
+        switch (mode) {
+            case DOCTOR -> {
+                if (request.getMainDoctorId() == null) {
+                    throw new RuntimeException("Doctor is required for DOCTOR booking mode.");
+                }
+                doctor = loadDoctor(request.getMainDoctorId());
+                if (expertise == null && doctor.getExpertise() != null) {
+                    expertise = doctor.getExpertise();
+                }
+            }
+            case EXPERTISE -> {
+                if (expertise == null) {
+                    throw new RuntimeException("Expertise is required for EXPERTISE booking mode.");
+                }
+                if (request.getMainDoctorId() != null) {
+                    doctor = loadDoctor(request.getMainDoctorId());
+                } else {
+                    doctor = autoAssignDoctor(expertise.getExpertiseId());
+                    request.setMainDoctorId(doctor.getStaffId());
+                }
+            }
+            case SERVICE -> {
+                if (request.getServiceId() == null) {
+                    throw new RuntimeException("Service is required for SERVICE booking mode.");
+                }
+                service = serviceRepository.findById(request.getServiceId())
+                        .orElseThrow(() -> new RuntimeException("Service not found"));
+                if (service.getServiceType() == ServiceType.EXAM) {
+                    if (request.getMainDoctorId() != null) {
+                        doctor = loadDoctor(request.getMainDoctorId());
+                    } else {
+                        doctor = autoAssignDoctor(request.getExpertiseId());
+                        request.setMainDoctorId(doctor.getStaffId());
+                    }
+                    if (expertise == null && doctor.getExpertise() != null) {
+                        expertise = doctor.getExpertise();
+                    }
+                }
+            }
+            case DIRECT -> {
+                if (request.getMainDoctorId() != null) {
+                    doctor = loadDoctor(request.getMainDoctorId());
+                    if (expertise == null && doctor.getExpertise() != null) {
+                        expertise = doctor.getExpertise();
+                    }
+                } else if (expertise != null) {
+                    doctor = autoAssignDoctor(expertise.getExpertiseId());
+                    request.setMainDoctorId(doctor.getStaffId());
+                }
+            }
+            default -> throw new RuntimeException("Unsupported booking mode.");
         }
+
+        validateAppointmentLogic(request, patient.getPatientId(), request.getMainDoctorId(), mode);
 
         Appointment appointment = appointmentMapper.toEntity(request);
         appointment.setPatient(patient);
         appointment.setMainDoctor(doctor);
         appointment.setService(service);
+        appointment.setExpertise(expertise);
+        appointment.setSuggestedExpertise(suggestedExpertise);
+        appointment.setBookingMode(mode);
+        appointment.setIsAiSuggested(Boolean.TRUE.equals(request.getIsAiSuggested()));
         appointment.setStatus(AppointmentStatus.PENDING);
         appointment.setIsDeleted(0);
 
-        Appointment saved = appointmentRepository.save(appointment);
-        return appointmentMapper.toResponse(saved);
+        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
     }
 
     @Transactional
@@ -175,13 +279,15 @@ public class AppointmentService {
     public AppointmentResponse cancelByPatient(Integer id, String reason) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
-        LocalDateTime appointmentDateTime = LocalDateTime.of(appointment.getAppointmentDate(), appointment.getTimeStart());
+        LocalDateTime appointmentDateTime = LocalDateTime.of(
+                appointment.getAppointmentDate(), appointment.getTimeStart());
         if (LocalDateTime.now().isAfter(appointmentDateTime.minusHours(3))) {
             throw new RuntimeException("Chỉ được phép hủy lịch trước thời gian khám ít nhất 3 tiếng.");
         }
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointment.setCancelledBy(CancelledByType.PATIENT);
         appointment.setCancelReason(reason);
+        appointment.setIsDeleted(1);
         return appointmentMapper.toResponse(appointmentRepository.save(appointment));
     }
 
@@ -192,6 +298,9 @@ public class AppointmentService {
         Staff newDoctor = staffRepository.findById(newDoctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
         appointment.setMainDoctor(newDoctor);
+        if (appointment.getExpertise() == null && newDoctor.getExpertise() != null) {
+            appointment.setExpertise(newDoctor.getExpertise());
+        }
         return appointmentMapper.toResponse(appointmentRepository.save(appointment));
     }
 
@@ -224,28 +333,93 @@ public class AppointmentService {
     }
 
     @Transactional(readOnly = true)
-    public List<com.clinic.dto.appointment.TimeSlotResponse> getAvailableSlots(Integer doctorId, java.time.LocalDate date) {
-        List<com.clinic.dto.appointment.TimeSlotResponse> slots = new java.util.ArrayList<>();
+    public List<TimeSlotResponse> getAvailableSlots(
+            Integer doctorId, Integer expertiseId, Integer serviceId, LocalDate date) {
+        if (doctorId != null) {
+            return buildSlotsForDoctor(doctorId, date, null);
+        }
+        if (expertiseId != null) {
+            return buildSlotsForExpertise(expertiseId, date);
+        }
+        if (serviceId != null) {
+            com.clinic.entity.medical.Service service = serviceRepository.findById(serviceId)
+                    .orElseThrow(() -> new RuntimeException("Service not found"));
+            if (service.getServiceType() == ServiceType.EXAM) {
+                return buildSlotsForExpertise(null, date);
+            }
+            return buildSlotsForLabStaff(date);
+        }
+        return List.of();
+    }
+
+    private List<TimeSlotResponse> buildSlotsForExpertise(Integer expertiseId, LocalDate date) {
+        List<Staff> doctors = expertiseId != null
+                ? staffRepository.findByExpertise_ExpertiseIdAndStaffTypeAndIsDeleted(
+                        expertiseId, StaffType.DOCTOR, 0)
+                : staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0);
+
+        Map<String, TimeSlotResponse> merged = new LinkedHashMap<>();
+        for (Staff doctor : doctors) {
+            for (TimeSlotResponse slot : buildSlotsForDoctor(doctor.getStaffId(), date, doctor)) {
+                if (!slot.isAvailable()) {
+                    continue;
+                }
+                String key = slot.getTimeStart() + "-" + slot.getTimeEnd();
+                merged.putIfAbsent(key, slot);
+            }
+        }
+        return merged.values().stream()
+                .sorted(Comparator.comparing(TimeSlotResponse::getTimeStart))
+                .collect(Collectors.toList());
+    }
+
+    private List<TimeSlotResponse> buildSlotsForLabStaff(LocalDate date) {
+        List<Staff> labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.LAB_TECH, 0);
+        if (labStaff.isEmpty()) {
+            labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.STAFF, 0);
+        }
+        Map<String, TimeSlotResponse> merged = new LinkedHashMap<>();
+        for (Staff staff : labStaff) {
+            for (TimeSlotResponse slot : buildSlotsForDoctor(staff.getStaffId(), date, staff)) {
+                if (!slot.isAvailable()) {
+                    continue;
+                }
+                String key = slot.getTimeStart() + "-" + slot.getTimeEnd();
+                merged.putIfAbsent(key, slot);
+            }
+        }
+        return merged.values().stream()
+                .sorted(Comparator.comparing(TimeSlotResponse::getTimeStart))
+                .collect(Collectors.toList());
+    }
+
+    private List<TimeSlotResponse> buildSlotsForDoctor(Integer doctorId, LocalDate date, Staff staffRef) {
+        List<TimeSlotResponse> slots = new ArrayList<>();
         List<StaffSchedule> schedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(doctorId, date);
         if (schedules.isEmpty()) {
             return slots;
         }
-        List<Appointment> existingAppointments = appointmentRepository.findByMainDoctor_StaffIdAndAppointmentDateAndIsDeleted(doctorId, date, 0);
+
+        Staff doctor = staffRef != null ? staffRef
+                : staffRepository.findById(doctorId).orElse(null);
 
         for (StaffSchedule schedule : schedules) {
-            if (schedule.getStatus() == ScheduleStatus.OFF) continue;
-            LocalTime start = schedule.getStartTime();
+            if (schedule.getStatus() == ScheduleStatus.OFF) {
+                continue;
+            }
+            LocalTime current = schedule.getStartTime();
             LocalTime end = schedule.getEndTime();
-            LocalTime current = start;
             while (current.plusMinutes(30).isBefore(end) || current.plusMinutes(30).equals(end)) {
                 LocalTime slotStart = current;
                 LocalTime slotEnd = current.plusMinutes(30);
-                boolean isAvailable = existingAppointments.stream().noneMatch(a ->
-                    (a.getStatus() != AppointmentStatus.CANCELLED) &&
-                    ((a.getTimeStart() != null && a.getTimeStart().equals(slotStart)) ||
-                     (a.getTimeStart() != null && a.getTimeStart().isBefore(slotEnd) && a.getTimeEnd() != null && a.getTimeEnd().isAfter(slotStart)))
-                );
-                slots.add(new com.clinic.dto.appointment.TimeSlotResponse(slotStart, slotEnd, isAvailable));
+                boolean available = !isSlotTakenByDoctor(doctorId, date, slotStart, slotEnd);
+                slots.add(TimeSlotResponse.builder()
+                        .timeStart(slotStart)
+                        .timeEnd(slotEnd)
+                        .isAvailable(available)
+                        .doctorId(doctor != null ? doctor.getStaffId() : doctorId)
+                        .doctorName(doctor != null ? doctor.getFullName() : null)
+                        .build());
                 current = current.plusMinutes(30);
             }
         }

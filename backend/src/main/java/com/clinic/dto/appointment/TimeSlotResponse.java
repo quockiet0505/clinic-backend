@@ -15,4 +15,7 @@ public class TimeSlotResponse {
     private LocalTime timeStart;
     private LocalTime timeEnd;
     private boolean isAvailable;
+    /** Bác sĩ gán cho slot (khi tra cứu theo chuyên khoa). */
+    private Integer doctorId;
+    private String doctorName;
 }

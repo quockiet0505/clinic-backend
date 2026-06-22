@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 import com.clinic.common.enums.AppointmentType;
+import com.clinic.common.enums.BookingMode;
 import com.clinic.common.enums.CreatedByType;
 
 import jakarta.validation.constraints.NotNull;
@@ -16,7 +17,13 @@ public class AppointmentRequest {
 
     private Integer expertiseId;
 
+    private Integer suggestedExpertiseId;
+
     private Integer serviceId;
+
+    private BookingMode bookingMode;
+
+    private Boolean isAiSuggested;
 
     @NotNull
     private LocalDate appointmentDate;

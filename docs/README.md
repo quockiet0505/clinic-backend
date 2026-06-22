@@ -5,8 +5,15 @@ Hệ thống được thiết kế dựa trên kiến trúc Microservices/Monoli
 
 ## 🌟 Tính năng cốt lõi
 - **Quản lý danh tính (Identity & Access Management):** Phân quyền dựa trên RBAC (Role-Based Access Control) cho Admin, Doctor, Patient.
-- **Quản lý Lịch hẹn (Appointments):** Hỗ trợ đặt lịch online, offline, webhook thanh toán và push notifications.
+- **Quản lý Lịch hẹn (Appointments):** 4 mode đặt lịch (DOCTOR/EXPERTISE/SERVICE/DIRECT), slot theo khoa/dịch vụ, AI gợi ý `suggested_expertise_id`
 - **Hồ sơ y tế điện tử (EMR):** Lưu trữ bệnh án, kết quả xét nghiệm, hình ảnh X-quang an toàn.
+
+## 📚 Tài liệu chi tiết
+
+- [Luồng nghiệp vụ (Business Flows)](business-flows.md) — đặt lịch, khám bệnh, lab, CRM; 4 booking mode
+- [API Design](api-design.md) — chuẩn response + appointment endpoints
+- [Luồng kỹ thuật Spring Boot (Architecture Flow)](architecture-flow.md)
+- [Database](database.md)
 
 ## 🛠 Tech Stack
 - **Ngôn ngữ:** Java 17

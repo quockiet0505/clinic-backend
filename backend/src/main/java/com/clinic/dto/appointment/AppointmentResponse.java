@@ -6,6 +6,7 @@ import java.time.LocalTime;
 
 import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.AppointmentType;
+import com.clinic.common.enums.BookingMode;
 import com.clinic.common.enums.CancelledByType;
 import com.clinic.common.enums.CreatedByType;
 import com.clinic.common.enums.ServiceType;
@@ -19,9 +20,15 @@ public class AppointmentResponse {
     private String patientName;
     private Integer mainDoctorId;
     private String doctorName;
-    private Integer serviceId;         
-    private String serviceName;        
+    private Integer serviceId;
+    private String serviceName;
     private ServiceType serviceType;
+    private Integer expertiseId;
+    private String expertiseName;
+    private Integer suggestedExpertiseId;
+    private String suggestedExpertiseName;
+    private BookingMode bookingMode;
+    private Boolean isAiSuggested;
     private LocalDate appointmentDate;
     private LocalTime timeStart;
     private LocalTime timeEnd;
@@ -33,7 +40,5 @@ public class AppointmentResponse {
     private Integer queueNumber;
     private CancelledByType cancelledBy;
     private String cancelReason;
-    private String note;        
-    private Integer expertiseId;
-    private String expertiseName;        
+    private String note;
 }

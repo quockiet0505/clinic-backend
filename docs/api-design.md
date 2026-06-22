@@ -51,3 +51,34 @@ Response phân trang phải chứa metadata:
   "totalPages": 8
 }
 ```
+
+## 5. API Đặt lịch (Appointment)
+
+| Method | Path | Auth | Mô tả |
+|--------|------|------|--------|
+| POST | `/api/v1/appointments` | PATIENT / STAFF | Tạo lịch; body có `bookingMode`, `isAiSuggested`, `suggestedExpertiseId` |
+| GET | `/api/v1/appointments/slots` | Public | `?date=` + một trong `doctorId`, `expertiseId`, `serviceId` |
+| GET | `/api/v1/appointments/my` | PATIENT | Lịch của tôi |
+| PATCH | `/api/v1/appointments/{id}/cancel` | PATIENT | Hủy (≥3h trước); set `is_deleted=1` |
+| PATCH | `/api/v1/appointments/{id}/status` | STAFF | Cập nhật trạng thái |
+
+**Payload tạo lịch (rút gọn):**
+
+```json
+{
+  "appointmentDate": "2026-06-25",
+  "timeStart": "09:00:00",
+  "timeEnd": "09:30:00",
+  "mainDoctorId": 12,
+  "expertiseId": 3,
+  "suggestedExpertiseId": 5,
+  "serviceId": null,
+  "bookingMode": "EXPERTISE",
+  "isAiSuggested": true,
+  "appointmentType": "ONLINE",
+  "createdBy": "PATIENT",
+  "note": "Triệu chứng..."
+}
+```
+
+Chi tiết luồng: [business-flows.md](business-flows.md)

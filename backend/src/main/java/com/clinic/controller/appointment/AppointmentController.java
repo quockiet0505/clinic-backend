@@ -79,8 +79,12 @@ public class AppointmentController {
 
     @GetMapping("/slots")
     public ResponseEntity<ApiResponse<List<com.clinic.dto.appointment.TimeSlotResponse>>> getAvailableSlots(
-            @RequestParam Integer doctorId,
+            @RequestParam(required = false) Integer doctorId,
+            @RequestParam(required = false) Integer expertiseId,
+            @RequestParam(required = false) Integer serviceId,
             @RequestParam java.time.LocalDate date) {
-        return ResponseUtil.success("Time slots retrieved successfully", appointmentService.getAvailableSlots(doctorId, date));
+        return ResponseUtil.success(
+                "Time slots retrieved successfully",
+                appointmentService.getAvailableSlots(doctorId, expertiseId, serviceId, date));
     }
 }

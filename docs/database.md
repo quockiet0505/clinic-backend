@@ -20,6 +20,25 @@
 
 ## Migration bổ sung
 
+Nếu database đã tạo trước khi có luồng đặt lịch mới / AI gợi ý chuyên khoa, chạy:
+
+```sql
+-- database/migrations/add_appointment_booking_fields.sql
+```
+
+**Bảng/cột cần update (P0):**
+
+| Đối tượng | Thay đổi |
+|-----------|----------|
+| `appointment` | Thêm `expertise_id`, `suggested_expertise_id`, `booking_mode`, `is_ai_suggested`, `is_deleted` |
+| `appointment` | UNIQUE `idx_unique_slot` (doctor + date + time + is_deleted) |
+| Thứ tự bảng | **10** SERVICE → **11** DOCTOR_SERVICE_PRICE → **12** APPOINTMENT (FK hợp lệ) |
+| `appointment_service` | **Bảng mới** — nhiều dịch vụ trong một lịch (gói khám) |
+
+**Chưa cần ngay (P2/P3 — roadmap):** `bill`, `bill_item`, `refund_log`, `inventory_transaction`, `lab_room_schedule`.
+
+Chi tiết luồng: [business-flows.md](business-flows.md)
+
 Nếu database đã tạo trước khi có các cột vital mới, chạy:
 
 ```sql

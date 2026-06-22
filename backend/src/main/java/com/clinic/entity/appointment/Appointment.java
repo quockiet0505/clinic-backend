@@ -6,11 +6,13 @@ import java.time.LocalTime;
 
 import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.AppointmentType;
+import com.clinic.common.enums.BookingMode;
 import com.clinic.common.enums.CancelledByType;
 import com.clinic.common.enums.CreatedByType;
 import com.clinic.entity.base.BaseEntity;
 import com.clinic.entity.medical.Service;
 import com.clinic.entity.patient.Patient;
+import com.clinic.entity.staff.Expertise;
 import com.clinic.entity.staff.Staff;
 
 import jakarta.persistence.Column;
@@ -50,12 +52,20 @@ public class Appointment extends BaseEntity {
     private Patient patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "main_doctor_id", nullable = true)
+    @JoinColumn(name = "main_doctor_id")
     private Staff mainDoctor;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_id")
     private Service service;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "expertise_id")
+    private Expertise expertise;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "suggested_expertise_id")
+    private Expertise suggestedExpertise;
 
     @Column(name = "appointment_date", nullable = false)
     private LocalDate appointmentDate;
@@ -78,6 +88,13 @@ public class Appointment extends BaseEntity {
     @Column(name = "created_by", nullable = false)
     private CreatedByType createdBy;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "booking_mode", nullable = false)
+    private BookingMode bookingMode = BookingMode.DOCTOR;
+
+    @Column(name = "is_ai_suggested", nullable = false)
+    private Boolean isAiSuggested = false;
+
     @Column(name = "checkin_time")
     private LocalDateTime checkinTime;
 
@@ -95,7 +112,7 @@ public class Appointment extends BaseEntity {
     private String cancelReason;
 
     @Column(name = "note", columnDefinition = "TEXT")
-    private String note;      
+    private String note;
 
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;

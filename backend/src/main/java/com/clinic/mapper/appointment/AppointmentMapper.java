@@ -13,21 +13,23 @@ public interface AppointmentMapper {
     @Mapping(target = "patient", ignore = true)
     @Mapping(target = "mainDoctor", ignore = true)
     @Mapping(target = "service", ignore = true)
+    @Mapping(target = "expertise", ignore = true)
+    @Mapping(target = "suggestedExpertise", ignore = true)
     @Mapping(target = "appointmentId", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "isDeleted", ignore = true)
     Appointment toEntity(AppointmentRequest request);
 
     @Mapping(source = "patient.patientId", target = "patientId")
     @Mapping(source = "patient.fullName", target = "patientName")
-
     @Mapping(source = "mainDoctor.staffId", target = "mainDoctorId")
     @Mapping(source = "mainDoctor.fullName", target = "doctorName")
-
-    @Mapping(source = "mainDoctor.expertise.expertiseId", target = "expertiseId")
-    @Mapping(source = "mainDoctor.expertise.expertiseName", target = "expertiseName")
-
+    @Mapping(source = "expertise.expertiseId", target = "expertiseId")
+    @Mapping(source = "expertise.expertiseName", target = "expertiseName")
+    @Mapping(source = "suggestedExpertise.expertiseId", target = "suggestedExpertiseId")
+    @Mapping(source = "suggestedExpertise.expertiseName", target = "suggestedExpertiseName")
     @Mapping(source = "service.serviceId", target = "serviceId")
     @Mapping(source = "service.serviceName", target = "serviceName")
     @Mapping(source = "service.serviceType", target = "serviceType")
-
     AppointmentResponse toResponse(Appointment appointment);
 }

@@ -1,5 +1,20 @@
 # Changelog
 
+## [2026-06-22] - Đặt lịch 4 mode + AI gợi ý chuyên khoa
+
+### Database
+- `clinic_system.sql`: bảng **10 SERVICE** → **11 DOCTOR_SERVICE_PRICE** → **12 APPOINTMENT** (đúng thứ tự FK)
+- `appointment`: `expertise_id`, `suggested_expertise_id`, `booking_mode`, `is_ai_suggested`, `is_deleted`
+- UNIQUE `idx_unique_slot (main_doctor_id, appointment_date, time_start, is_deleted)`
+
+### Backend
+- `BookingMode` enum; entity/DTO/mapper `Appointment` mở rộng
+- `AppointmentService`: tạo lịch theo DOCTOR/EXPERTISE/SERVICE/DIRECT; slots theo doctor/expertise/service; hủy patient → `is_deleted=1`
+- `GET /appointments/slots` nhận `doctorId`, `expertiseId`, `serviceId`, `date`
+
+### Docs
+- Cập nhật `docs/business-flows.md`, `docs/database.md`, `docs/api-design.md`
+
 ## [2026-06-22] - UI/UX & Feedback Features Update
 
 ### Backend (`clinic-backend`)

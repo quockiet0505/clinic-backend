@@ -136,46 +136,134 @@ CREATE TABLE patient_vital_profile (
 -- [NHÓM 4: LỊCH HẸN]
 
 -- 10. APPOINTMENT
+-- ============================================================
+-- BẢNG APPOINTMENT (LỊCH HẸN) - FINAL VERSION
+-- ============================================================
 CREATE TABLE appointment (
+    -- Khóa chính
     appointment_id INT AUTO_INCREMENT PRIMARY KEY,
+    
+    -- Liên kết bệnh nhân
     patient_id INT NOT NULL,
+    
+    -- Liên kết bác sĩ (NULL nếu là dịch vụ hoặc đặt trực tiếp)
     main_doctor_id INT NULL,
+    
+    -- Liên kết dịch vụ (có thể NULL nếu chỉ đặt lịch khám thông thường)
     service_id INT NULL,
+    
+    -- Chuyên khoa bệnh nhân chọn (hoặc hệ thống tự gán)
+    expertise_id INT NULL,
+    
+    -- Chuyên khoa AI gợi ý từ note/chat (lưu để tham khảo)
+    suggested_expertise_id INT NULL,
+    
+    -- Thông tin lịch hẹn
     appointment_date DATE NOT NULL,
     time_start TIME NULL,
     time_end TIME NULL,
+    
+    -- Loại hình đặt lịch: ONLINE (trực tuyến) / WALK_IN (trực tiếp)
     appointment_type ENUM('ONLINE','WALK_IN') NOT NULL,
+    
+    -- Trạng thái lịch hẹn
     status ENUM(
-        'PENDING',
-        'CONFIRMED',
-        'CHECKED_IN',
-        'IN_PROGRESS',
-        'WAITING_RESULT',
-        'COMPLETED',
-        'SKIPPED',
-        'CANCELLED',
-        'NO_SHOW'
+        'PENDING',        -- Chờ xác nhận
+        'CONFIRMED',      -- Đã xác nhận
+        'CHECKED_IN',     -- Đã check-in
+        'IN_PROGRESS',    -- Đang khám
+        'WAITING_RESULT', -- Chờ kết quả
+        'COMPLETED',      -- Đã hoàn thành
+        'SKIPPED',        -- Bỏ qua
+        'CANCELLED',      -- Đã hủy
+        'NO_SHOW'         -- Không đến
     ) DEFAULT 'PENDING',
+    
+    -- Người tạo lịch: PATIENT (bệnh nhân) / STAFF (nhân viên)
     created_by ENUM('PATIENT','STAFF') NOT NULL,
+    
+    -- Chế độ đặt lịch
+    booking_mode ENUM('DOCTOR', 'EXPERTISE', 'SERVICE', 'DIRECT') DEFAULT 'DOCTOR',
+    -- DOCTOR   : Bệnh nhân chọn trực tiếp bác sĩ
+    -- EXPERTISE: Bệnh nhân chọn chuyên khoa → hệ thống tự gán bác sĩ
+    -- SERVICE  : Đặt dịch vụ (xét nghiệm/chụp chiếu) → không cần bác sĩ
+    -- DIRECT   : Đặt lịch trực tiếp → không cần bác sĩ/dịch vụ
+    
+    -- Đánh dấu AI gợi ý chuyên khoa
+    is_ai_suggested BOOLEAN DEFAULT FALSE,
+    
+    -- Thời gian check-in/check-out
     checkin_time DATETIME NULL,
     checkout_time DATETIME NULL,
+    
+    -- Số thứ tự xếp hàng
     queue_number INT NULL,
+    
+    -- Người hủy lịch
     cancelled_by ENUM('PATIENT', 'CLINIC') NULL,
     cancel_reason TEXT,
-     note TEXT NULL,
+    
+    -- Ghi chú của bệnh nhân (mô tả triệu chứng, yêu cầu đặc biệt, ...)
+    note TEXT NULL,
+    
+    -- Soft delete (0: hoạt động, 1: đã xóa)
     is_deleted TINYINT DEFAULT 0,
+    
+    -- Thời gian tạo và cập nhật
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (patient_id)
+    -- ============================================================
+    -- KHÓA NGOẠI
+    -- ============================================================
+    CONSTRAINT fk_appointment_patient
+        FOREIGN KEY (patient_id)
         REFERENCES patient(patient_id)
         ON DELETE CASCADE,
 
-    FOREIGN KEY (main_doctor_id)
+    CONSTRAINT fk_appointment_doctor
+        FOREIGN KEY (main_doctor_id)
         REFERENCES staff(staff_id),
 
-    FOREIGN KEY (service_id)
-        REFERENCES service(service_id)
+    CONSTRAINT fk_appointment_service
+        FOREIGN KEY (service_id)
+        REFERENCES service(service_id),
+
+    CONSTRAINT fk_appointment_expertise
+        FOREIGN KEY (expertise_id)
+        REFERENCES expertise(expertise_id),
+
+    CONSTRAINT fk_appointment_suggested_expertise
+        FOREIGN KEY (suggested_expertise_id)
+        REFERENCES expertise(expertise_id)
 );
+
+-- ============================================================
+-- INDEXES
+-- ============================================================
+
+-- 1. UNIQUE INDEX chống trùng slot bác sĩ (có xét is_deleted)
+-- Cho phép nhiều bản ghi đã hủy (is_deleted=1) cùng slot
+CREATE UNIQUE INDEX idx_unique_slot 
+ON appointment (main_doctor_id, appointment_date, time_start, is_deleted)
+COMMENT 'Cho phép nhiều bản ghi đã hủy cùng slot';
+
+-- 2. INDEX cho truy vấn theo bệnh nhân
+CREATE INDEX idx_patient_id ON appointment (patient_id);
+
+-- 3. INDEX cho truy vấn theo trạng thái
+CREATE INDEX idx_status ON appointment (status);
+
+-- 4. INDEX cho truy vấn theo ngày
+CREATE INDEX idx_appointment_date ON appointment (appointment_date);
+
+-- 5. INDEX cho truy vấn theo chuyên khoa + ngày
+CREATE INDEX idx_expertise_date ON appointment (expertise_id, appointment_date);
+
+-- 6. INDEX cho truy vấn theo bác sĩ + ngày (cho lịch làm việc)
+CREATE INDEX idx_doctor_date ON appointment (main_doctor_id, appointment_date);
+
+-- 7. INDEX cho truy vấn theo loại đặt lịch
+CREATE INDEX idx_booking_mode ON appointment (booking_mode);
 
 -- [NHÓM 5: DỊCH VỤ và XÉT NGHIỆM & GIÁ]
 

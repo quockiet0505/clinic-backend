@@ -15,6 +15,8 @@ public interface StaffRepository extends JpaRepository<Staff, Integer>, JpaSpeci
     @EntityGraph(attributePaths = {"account", "expertise"})
     List<Staff> findByIsDeleted(Integer isDeleted);
     List<Staff> findByStaffTypeAndIsDeleted(StaffType staffType, Integer isDeleted);
+    List<Staff> findByExpertise_ExpertiseIdAndStaffTypeAndIsDeleted(
+            Integer expertiseId, StaffType staffType, Integer isDeleted);
     List<Staff> findByStaffTypeAndIsDeletedAndIsFeaturedOrderByFeaturedPriorityAsc(StaffType staffType, Integer isDeleted, Boolean isFeatured);
     long countByExpertiseAndStaffType(Expertise expertise, StaffType staffType);
     Optional<Staff> findByAccount_AccountId(Integer accountId);
