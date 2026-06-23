@@ -56,10 +56,12 @@ public class MedicalRecordService {
     private final PrescriptionMapper prescriptionMapper;
     private final ServiceOrderRepository serviceOrderRepository;
     private final ServiceOrderMapper serviceOrderMapper;
+    private final com.clinic.repository.medical.DoctorServicePriceRepository doctorServicePriceRepository;
     private final ServiceResultRepository serviceResultRepository;
     private final ServiceResultMapper serviceResultMapper;
     private final FollowUpRepository followUpRepository;
     private final FollowUpMapper followUpMapper;
+    private final com.clinic.service.appointment.AppointmentService appointmentService;
 
     @Transactional
     public MedicalRecordResponse create(MedicalRecordRequest request) {
@@ -101,6 +103,30 @@ public class MedicalRecordService {
         
         if (request.getStatus() != null) {
             record.setStatus(request.getStatus());
+            
+            if (request.getStatus() == com.clinic.common.enums.MedicalRecordStatus.DONE && record.getAppointment() != null) {
+                // Tự động tính và lưu giá khám bác sĩ
+                java.math.BigDecimal consultationFee = doctorServicePriceRepository.getBaseConsultationFeeByDoctorId(record.getMainDoctor().getStaffId());
+                if (consultationFee == null) {
+                    consultationFee = new java.math.BigDecimal("300000"); // Giá mặc định nếu chưa cấu hình
+                }
+                record.setConsultationFee(consultationFee);
+
+                // Tự động tính tổng giá dịch vụ cận lâm sàng (Lab/Imaging)
+                java.math.BigDecimal totalServiceFee = java.math.BigDecimal.ZERO;
+                java.util.List<com.clinic.entity.medical.ServiceOrder> orders = serviceOrderRepository.findByMedicalRecordId(record.getRecordId());
+                for (com.clinic.entity.medical.ServiceOrder order : orders) {
+                    if (order.getStatus() != com.clinic.common.enums.ServiceOrderStatus.CANCELLED) {
+                        java.math.BigDecimal price = order.getPriceAtTime();
+                        if (price != null) {
+                            totalServiceFee = totalServiceFee.add(price);
+                        }
+                    }
+                }
+                record.setServiceFee(totalServiceFee);
+
+                appointmentService.updateStatus(record.getAppointment().getAppointmentId(), com.clinic.common.enums.AppointmentStatus.COMPLETED);
+            }
         }
 
         if (request.getUpdatedByDoctorId() != null) {
@@ -173,13 +199,15 @@ public class MedicalRecordService {
                 .patientAddress(record.getPatient().getAddress())
                 .appointmentId(record.getAppointment() != null ? record.getAppointment().getAppointmentId() : null)
                 .mainDoctorId(record.getMainDoctor().getStaffId())
-                .doctorName(record.getMainDoctor().getFullName())
+                .mainDoctorName(record.getMainDoctor().getFullName())
                 .diagnosis(record.getDiagnosis())
                 .treatment(record.getTreatment())
                 .note(record.getNote())
                 .status(record.getStatus() != null ? record.getStatus().name() : null)
                 .createdAt(record.getCreatedAt())
                 .updatedAt(record.getUpdatedAt())
+                .consultationFee(record.getConsultationFee())
+                .serviceFee(record.getServiceFee())
                 .prescription(prescriptionResponse)
                 .serviceOrders(orderResponses)
                 .followUps(followUpResponses)

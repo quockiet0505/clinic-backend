@@ -30,6 +30,7 @@ public class ServiceResultService {
     private final StaffRepository staffRepository;
     private final ServiceResultMapper resultMapper;
     private final com.clinic.repository.patient.PatientRepository patientRepository;
+    private final com.clinic.service.crm.NotificationService notificationService;
 
     @Transactional
     public ServiceResultResponse submitResult(ServiceResultRequest request) {
@@ -52,6 +53,15 @@ public class ServiceResultService {
         // Auto-update Order Status
         order.setStatus(ServiceOrderStatus.DONE);
         orderRepository.save(order);
+
+        // Notify Doctor
+        if (order.getMedicalRecord() != null && order.getMedicalRecord().getMainDoctor() != null) {
+            notificationService.createAndSendNotification(
+                    order.getMedicalRecord().getMainDoctor().getAccount().getAccountId(),
+                    "Đã có kết quả cận lâm sàng cho bệnh nhân " + order.getMedicalRecord().getPatient().getFullName() + " (Mã Order: " + order.getOrderId() + ").",
+                    "SYSTEM"
+            );
+        }
 
         return resultMapper.toResponse(resultRepository.save(result));
     }

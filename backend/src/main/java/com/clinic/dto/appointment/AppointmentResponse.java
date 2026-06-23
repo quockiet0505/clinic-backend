@@ -20,6 +20,7 @@ public class AppointmentResponse {
     private String patientName;
     private Integer mainDoctorId;
     private String doctorName;
+    private String doctorImageUrl;
     private Integer serviceId;
     private String serviceName;
     private ServiceType serviceType;

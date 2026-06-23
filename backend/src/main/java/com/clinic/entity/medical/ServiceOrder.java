@@ -46,6 +46,9 @@ public class ServiceOrder {
     @JoinColumn(name = "ordered_by", nullable = false)
     private Staff orderedBy;
 
+    @Column(name = "price_at_time", precision = 10, scale = 2, nullable = false)
+    private java.math.BigDecimal priceAtTime;
+
     @Enumerated(EnumType.STRING)
     private ServiceOrderStatus status = ServiceOrderStatus.ORDERED;
 

@@ -43,6 +43,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     List<Appointment> findByMainDoctor_StaffIdAndAppointmentDateBetweenAndIsDeleted(
             Integer doctorId, LocalDate startDate, LocalDate endDate, Integer isDeleted);
 
+    @Query("SELECT MAX(a.queueNumber) FROM Appointment a WHERE a.mainDoctor.staffId = :doctorId AND a.appointmentDate = :date AND a.isDeleted = 0")
+    Optional<Integer> findMaxQueueNumberByDoctorAndDate(@Param("doctorId") Integer doctorId, @Param("date") LocalDate date);
+
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.patient.patientId = :patientId AND a.appointmentDate BETWEEN :start AND :end AND a.isDeleted = 0")
     long countByPatientIdAndAppointmentDateBetween(
             @Param("patientId") Integer patientId,

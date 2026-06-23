@@ -13,6 +13,8 @@ import lombok.Data;
 @Data
 public class AppointmentRequest {
 
+    private Integer patientId;
+
     private Integer mainDoctorId;
 
     private Integer expertiseId;

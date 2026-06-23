@@ -335,6 +335,7 @@ CREATE TABLE service_order (
     record_id INT NOT NULL,
     service_id INT NOT NULL,
     ordered_by INT NOT NULL,
+     price_at_time DECIMAL(10,2) NOT NULL, 
     status ENUM('ORDERED','DONE','CANCELLED', 'REJECTED') DEFAULT 'ORDERED',
     rejection_reason TEXT,                 
     sample_collected_at DATETIME NULL,     

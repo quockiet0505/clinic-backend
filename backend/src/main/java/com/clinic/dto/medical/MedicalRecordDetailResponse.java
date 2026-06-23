@@ -25,13 +25,16 @@ public class MedicalRecordDetailResponse {
     private String patientAddress;
     private Integer appointmentId;
     private Integer mainDoctorId;
-    private String doctorName;
+    private String mainDoctorName;
     private String diagnosis;
     private String treatment;
     private String note;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    private java.math.BigDecimal consultationFee;
+    private java.math.BigDecimal serviceFee;
     
     private PrescriptionResponse prescription;
     private List<ServiceOrderResponse> serviceOrders;

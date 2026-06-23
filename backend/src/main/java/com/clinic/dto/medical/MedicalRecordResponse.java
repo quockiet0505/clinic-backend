@@ -19,6 +19,9 @@ public class MedicalRecordResponse {
     private MedicalRecordStatus status;
     private LocalDateTime createdAt;
     
+    private java.math.BigDecimal consultationFee;
+    private java.math.BigDecimal serviceFee;
+    
     // Thêm lưu vết
     private Integer updatedByDoctorId;
     private String updatedByDoctorName;

@@ -24,6 +24,7 @@ public interface AppointmentMapper {
     @Mapping(source = "patient.fullName", target = "patientName")
     @Mapping(source = "mainDoctor.staffId", target = "mainDoctorId")
     @Mapping(source = "mainDoctor.fullName", target = "doctorName")
+    @Mapping(source = "mainDoctor.imageUrl", target = "doctorImageUrl")
     @Mapping(source = "expertise.expertiseId", target = "expertiseId")
     @Mapping(source = "expertise.expertiseName", target = "expertiseName")
     @Mapping(source = "suggestedExpertise.expertiseId", target = "suggestedExpertiseId")
@@ -32,4 +33,12 @@ public interface AppointmentMapper {
     @Mapping(source = "service.serviceName", target = "serviceName")
     @Mapping(source = "service.serviceType", target = "serviceType")
     AppointmentResponse toResponse(Appointment appointment);
+
+    @org.mapstruct.AfterMapping
+    default void fallbackExpertise(Appointment appointment, @org.mapstruct.MappingTarget AppointmentResponse response) {
+        if (response.getExpertiseName() == null && appointment.getMainDoctor() != null && appointment.getMainDoctor().getExpertise() != null) {
+            response.setExpertiseName(appointment.getMainDoctor().getExpertise().getExpertiseName());
+            response.setExpertiseId(appointment.getMainDoctor().getExpertise().getExpertiseId());
+        }
+    }
 }

@@ -1,6 +1,7 @@
 // src/main/java/com/clinic/service/appointment/AppointmentService.java
 package com.clinic.service.appointment;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -43,8 +44,10 @@ import com.clinic.repository.patient.PatientRepository;
 import com.clinic.repository.staff.ExpertiseRepository;
 import com.clinic.repository.staff.StaffRepository;
 import com.clinic.repository.staff.StaffScheduleRepository;
+import com.clinic.repository.staff.LeaveRequestRepository;
 import com.clinic.specification.appointment.AppointmentSpecification;
 import com.clinic.util.FilterUtils;
+import com.clinic.util.HolidayUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -58,7 +61,9 @@ public class AppointmentService {
     private final ServiceRepository serviceRepository;
     private final ExpertiseRepository expertiseRepository;
     private final StaffScheduleRepository scheduleRepository;
+    private final LeaveRequestRepository leaveRequestRepository;
     private final AppointmentMapper appointmentMapper;
+    private final com.clinic.service.crm.NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public PageResponse<AppointmentResponse> getAll(AppointmentFilterRequest filter) {
@@ -159,10 +164,36 @@ public class AppointmentService {
             return;
         }
 
+        LocalDate date = request.getAppointmentDate();
+
+        // 1. Weekend check
+        if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            throw new RuntimeException("Cannot book on weekends.");
+        }
+
+        // 2. Holiday check
+        if (HolidayUtils.isHoliday(date)) {
+            throw new RuntimeException("Cannot book on holidays.");
+        }
+
+        // 3. Leave check
+        if (leaveRequestRepository.isDoctorOnLeave(doctorId, date)) {
+            throw new RuntimeException("Doctor is on leave on this date.");
+        }
+
         List<StaffSchedule> dailySchedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(
-                doctorId, request.getAppointmentDate());
+                doctorId, date);
+
+        // 4. Default schedule check
         if (dailySchedules.isEmpty()) {
-            throw new RuntimeException("Doctor is not scheduled on this date.");
+            LocalTime start = request.getTimeStart();
+            if (start != null) {
+                boolean isMorning = (!start.isBefore(LocalTime.of(7, 30)) && start.isBefore(LocalTime.of(11, 30)));
+                boolean isAfternoon = (!start.isBefore(LocalTime.of(13, 30)) && start.isBefore(LocalTime.of(17, 0)));
+                if (!isMorning && !isAfternoon) {
+                    throw new RuntimeException("Requested time is outside default working hours.");
+                }
+            }
         }
 
         if (isSlotTakenByDoctor(doctorId, request.getAppointmentDate(),
@@ -171,11 +202,16 @@ public class AppointmentService {
         }
 
         if (request.getAppointmentType() == AppointmentType.WALK_IN && request.getTimeStart() != null) {
-            LocalTime latestEndTime = dailySchedules.stream()
-                    .filter(s -> s.getStatus() != ScheduleStatus.OFF)
-                    .map(StaffSchedule::getEndTime)
-                    .max(LocalTime::compareTo)
-                    .orElse(LocalTime.MAX);
+            LocalTime latestEndTime;
+            if (dailySchedules.isEmpty()) {
+                latestEndTime = LocalTime.of(17, 0);
+            } else {
+                latestEndTime = dailySchedules.stream()
+                        .filter(s -> s.getStatus() != ScheduleStatus.OFF)
+                        .map(StaffSchedule::getEndTime)
+                        .max(LocalTime::compareTo)
+                        .orElse(LocalTime.MAX);
+            }
             if (request.getTimeStart().plusMinutes(15).isAfter(latestEndTime)) {
                 throw new RuntimeException("Doctor is ending shift soon. Cannot accept more walk-ins.");
             }
@@ -184,7 +220,21 @@ public class AppointmentService {
 
     @Transactional
     public AppointmentResponse create(AppointmentRequest request) {
-        Patient patient = getCurrentPatient();
+        Patient patient = null;
+        if (request.getPatientId() != null) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isStaffOrAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF") || a.getAuthority().equals("ROLE_ADMIN"));
+            if (isStaffOrAdmin) {
+                patient = patientRepository.findById(request.getPatientId())
+                    .orElseThrow(() -> new RuntimeException("Patient not found"));
+            } else {
+                patient = getCurrentPatient();
+            }
+        } else {
+            patient = getCurrentPatient();
+        }
+
         BookingMode mode = resolveBookingMode(request);
 
         Expertise expertise = loadExpertise(request.getExpertiseId());
@@ -258,21 +308,72 @@ public class AppointmentService {
         appointment.setStatus(AppointmentStatus.PENDING);
         appointment.setIsDeleted(0);
 
-        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
+        if (request.getAppointmentType() == AppointmentType.WALK_IN) {
+            appointment.setStatus(AppointmentStatus.CHECKED_IN);
+            appointment.setCheckinTime(LocalDateTime.now());
+            Integer maxQueue = appointmentRepository.findMaxQueueNumberByDoctorAndDate(
+                    doctor != null ? doctor.getStaffId() : null, 
+                    request.getAppointmentDate()).orElse(0);
+            appointment.setQueueNumber(maxQueue + 1);
+        }
+
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        // Send Notification
+        String dateStr = request.getAppointmentDate().toString();
+        String timeStr = request.getTimeStart().toString();
+        if (request.getAppointmentType() == AppointmentType.WALK_IN) {
+            notificationService.createAndSendNotification(
+                    patient.getAccount().getAccountId(),
+                    "Lịch khám trực tiếp của bạn đã được Check-in. Số thứ tự của bạn là " + savedAppointment.getQueueNumber() + ".",
+                    "SYSTEM");
+        } else {
+            notificationService.createAndSendNotification(
+                    patient.getAccount().getAccountId(),
+                    "Lịch hẹn khám của bạn vào ngày " + dateStr + " lúc " + timeStr + " đã được tạo thành công.",
+                    "SYSTEM");
+        }
+
+        return appointmentMapper.toResponse(savedAppointment);
     }
 
     @Transactional
     public AppointmentResponse updateStatus(Integer id, AppointmentStatus newStatus) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        
+        boolean justCheckedIn = false;
+        boolean justCompleted = false;
+
         if (newStatus == AppointmentStatus.CHECKED_IN && appointment.getStatus() == AppointmentStatus.PENDING) {
             appointment.setCheckinTime(LocalDateTime.now());
+            Integer maxQueue = appointmentRepository.findMaxQueueNumberByDoctorAndDate(
+                    appointment.getMainDoctor() != null ? appointment.getMainDoctor().getStaffId() : null, 
+                    appointment.getAppointmentDate()).orElse(0);
+            appointment.setQueueNumber(maxQueue + 1);
+            justCheckedIn = true;
         }
-        if (newStatus == AppointmentStatus.COMPLETED) {
+        if (newStatus == AppointmentStatus.COMPLETED && appointment.getStatus() != AppointmentStatus.COMPLETED) {
             appointment.setCheckoutTime(LocalDateTime.now());
+            justCompleted = true;
         }
         appointment.setStatus(newStatus);
-        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
+        
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        if (justCheckedIn) {
+            notificationService.createAndSendNotification(
+                    appointment.getPatient().getAccount().getAccountId(),
+                    "Bạn đã check-in thành công. Vui lòng chờ đến lượt khám. Số thứ tự của bạn là " + savedAppointment.getQueueNumber() + ".",
+                    "SYSTEM");
+        } else if (justCompleted) {
+            notificationService.createAndSendNotification(
+                    appointment.getPatient().getAccount().getAccountId(),
+                    "Ca khám của bạn đã hoàn tất. Cảm ơn bạn đã sử dụng dịch vụ của phòng khám.",
+                    "SYSTEM");
+        }
+
+        return appointmentMapper.toResponse(savedAppointment);
     }
 
     @Transactional
@@ -288,7 +389,15 @@ public class AppointmentService {
         appointment.setCancelledBy(CancelledByType.PATIENT);
         appointment.setCancelReason(reason);
         appointment.setIsDeleted(1);
-        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
+        
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        notificationService.createAndSendNotification(
+                appointment.getPatient().getAccount().getAccountId(),
+                "Lịch hẹn khám ngày " + appointment.getAppointmentDate() + " lúc " + appointment.getTimeStart() + " đã bị hủy với lý do: " + reason,
+                "SYSTEM");
+
+        return appointmentMapper.toResponse(savedAppointment);
     }
 
     @Transactional
@@ -301,7 +410,15 @@ public class AppointmentService {
         if (appointment.getExpertise() == null && newDoctor.getExpertise() != null) {
             appointment.setExpertise(newDoctor.getExpertise());
         }
-        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
+        
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        notificationService.createAndSendNotification(
+                appointment.getPatient().getAccount().getAccountId(),
+                "Lịch hẹn của bạn đã được chuyển sang Bác sĩ " + newDoctor.getFullName() + " phụ trách.",
+                "SYSTEM");
+
+        return appointmentMapper.toResponse(savedAppointment);
     }
 
     @Transactional(readOnly = true)
@@ -395,13 +512,29 @@ public class AppointmentService {
 
     private List<TimeSlotResponse> buildSlotsForDoctor(Integer doctorId, LocalDate date, Staff staffRef) {
         List<TimeSlotResponse> slots = new ArrayList<>();
-        List<StaffSchedule> schedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(doctorId, date);
-        if (schedules.isEmpty()) {
+        
+        // 1. Check weekends
+        if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            return slots;
+        }
+        
+        // 2. Check holidays
+        if (HolidayUtils.isHoliday(date)) {
             return slots;
         }
 
-        Staff doctor = staffRef != null ? staffRef
-                : staffRepository.findById(doctorId).orElse(null);
+        // 3. Check leaves
+        if (leaveRequestRepository.isDoctorOnLeave(doctorId, date)) {
+            return slots;
+        }
+
+        List<StaffSchedule> schedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(doctorId, date);
+        Staff doctor = staffRef != null ? staffRef : staffRepository.findById(doctorId).orElse(null);
+
+        // 4. Default schedules if not specifically set
+        if (schedules.isEmpty()) {
+            return generateDefaultSlots(doctorId, date, doctor);
+        }
 
         for (StaffSchedule schedule : schedules) {
             if (schedule.getStatus() == ScheduleStatus.OFF) {
@@ -424,5 +557,29 @@ public class AppointmentService {
             }
         }
         return slots;
+    }
+
+    private List<TimeSlotResponse> generateDefaultSlots(Integer doctorId, LocalDate date, Staff doctor) {
+        List<TimeSlotResponse> slots = new ArrayList<>();
+        generateSlotsForRange(doctorId, date, doctor, LocalTime.of(7, 30), LocalTime.of(11, 30), slots);
+        generateSlotsForRange(doctorId, date, doctor, LocalTime.of(13, 30), LocalTime.of(17, 0), slots);
+        return slots;
+    }
+
+    private void generateSlotsForRange(Integer doctorId, LocalDate date, Staff doctor, LocalTime start, LocalTime end, List<TimeSlotResponse> slots) {
+        LocalTime current = start;
+        while (current.plusMinutes(30).isBefore(end) || current.plusMinutes(30).equals(end)) {
+            LocalTime slotStart = current;
+            LocalTime slotEnd = current.plusMinutes(30);
+            boolean available = !isSlotTakenByDoctor(doctorId, date, slotStart, slotEnd);
+            slots.add(TimeSlotResponse.builder()
+                    .timeStart(slotStart)
+                    .timeEnd(slotEnd)
+                    .isAvailable(available)
+                    .doctorId(doctor != null ? doctor.getStaffId() : doctorId)
+                    .doctorName(doctor != null ? doctor.getFullName() : null)
+                    .build());
+            current = current.plusMinutes(30);
+        }
     }
 }

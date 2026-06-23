@@ -60,6 +60,10 @@ public class ServiceOrderService {
         order.setOrderedBy(orderedBy);
         order.setStatus(ServiceOrderStatus.ORDERED);
 
+        java.math.BigDecimal price = service.getDiscountPrice() != null ? service.getDiscountPrice() : service.getOriginalPrice();
+        if (price == null) price = java.math.BigDecimal.ZERO;
+        order.setPriceAtTime(price);
+
         return serviceOrderMapper.toResponse(serviceOrderRepository.save(order));
     }
 
