@@ -23,6 +23,7 @@ public class AppointmentSpecification {
                 .and(doctorIdEquals(filter.getDoctorId()))
                 .and(patientIdEquals(filter.getPatientId()))
                 .and(sourceFilter(filter.getSource()))
+                .and(serviceFilter(filter.getServiceType()))
                 .and(appointmentDateFilter(filter.getFromDate(), filter.getToDate()))
                 .and(tabFilter(filter.getTab()));
     }
@@ -55,6 +56,13 @@ public class AppointmentSpecification {
         return (root, query, cb) -> {
             if (source == null || "ALL".equals(source)) return cb.conjunction();
             return cb.equal(root.get("appointmentType"), source);
+        };
+    }
+
+    private static Specification<Appointment> serviceFilter(String serviceType) {
+        return (root, query, cb) -> {
+            if (serviceType == null || "ALL".equals(serviceType)) return cb.conjunction();
+            return cb.equal(root.get("service").get("serviceType"), com.clinic.common.enums.ServiceType.valueOf(serviceType));
         };
     }
 

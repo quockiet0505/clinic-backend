@@ -18,6 +18,7 @@ import com.clinic.dto.medical.MedicalRecordDetailResponse;
 import com.clinic.dto.medical.MedicalRecordFilterRequest;
 import com.clinic.dto.medical.MedicalRecordRequest;
 import com.clinic.dto.medical.MedicalRecordResponse;
+import com.clinic.dto.medical.TriageRequest;
 import com.clinic.service.medical.MedicalRecordService;
 import com.clinic.util.ResponseUtil;
 
@@ -59,6 +60,18 @@ public class MedicalRecordController {
         return ResponseUtil.success(
                 "Medical records fetched successfully",
                 medicalRecordService.getAll()
+        ).getBody();
+    }
+
+    @PostMapping("/{id}/triage")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    public ApiResponse<MedicalRecordResponse> updateTriage(
+            @PathVariable Integer id,
+            @Valid @RequestBody TriageRequest request
+    ) {
+        return ResponseUtil.success(
+                "Triage completed successfully",
+                medicalRecordService.updateTriage(id, request)
         ).getBody();
     }
 

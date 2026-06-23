@@ -26,4 +26,6 @@ public class MedicalRecordResponse {
     private Integer updatedByDoctorId;
     private String updatedByDoctorName;
     private String editReason;
+    
+    private Boolean vitalsTaken;
 }

@@ -41,6 +41,10 @@ import com.clinic.util.FilterUtils;
 
 import lombok.RequiredArgsConstructor;
 
+import com.clinic.dto.medical.TriageRequest;
+import com.clinic.entity.patient.PatientVitalProfile;
+import com.clinic.repository.patient.PatientVitalProfileRepository;
+
 @Service
 @RequiredArgsConstructor
 public class MedicalRecordService {
@@ -62,6 +66,7 @@ public class MedicalRecordService {
     private final FollowUpRepository followUpRepository;
     private final FollowUpMapper followUpMapper;
     private final com.clinic.service.appointment.AppointmentService appointmentService;
+    private final PatientVitalProfileRepository vitalProfileRepository;
 
     @Transactional
     public MedicalRecordResponse create(MedicalRecordRequest request) {
@@ -136,6 +141,30 @@ public class MedicalRecordService {
             record.setEditReason(request.getEditReason());
         }
 
+        return medicalRecordMapper.toResponse(medicalRecordRepository.save(record));
+    }
+
+    @Transactional
+    public MedicalRecordResponse updateTriage(Integer recordId, TriageRequest request) {
+        MedicalRecord record = medicalRecordRepository.findById(recordId)
+                .orElseThrow(() -> new RuntimeException("Medical record not found."));
+
+        Patient patient = record.getPatient();
+        PatientVitalProfile vitalProfile = vitalProfileRepository.findById(patient.getPatientId())
+                .orElse(new PatientVitalProfile(patient.getPatientId(), patient, null, null, null, null, null, null, null, null, null));
+
+        vitalProfile.setHeight(request.getHeight());
+        vitalProfile.setWeight(request.getWeight());
+        vitalProfile.setBloodPressure(request.getBloodPressure());
+        vitalProfile.setPulse(request.getPulse());
+        vitalProfile.setBloodType(request.getBloodType());
+        vitalProfile.setAllergies(request.getAllergies());
+        vitalProfile.setMedicalHistory(request.getChronicDiseases());
+        // Temperature is not in DB, so we omit or add it to DB later. For now omit.
+        
+        vitalProfileRepository.save(vitalProfile);
+
+        record.setVitalsTaken(true);
         return medicalRecordMapper.toResponse(medicalRecordRepository.save(record));
     }
 

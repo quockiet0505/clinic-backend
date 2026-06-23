@@ -72,4 +72,7 @@ public class MedicalRecord extends BaseEntity {
 
     @Column(name = "edit_reason", columnDefinition = "TEXT")
     private String editReason;
+
+    @Column(name = "vitals_taken")
+    private Boolean vitalsTaken = false;
 }

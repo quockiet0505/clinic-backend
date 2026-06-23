@@ -30,6 +30,7 @@ public class MedicalRecordDetailResponse {
     private String treatment;
     private String note;
     private String status;
+    private Boolean vitalsTaken;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
