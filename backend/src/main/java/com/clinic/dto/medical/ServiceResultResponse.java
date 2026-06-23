@@ -7,6 +7,7 @@ import lombok.Data;
 public class ServiceResultResponse {
     private Integer resultId;
     private Integer orderId;
+    private Integer patientId;
     private String serviceName; 
     private String patientName;
     private String doctorName;

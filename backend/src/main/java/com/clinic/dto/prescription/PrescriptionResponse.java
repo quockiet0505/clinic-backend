@@ -9,6 +9,7 @@ import lombok.Data;
 public class PrescriptionResponse {
     private Integer prescriptionId;
     private Integer recordId;
+    private Integer patientId;
     private String patientName;
     private String doctorName;
     private String diagnosis;

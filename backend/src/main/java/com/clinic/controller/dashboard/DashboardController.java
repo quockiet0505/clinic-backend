@@ -62,11 +62,6 @@ public class DashboardController {
         return ResponseUtil.success("Success", dashboardService.getRecentAppointments(limit));
     }
 
-    @PostMapping("/report-preview")
-    public ResponseEntity<ApiResponse<String>> previewReport(@RequestBody ReportFilterRequest filter) {
-        String preview = dashboardService.generateReportPreview(filter);
-        return ResponseUtil.success("Preview generated", preview);
-    }
 
     @PostMapping("/report")
     public ResponseEntity<byte[]> generateReport(@RequestBody ReportFilterRequest filter) {

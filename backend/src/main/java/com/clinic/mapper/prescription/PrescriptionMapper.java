@@ -17,6 +17,7 @@ public interface PrescriptionMapper {
     Prescription toEntity(PrescriptionRequest request);
 
     @Mapping(source = "medicalRecord.recordId", target = "recordId")
+    @Mapping(source = "medicalRecord.patient.patientId", target = "patientId")
     @Mapping(source = "medicalRecord.patient.fullName", target = "patientName")
     @Mapping(source = "medicalRecord.mainDoctor.fullName", target = "doctorName")
     @Mapping(source = "medicalRecord.diagnosis", target = "diagnosis")

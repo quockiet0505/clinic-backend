@@ -369,7 +369,6 @@ CREATE TABLE medicine (
     active_element VARCHAR(255), 
     packing_standard VARCHAR(100), -- VD: Hộp 10 vỉ
     base_unit VARCHAR(50),         -- VD: Viên, Lọ
---     sell_price DECIMAL(10,2),    
     usage_note VARCHAR(255),
     is_deleted TINYINT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
