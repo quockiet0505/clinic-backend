@@ -70,7 +70,16 @@ public class AppointmentService {
         Specification<Appointment> spec = AppointmentSpecification.filterBy(filter);
         Pageable pageable = FilterUtils.buildPageable(filter);
         Page<Appointment> page = appointmentRepository.findAll(spec, pageable);
-        return FilterUtils.buildPageResponse(page.map(appointmentMapper::toResponse));
+        return FilterUtils.buildPageResponse(page.map(this::enrichResponse));
+    }
+
+    private AppointmentResponse enrichResponse(Appointment appointment) {
+        AppointmentResponse response = appointmentMapper.toResponse(appointment);
+        if (appointment.getMainDoctor() != null && appointment.getAppointmentDate() != null) {
+            boolean isBusy = leaveRequestRepository.isDoctorOnLeave(appointment.getMainDoctor().getStaffId(), appointment.getAppointmentDate());
+            response.setIsDoctorBusy(isBusy);
+        }
+        return response;
     }
 
     private Patient getCurrentPatient() {
@@ -311,10 +320,16 @@ public class AppointmentService {
         if (request.getAppointmentType() == AppointmentType.WALK_IN) {
             appointment.setStatus(AppointmentStatus.CHECKED_IN);
             appointment.setCheckinTime(LocalDateTime.now());
-            Integer maxQueue = appointmentRepository.findMaxQueueNumberByDoctorAndDate(
-                    doctor != null ? doctor.getStaffId() : null, 
-                    request.getAppointmentDate()).orElse(0);
-            appointment.setQueueNumber(maxQueue + 1);
+            
+            // Check if this is a priority walk-in (e.g. Emergency, VIP)
+            if (Boolean.TRUE.equals(request.getIsPriority())) {
+                appointment.setQueueNumber(0);
+            } else {
+                Integer maxQueue = appointmentRepository.findMaxQueueNumberByDoctorAndDate(
+                        doctor != null ? doctor.getStaffId() : null, 
+                        request.getAppointmentDate()).orElse(0);
+                appointment.setQueueNumber(maxQueue + 1);
+            }
         }
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
@@ -334,23 +349,30 @@ public class AppointmentService {
                     "SYSTEM");
         }
 
-        return appointmentMapper.toResponse(savedAppointment);
+        return enrichResponse(savedAppointment);
     }
 
     @Transactional
-    public AppointmentResponse updateStatus(Integer id, AppointmentStatus newStatus) {
+    public AppointmentResponse updateStatus(Integer id, AppointmentStatus newStatus, Boolean isPriority) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
         
         boolean justCheckedIn = false;
         boolean justCompleted = false;
 
-        if (newStatus == AppointmentStatus.CHECKED_IN && appointment.getStatus() == AppointmentStatus.PENDING) {
+        if (newStatus == AppointmentStatus.CHECKED_IN && 
+            (appointment.getStatus() == AppointmentStatus.PENDING || appointment.getStatus() == AppointmentStatus.CONFIRMED)) {
             appointment.setCheckinTime(LocalDateTime.now());
-            Integer maxQueue = appointmentRepository.findMaxQueueNumberByDoctorAndDate(
-                    appointment.getMainDoctor() != null ? appointment.getMainDoctor().getStaffId() : null, 
-                    appointment.getAppointmentDate()).orElse(0);
-            appointment.setQueueNumber(maxQueue + 1);
+            
+            if (Boolean.TRUE.equals(isPriority)) {
+                appointment.setQueueNumber(0);
+            } else {
+                Integer maxQueue = appointmentRepository.findMaxQueueNumberByDoctorAndDate(
+                        appointment.getMainDoctor() != null ? appointment.getMainDoctor().getStaffId() : null, 
+                        appointment.getAppointmentDate()).orElse(0);
+                appointment.setQueueNumber(maxQueue + 1);
+            }
+            
             justCheckedIn = true;
         }
         if (newStatus == AppointmentStatus.COMPLETED && appointment.getStatus() != AppointmentStatus.COMPLETED) {
@@ -373,7 +395,7 @@ public class AppointmentService {
                     "SYSTEM");
         }
 
-        return appointmentMapper.toResponse(savedAppointment);
+        return enrichResponse(savedAppointment);
     }
 
     @Transactional
@@ -397,7 +419,7 @@ public class AppointmentService {
                 "Lịch hẹn khám ngày " + appointment.getAppointmentDate() + " lúc " + appointment.getTimeStart() + " đã bị hủy với lý do: " + reason,
                 "SYSTEM");
 
-        return appointmentMapper.toResponse(savedAppointment);
+        return enrichResponse(savedAppointment);
     }
 
     @Transactional
@@ -418,13 +440,13 @@ public class AppointmentService {
                 "Lịch hẹn của bạn đã được chuyển sang Bác sĩ " + newDoctor.getFullName() + " phụ trách.",
                 "SYSTEM");
 
-        return appointmentMapper.toResponse(savedAppointment);
+        return enrichResponse(savedAppointment);
     }
 
     @Transactional(readOnly = true)
     public List<AppointmentResponse> getAllActive() {
         return appointmentRepository.findByIsDeleted(0).stream()
-                .map(appointmentMapper::toResponse)
+                .map(this::enrichResponse)
                 .collect(Collectors.toList());
     }
 
@@ -434,7 +456,7 @@ public class AppointmentService {
         return appointmentRepository.findByPatient_PatientIdAndIsDeletedOrderByAppointmentDateDesc(
                         patient.getPatientId(), 0)
                 .stream()
-                .map(appointmentMapper::toResponse)
+                .map(this::enrichResponse)
                 .collect(Collectors.toList());
     }
 
@@ -446,7 +468,7 @@ public class AppointmentService {
         if (!appointment.getPatient().getPatientId().equals(patient.getPatientId())) {
             throw new RuntimeException("Access denied");
         }
-        return appointmentMapper.toResponse(appointment);
+        return enrichResponse(appointment);
     }
 
     @Transactional(readOnly = true)

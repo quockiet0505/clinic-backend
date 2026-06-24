@@ -7,6 +7,8 @@ import com.clinic.dto.appointment.AppointmentResponse;
 import com.clinic.dto.common.ApiResponse;
 import com.clinic.dto.common.PageResponse;
 import com.clinic.service.appointment.AppointmentService;
+import com.clinic.service.appointment.AppointmentQueueService;
+import com.clinic.service.appointment.AppointmentSlotService;
 import com.clinic.util.ResponseUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,8 @@ import java.util.List;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
+    private final AppointmentQueueService appointmentQueueService;
+    private final AppointmentSlotService appointmentSlotService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
@@ -45,8 +49,39 @@ public class AppointmentController {
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> updateStatus(
             @PathVariable Integer id,
-            @RequestParam AppointmentStatus status) {
-        return ResponseUtil.success("Appointment status updated successfully", appointmentService.updateStatus(id, status));
+            @RequestParam AppointmentStatus status,
+            @RequestParam(required = false, defaultValue = "false") Boolean isPriority) {
+        return ResponseUtil.success("Appointment status updated successfully", appointmentService.updateStatus(id, status, isPriority));
+    }
+
+    @PatchMapping("/{id}/queue/call")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> callPatient(@PathVariable Integer id) {
+        return ResponseUtil.success("Patient called successfully", appointmentQueueService.callPatient(id));
+    }
+
+    @PatchMapping("/{id}/queue/skip")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> skipPatient(@PathVariable Integer id) {
+        return ResponseUtil.success("Patient skipped", appointmentQueueService.skipPatient(id));
+    }
+
+    @PatchMapping("/{id}/queue/return")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> returnToQueue(@PathVariable Integer id) {
+        return ResponseUtil.success("Patient returned to queue", appointmentQueueService.returnToQueue(id));
+    }
+
+    @PatchMapping("/{id}/queue/send-to-lab")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> sendToLab(@PathVariable Integer id) {
+        return ResponseUtil.success("Patient sent to lab", appointmentQueueService.sendToLab(id));
+    }
+
+    @PatchMapping("/{id}/queue/return-from-lab")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> returnFromLab(@PathVariable Integer id) {
+        return ResponseUtil.success("Patient returned from lab (Re-exam)", appointmentQueueService.returnFromLab(id));
     }
 
     @PatchMapping("/{id}/cancel")
@@ -85,6 +120,6 @@ public class AppointmentController {
             @RequestParam java.time.LocalDate date) {
         return ResponseUtil.success(
                 "Time slots retrieved successfully",
-                appointmentService.getAvailableSlots(doctorId, expertiseId, serviceId, date));
+                appointmentSlotService.getAvailableSlots(doctorId, expertiseId, serviceId, date));
     }
 }

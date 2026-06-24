@@ -42,4 +42,5 @@ public class AppointmentResponse {
     private CancelledByType cancelledBy;
     private String cancelReason;
     private String note;
+    private Boolean isDoctorBusy;
 }

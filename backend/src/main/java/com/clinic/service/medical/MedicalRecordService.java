@@ -130,7 +130,7 @@ public class MedicalRecordService {
                 }
                 record.setServiceFee(totalServiceFee);
 
-                appointmentService.updateStatus(record.getAppointment().getAppointmentId(), com.clinic.common.enums.AppointmentStatus.COMPLETED);
+                appointmentService.updateStatus(record.getAppointment().getAppointmentId(), com.clinic.common.enums.AppointmentStatus.COMPLETED, false);
             }
         }
 

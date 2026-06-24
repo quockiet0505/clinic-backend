@@ -27,6 +27,8 @@ public class AppointmentRequest {
 
     private Boolean isAiSuggested;
 
+    private Boolean isPriority;
+
     @NotNull
     private LocalDate appointmentDate;
 
