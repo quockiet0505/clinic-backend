@@ -1,0 +1,75 @@
+---
+description: Use RTK (Rust Token Killer) for Shell commands to reduce token usage
+alwaysApply: true
+---
+
+# RTK Shell Commands
+
+RTK hook may not intercept Agent Shell automatically. **Always prefix** dev commands with `rtk` when using the Shell tool.
+
+## Rules
+
+- `git status` → `rtk git status` (never bare `git status`)
+- `npm run build` → `rtk npm run build`
+- `mvn ...` → `rtk mvn ...`
+- `flutter test` → `rtk test flutter test` or `rtk err flutter test`
+- Do **NOT** double-prefix: `rtk rtk git status` is wrong
+- Skip `rtk` for: `cd`, `mkdir`, `echo`, pure path navigation
+
+## Quick reference
+
+| Instead of | Use |
+|------------|-----|
+| `git status` | `rtk git status` |
+| `git diff --stat` | `rtk git diff --stat` |
+| `git log -n 10` | `rtk git log -n 10` |
+| `npm run build` | `rtk npm run build` |
+| `mvn clean install` | `rtk mvn clean install` |
+| `cat file` / read via shell | `rtk read file` |
+| `grep pattern .` | `rtk grep "pattern" .` |
+| `find ...` | `rtk find "..." .` |
+| test runners | `rtk test <cmd>` or `rtk jest` / `rtk vitest` / `rtk pytest` |
+| lint / tsc | `rtk lint` / `rtk tsc` |
+| errors only | `rtk err <cmd>` |
+
+## Files & search
+
+```
+rtk ls .
+rtk read path/to/file
+rtk read path/to/file -l aggressive   # signatures only
+rtk smart path/to/file                # 2-line summary
+rtk find "*.java" .
+rtk grep "pattern" .
+rtk diff file1 file2
+```
+
+## Git (compact output)
+
+```
+rtk git status
+rtk git log -n 10
+rtk git diff
+rtk git add .
+rtk git commit -m "msg"
+rtk git push
+rtk git pull
+```
+
+## Build (Java)
+
+```
+rtk mvn clean install -DskipTests
+rtk mvn spring-boot:run
+rtk mvn test
+rtk err mvn test
+```
+
+## Analytics
+
+```
+rtk gain
+rtk gain --history
+```
+
+Built-in Read/Grep/Glob tools bypass RTK hook — prefer Shell + `rtk read` / `rtk grep` when output is large.

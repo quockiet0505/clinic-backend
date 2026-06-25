@@ -12,9 +12,15 @@ public class FollowUpResponse {
     private Integer recordId;
     private Integer patientId;
     private String patientName;
+    private Integer accountId;
+    private String phone;
     private Integer doctorId;
     private String doctorName;
+    private Integer appointmentId;
     private LocalDateTime scheduledDatetime;
     private String note;
     private FollowUpStatus status;
+    private LocalDateTime confirmedAt;
+    private LocalDateTime reminderSentAt;
+    private String cancelReason;
 }

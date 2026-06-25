@@ -227,6 +227,9 @@ public class MedicalRecordService {
                 .patientPhone(record.getPatient().getPhone())
                 .patientAddress(record.getPatient().getAddress())
                 .appointmentId(record.getAppointment() != null ? record.getAppointment().getAppointmentId() : null)
+                .appointmentStatus(record.getAppointment() != null && record.getAppointment().getStatus() != null
+                        ? record.getAppointment().getStatus().name() : null)
+                .queueNumber(record.getAppointment() != null ? record.getAppointment().getQueueNumber() : null)
                 .mainDoctorId(record.getMainDoctor().getStaffId())
                 .mainDoctorName(record.getMainDoctor().getFullName())
                 .diagnosis(record.getDiagnosis())

@@ -5,10 +5,12 @@ import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.crm.NotificationFilterRequest;
 import com.clinic.dto.crm.NotificationResponse;
 import com.clinic.dto.crm.NotificationRequest;
+import com.clinic.dto.crm.PatientNotificationResponse;
 import com.clinic.service.crm.NotificationService;
 import com.clinic.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +21,15 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<List<PatientNotificationResponse>>> getMyNotifications() {
+        return ResponseUtil.success(
+                "Notifications retrieved successfully",
+                notificationService.getMyNotifications()
+        );
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<NotificationResponse>>> getAll(
@@ -33,6 +44,7 @@ public class NotificationController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
     public ApiResponse<Void> createNotification(@RequestBody NotificationRequest request) {
         notificationService.createNotification(request);
         return ApiResponse.<Void>builder()

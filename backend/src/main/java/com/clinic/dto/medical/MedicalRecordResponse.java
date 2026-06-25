@@ -1,5 +1,6 @@
 package com.clinic.dto.medical;
 
+import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.MedicalRecordStatus;
 import java.time.LocalDateTime;
 
@@ -11,6 +12,9 @@ public class MedicalRecordResponse {
     private Integer patientId;
     private String patientName;
     private Integer appointmentId;
+    private AppointmentStatus appointmentStatus;
+    private Integer queueNumber;
+    private LocalDateTime checkinTime;
     private Integer mainDoctorId;
     private String mainDoctorName;
     private String diagnosis;

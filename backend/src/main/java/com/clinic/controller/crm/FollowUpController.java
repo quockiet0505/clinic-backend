@@ -66,15 +66,49 @@ public class FollowUpController {
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
     public ResponseEntity<ApiResponse<FollowUpResponse>> updateStatus(
             @PathVariable Integer id,
-            @RequestParam FollowUpStatus status
+            @RequestParam FollowUpStatus status,
+            @RequestParam(required = false) String cancelReason
     ) {
 
         FollowUpResponse response =
-                followUpService.updateStatus(id, status);
+                followUpService.updateStatus(id, status, cancelReason);
 
         return ResponseUtil.success(
                 "Follow-up status updated successfully",
                 response
         );
+    }
+
+    @PatchMapping("/{id}/appointment/{appointmentId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
+    public ResponseEntity<ApiResponse<FollowUpResponse>> linkAppointment(
+            @PathVariable Integer id,
+            @PathVariable Integer appointmentId
+    ) {
+        FollowUpResponse response = followUpService.linkAppointment(id, appointmentId);
+        return ResponseUtil.success("Follow-up linked to appointment successfully", response);
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<List<FollowUpResponse>>> getMyFollowUps() {
+        return ResponseUtil.success("Follow-ups retrieved successfully", followUpService.getMyFollowUps());
+    }
+
+    @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<FollowUpResponse>> confirm(
+            @PathVariable Integer id
+    ) {
+        return ResponseUtil.success("Follow-up confirmed", followUpService.confirmByPatient(id));
+    }
+
+    @PostMapping("/{id}/decline")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<FollowUpResponse>> decline(
+            @PathVariable Integer id,
+            @RequestParam(required = false) String reason
+    ) {
+        return ResponseUtil.success("Follow-up declined", followUpService.declineByPatient(id, reason));
     }
 }

@@ -403,14 +403,22 @@ CREATE TABLE follow_up (
     record_id INT NOT NULL,
     patient_id INT NOT NULL,
     doctor_id INT NOT NULL,
+    appointment_id INT NULL,
     scheduled_datetime DATETIME NOT NULL,
     note VARCHAR(255),
     status ENUM('PENDING','CONFIRMED','COMPLETED','CANCELLED','MISSED') DEFAULT 'PENDING',
+    confirmed_at DATETIME NULL,
+    reminder_sent_at DATETIME NULL,
+    cancel_reason VARCHAR(255) NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (record_id) REFERENCES medical_record(record_id),
     FOREIGN KEY (patient_id) REFERENCES patient(patient_id),
-    FOREIGN KEY (doctor_id) REFERENCES staff(staff_id)
+    FOREIGN KEY (doctor_id) REFERENCES staff(staff_id),
+    FOREIGN KEY (appointment_id) REFERENCES appointment(appointment_id)
 );
+
+CREATE INDEX idx_followup_appointment ON follow_up(appointment_id);
+CREATE INDEX idx_followup_status_datetime ON follow_up(status, scheduled_datetime);
 
 -- 21. NOTIFICATION
 CREATE TABLE notification (

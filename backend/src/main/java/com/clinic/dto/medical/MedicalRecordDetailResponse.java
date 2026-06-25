@@ -24,6 +24,8 @@ public class MedicalRecordDetailResponse {
     private String patientPhone;
     private String patientAddress;
     private Integer appointmentId;
+    private String appointmentStatus;
+    private Integer queueNumber;
     private Integer mainDoctorId;
     private String mainDoctorName;
     private String diagnosis;

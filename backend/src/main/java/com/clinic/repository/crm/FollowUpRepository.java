@@ -18,4 +18,15 @@ public interface FollowUpRepository extends JpaRepository<FollowUp, Integer>, Jp
     
     // Method cho scheduler (có thể bỏ nếu comment job)
     List<FollowUp> findByScheduledDatetimeBetweenAndStatusIn(LocalDateTime start, LocalDateTime end, List<FollowUpStatus> statuses);
+
+    @Query("SELECT f FROM FollowUp f WHERE f.scheduledDatetime BETWEEN :start AND :end "
+            + "AND f.status IN :statuses AND f.reminderSentAt IS NULL")
+    List<FollowUp> findDueForReminder(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("statuses") List<FollowUpStatus> statuses);
+
+    List<FollowUp> findByPatient_PatientIdOrderByScheduledDatetimeDesc(Integer patientId);
+
+    java.util.Optional<FollowUp> findByFollowUpIdAndPatient_PatientId(Integer followUpId, Integer patientId);
 }

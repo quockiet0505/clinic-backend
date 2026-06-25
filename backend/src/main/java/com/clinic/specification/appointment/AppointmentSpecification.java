@@ -92,6 +92,17 @@ public class AppointmentSpecification {
             if ("upcoming".equals(tab)) {
                 return cb.greaterThan(root.get("appointmentDate"), today);
             }
+            if ("queue".equals(tab)) {
+                List<Predicate> predicates = new ArrayList<>();
+                predicates.add(cb.equal(root.get("appointmentDate"), today));
+                predicates.add(cb.isNotNull(root.get("queueNumber")));
+                predicates.add(root.get("status").in(
+                        com.clinic.common.enums.AppointmentStatus.CHECKED_IN,
+                        com.clinic.common.enums.AppointmentStatus.IN_PROGRESS,
+                        com.clinic.common.enums.AppointmentStatus.SKIPPED
+                ));
+                return cb.and(predicates.toArray(new Predicate[0]));
+            }
             return cb.conjunction();
         };
     }

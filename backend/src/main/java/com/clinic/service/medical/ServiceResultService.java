@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.clinic.common.enums.ServiceOrderStatus;
+import com.clinic.common.enums.ServiceOrderStatus;
 import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.medical.ServiceResultFilterRequest;
 import com.clinic.dto.medical.ServiceResultRequest;
@@ -17,6 +18,7 @@ import com.clinic.mapper.medical.ServiceResultMapper;
 import com.clinic.repository.medical.ServiceOrderRepository;
 import com.clinic.repository.medical.ServiceResultRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.service.appointment.AppointmentQueueService;
 import com.clinic.specification.medical.ServiceResultSpecification;
 import com.clinic.util.FilterUtils;
 
@@ -31,6 +33,7 @@ public class ServiceResultService {
     private final ServiceResultMapper resultMapper;
     private final com.clinic.repository.patient.PatientRepository patientRepository;
     private final com.clinic.service.crm.NotificationService notificationService;
+    private final AppointmentQueueService appointmentQueueService;
 
     @Transactional
     public ServiceResultResponse submitResult(ServiceResultRequest request) {
@@ -55,7 +58,8 @@ public class ServiceResultService {
         orderRepository.save(order);
 
         // Notify Doctor
-        if (order.getMedicalRecord() != null && order.getMedicalRecord().getMainDoctor() != null) {
+        if (order.getMedicalRecord() != null && order.getMedicalRecord().getMainDoctor() != null
+                && order.getMedicalRecord().getMainDoctor().getAccount() != null) {
             notificationService.createAndSendNotification(
                     order.getMedicalRecord().getMainDoctor().getAccount().getAccountId(),
                     "Đã có kết quả cận lâm sàng cho bệnh nhân " + order.getMedicalRecord().getPatient().getFullName() + " (Mã Order: " + order.getOrderId() + ").",
@@ -63,7 +67,13 @@ public class ServiceResultService {
             );
         }
 
-        return resultMapper.toResponse(resultRepository.save(result));
+        ServiceResultResponse response = resultMapper.toResponse(resultRepository.save(result));
+
+        if (order.getMedicalRecord() != null) {
+            appointmentQueueService.tryAutoReturnFromLab(order.getMedicalRecord().getRecordId());
+        }
+
+        return response;
     }
 
     @Transactional(readOnly = true)

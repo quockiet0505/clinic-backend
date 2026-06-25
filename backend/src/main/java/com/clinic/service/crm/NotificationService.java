@@ -5,6 +5,7 @@ import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.crm.NotificationFilterRequest;
 import com.clinic.dto.crm.NotificationResponse;
 import com.clinic.dto.crm.NotificationRequest;
+import com.clinic.dto.crm.PatientNotificationResponse;
 import com.clinic.entity.auth.Account;
 import com.clinic.entity.crm.Notification;
 import com.clinic.mapper.crm.NotificationMapper;
@@ -22,6 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 @RequiredArgsConstructor
@@ -72,5 +76,43 @@ public class NotificationService {
         request.setContent(content);
         request.setType(type);
         createNotification(request);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PatientNotificationResponse> getMyNotifications() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Account account = accountRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        return notificationRepository.findByAccount_AccountIdOrderBySentAtDesc(account.getAccountId())
+                .stream()
+                .map(this::toPatientNotification)
+                .collect(Collectors.toList());
+    }
+
+    private PatientNotificationResponse toPatientNotification(Notification n) {
+        String content = n.getContent() != null ? n.getContent() : "";
+        String subject = deriveSubject(content);
+        return PatientNotificationResponse.builder()
+                .id(n.getNotificationId())
+                .type(n.getType() != null ? n.getType().name() : "SYSTEM")
+                .subject(subject)
+                .content(content)
+                .sentAt(n.getSentAt())
+                .build();
+    }
+
+    private String deriveSubject(String content) {
+        String lower = content.toLowerCase();
+        if (lower.contains("tái khám") || lower.contains("follow-up")) {
+            return "Nhắc tái khám";
+        }
+        if (lower.contains("xét nghiệm") || lower.contains("kết quả") || lower.contains("cận lâm sàng")) {
+            return "Kết quả / Cận lâm sàng";
+        }
+        if (lower.contains("lịch hẹn") || lower.contains("lượt khám") || lower.contains("đến lượt")) {
+            return "Lịch khám";
+        }
+        return "Thông báo hệ thống";
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.common.enums.ServiceOrderStatus;
 import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.prescription.PrescriptionFilterRequest;
 import com.clinic.dto.prescription.PrescriptionItemRequest;
@@ -23,6 +24,7 @@ import com.clinic.entity.prescription.PrescriptionItem;
 import com.clinic.entity.prescription.PrescriptionItemKey;
 import com.clinic.mapper.prescription.PrescriptionMapper;
 import com.clinic.repository.medical.MedicalRecordRepository;
+import com.clinic.repository.medical.ServiceOrderRepository;
 import com.clinic.repository.prescription.MedicineRepository;
 import com.clinic.repository.prescription.PrescriptionRepository;
 import com.clinic.specification.prescription.PrescriptionSpecification;
@@ -37,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 public class PrescriptionService {
     private final PrescriptionRepository prescriptionRepository;
     private final MedicalRecordRepository medicalRecordRepository;
+    private final ServiceOrderRepository serviceOrderRepository;
     private final MedicineRepository medicineRepository;
     private final PatientRepository patientRepository;
     private final PrescriptionMapper prescriptionMapper;
@@ -45,6 +48,13 @@ public class PrescriptionService {
     public PrescriptionResponse create(PrescriptionRequest request) {
         MedicalRecord record = medicalRecordRepository.findById(request.getRecordId())
                 .orElseThrow(() -> new RuntimeException("Medical record not found."));
+
+        boolean hasPendingLabOrders = serviceOrderRepository.findByMedicalRecordId(record.getRecordId())
+                .stream()
+                .anyMatch(o -> o.getStatus() == ServiceOrderStatus.ORDERED);
+        if (hasPendingLabOrders) {
+            throw new RuntimeException("Không thể kê đơn khi còn chỉ định cận lâm sàng chưa có kết quả.");
+        }
 
         Prescription prescription = prescriptionMapper.toEntity(request);
         prescription.setMedicalRecord(record);
