@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.dto.common.ApiResponse;
@@ -71,6 +72,13 @@ public class StaffScheduleController {
                 "Schedule deleted successfully",
                 null
         ).getBody();
+    }
+
+    @PostMapping("/auto-generate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Void> autoGenerate(@RequestParam int year, @RequestParam int month) {
+        scheduleService.autoGenerateSchedules(year, month);
+        return ResponseUtil.<Void>success("Schedules auto-generated successfully", null).getBody();
     }
 }
 

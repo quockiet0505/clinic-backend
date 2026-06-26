@@ -7,8 +7,10 @@ import com.clinic.common.enums.ServiceType;
 import com.clinic.repository.appointment.AppointmentRepository;
 import com.clinic.repository.staff.LeaveRequestRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.repository.staff.StaffScheduleRepository;
 import com.clinic.repository.medical.ServiceRepository;
 import com.clinic.util.HolidayUtils;
+import com.clinic.entity.staff.StaffSchedule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ public class AppointmentSlotService {
     private final ServiceRepository serviceRepository;
     private final AppointmentRepository appointmentRepository;
     private final LeaveRequestRepository leaveRequestRepository;
+    private final StaffScheduleRepository scheduleRepository;
 
     @Transactional(readOnly = true)
     public List<TimeSlotResponse> getAvailableSlots(
@@ -92,36 +95,24 @@ public class AppointmentSlotService {
     private List<TimeSlotResponse> buildSlotsForDoctor(Integer doctorId, LocalDate date, Staff staffRef) {
         List<TimeSlotResponse> slots = new ArrayList<>();
         
-        // 1. Check weekends
-        if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            return slots;
-        }
-        
-        // 2. Check holidays
-        if (HolidayUtils.isHoliday(date)) {
+        // 1. Get working schedules for the doctor on this date
+        List<StaffSchedule> schedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(doctorId, date);
+        if (schedules.isEmpty()) {
             return slots;
         }
 
-        // 3. Check leaves
+        // 2. Check leaves (extra safety)
         if (leaveRequestRepository.isDoctorOnLeave(doctorId, date)) {
             return slots;
         }
 
-        // 4. Generate slots
-        LocalTime[] morningSlots = {
-            LocalTime.of(8, 0), LocalTime.of(8, 30), LocalTime.of(9, 0), LocalTime.of(9, 30),
-            LocalTime.of(10, 0), LocalTime.of(10, 30), LocalTime.of(11, 0), LocalTime.of(11, 30)
-        };
-        LocalTime[] afternoonSlots = {
-            LocalTime.of(13, 30), LocalTime.of(14, 0), LocalTime.of(14, 30), LocalTime.of(15, 0),
-            LocalTime.of(15, 30), LocalTime.of(16, 0), LocalTime.of(16, 30), LocalTime.of(17, 0)
-        };
-
-        for (LocalTime start : morningSlots) {
-            slots.add(createSlot(doctorId, date, start, staffRef));
-        }
-        for (LocalTime start : afternoonSlots) {
-            slots.add(createSlot(doctorId, date, start, staffRef));
+        // 3. Generate 30-minute slots based on StaffSchedule actual hours
+        for (StaffSchedule schedule : schedules) {
+            LocalTime current = schedule.getStartTime();
+            while (current.isBefore(schedule.getEndTime()) && !current.plusMinutes(30).isAfter(schedule.getEndTime())) {
+                slots.add(createSlot(doctorId, date, current, staffRef));
+                current = current.plusMinutes(30);
+            }
         }
 
         return slots;
