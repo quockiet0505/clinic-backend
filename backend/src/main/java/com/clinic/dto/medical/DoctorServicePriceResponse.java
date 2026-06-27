@@ -12,9 +12,6 @@ public class DoctorServicePriceResponse {
     private Integer staffId;
     private String doctorName;
 
-    private Integer serviceId;
-    private String serviceName;
-
     private BigDecimal originalPrice;
     private BigDecimal discountPrice;
     private BigDecimal finalPrice;

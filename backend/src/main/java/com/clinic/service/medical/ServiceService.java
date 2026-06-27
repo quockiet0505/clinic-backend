@@ -36,6 +36,9 @@ public class ServiceService {
 
     @Transactional
     public ServiceResponse create(ServiceRequest request) {
+        if (request.getServiceType() != null && request.getServiceType().isHiddenEverywhere()) {
+            throw new RuntimeException("Dịch vụ khám tổng quát (EXAM) hiện không được phép tạo.");
+        }
         Service service = serviceMapper.toEntity(request);
         return serviceMapper.toResponse(serviceRepository.save(service));
     }
@@ -54,6 +57,9 @@ public class ServiceService {
         Service service = serviceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service not found"));
         service.setServiceName(request.getServiceName());
+        if (request.getServiceType() != null && request.getServiceType().isHiddenEverywhere()) {
+            throw new RuntimeException("Dịch vụ khám tổng quát (EXAM) hiện không được phép cập nhật.");
+        }
         service.setServiceType(request.getServiceType());
         service.setOriginalPrice(request.getOriginalPrice());
         service.setDiscountPrice(request.getDiscountPrice());

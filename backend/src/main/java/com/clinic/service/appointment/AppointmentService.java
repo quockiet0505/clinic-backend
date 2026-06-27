@@ -91,18 +91,19 @@ public class AppointmentService {
 
     private BookingMode resolveBookingMode(AppointmentRequest request) {
         if (request.getBookingMode() != null) {
+            if (request.getBookingMode() == BookingMode.EXPERTISE) {
+                throw new RuntimeException(
+                        "Chỉ hỗ trợ 2 luồng đặt lịch: DOCTOR (chọn chuyên khoa + bác sĩ) hoặc SERVICE (xét nghiệm/chụp).");
+            }
             return request.getBookingMode();
-        }
-        if (request.getMainDoctorId() != null) {
-            return BookingMode.DOCTOR;
         }
         if (request.getServiceId() != null) {
             return BookingMode.SERVICE;
         }
-        if (request.getExpertiseId() != null) {
-            return BookingMode.EXPERTISE;
+        if (request.getMainDoctorId() != null || request.getExpertiseId() != null) {
+            return BookingMode.DOCTOR;
         }
-        throw new RuntimeException("Cannot determine booking mode. Must provide Doctor, Expertise, or Service.");
+        throw new RuntimeException("Cannot determine booking mode. Must provide Doctor+Expertise or Service.");
     }
 
     private Expertise loadExpertise(Integer expertiseId) {
@@ -116,20 +117,6 @@ public class AppointmentService {
     private Staff loadDoctor(Integer doctorId) {
         return staffRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
-    }
-
-    private Staff autoAssignDoctor(Integer expertiseId) {
-        List<Staff> doctors;
-        if (expertiseId != null) {
-            doctors = staffRepository.findByExpertise_ExpertiseIdAndStaffTypeAndIsDeleted(
-                    expertiseId, StaffType.DOCTOR, 0);
-        } else {
-            doctors = staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0);
-        }
-        if (doctors.isEmpty()) {
-            throw new RuntimeException("No doctor available for the selected criteria");
-        }
-        return doctors.get(0);
     }
 
     private Staff autoAssignTechnician(LocalDate date, LocalTime slotStart, Integer durationMinutes) {
@@ -271,25 +258,21 @@ public class AppointmentService {
 
         switch (mode) {
             case DOCTOR -> {
+                if (request.getExpertiseId() == null) {
+                    throw new RuntimeException("Vui lòng chọn chuyên khoa.");
+                }
                 if (request.getMainDoctorId() == null) {
-                    throw new RuntimeException("Doctor is required for DOCTOR booking mode.");
+                    throw new RuntimeException("Vui lòng chọn bác sĩ.");
                 }
+                expertise = loadExpertise(request.getExpertiseId());
                 doctor = loadDoctor(request.getMainDoctorId());
-                if (expertise == null && doctor.getExpertise() != null) {
-                    expertise = doctor.getExpertise();
+                if (doctor.getExpertise() != null
+                        && !doctor.getExpertise().getExpertiseId().equals(expertise.getExpertiseId())) {
+                    throw new RuntimeException("Bác sĩ không thuộc chuyên khoa đã chọn.");
                 }
             }
-            case EXPERTISE -> {
-                if (expertise == null) {
-                    throw new RuntimeException("Expertise is required for EXPERTISE booking mode.");
-                }
-                if (request.getMainDoctorId() != null) {
-                    doctor = loadDoctor(request.getMainDoctorId());
-                } else {
-                    doctor = autoAssignDoctor(expertise.getExpertiseId());
-                    request.setMainDoctorId(doctor.getStaffId());
-                }
-            }
+            case EXPERTISE -> throw new RuntimeException(
+                    "Chỉ hỗ trợ 2 luồng đặt lịch: DOCTOR (chọn chuyên khoa + bác sĩ) hoặc SERVICE (xét nghiệm/chụp).");
             case SERVICE -> {
                 if (request.getServiceId() == null) {
                     throw new RuntimeException("Service is required for SERVICE booking mode.");

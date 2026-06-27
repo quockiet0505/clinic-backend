@@ -12,9 +12,6 @@ public class DoctorServicePriceRequest {
     @NotNull(message = "Staff ID is required")
     private Integer staffId;
 
-    @NotNull(message = "Service ID is required")
-    private Integer serviceId;
-
     @NotNull(message = "Original price is required")
     @DecimalMin(value = "0.0", inclusive = true)
     private BigDecimal originalPrice;

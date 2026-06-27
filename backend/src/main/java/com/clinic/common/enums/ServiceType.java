@@ -10,10 +10,9 @@ public enum ServiceType {
     ENDOSCOPY,  // Nội soi
     OTHER;      // Chỉ định trong khám — không đặt lịch trực tiếp
 
-    /** BN được đặt lịch trực tiếp (SERVICE mode): xét nghiệm + chẩn đoán hình ảnh. */
+    /** BN đặt lịch trực tiếp (SERVICE mode): chỉ xét nghiệm và X-Quang. */
     public boolean isPatientBookable() {
-        return this == LAB_TEST || this == X_RAY || this == ULTRASOUND
-                || this == CT_SCAN || this == MRI || this == ENDOSCOPY;
+        return this == LAB_TEST || this == X_RAY;
     }
 
     /** EXAM tạm ẩn toàn hệ thống (catalog, booking). */

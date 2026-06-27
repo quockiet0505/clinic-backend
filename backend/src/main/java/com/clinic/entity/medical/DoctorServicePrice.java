@@ -26,7 +26,7 @@ import lombok.Setter;
 @Table(
     name = "doctor_service_price",
     uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"staff_id", "service_id"})
+        @UniqueConstraint(columnNames = {"staff_id"})
     }
 )
 @Getter
@@ -42,10 +42,6 @@ public class DoctorServicePrice {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "staff_id", nullable = false)
     private Staff staff;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_id", nullable = false)
-    private Service service;
 
     @Column(name = "original_price", nullable = false)
     private BigDecimal originalPrice;

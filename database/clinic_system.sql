@@ -283,16 +283,15 @@ CREATE TABLE service (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 12. DOCTOR SERVICE PRICE
+-- 12. DOCTOR CONSULTATION PRICE (một mức phí khám / bác sĩ)
 CREATE TABLE doctor_service_price (
     id INT AUTO_INCREMENT PRIMARY KEY,
     staff_id INT NOT NULL,
-    service_id INT NOT NULL,
     original_price DECIMAL(10,2) NOT NULL,
     discount_price DECIMAL(10,2) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (staff_id) REFERENCES staff(staff_id),
-    FOREIGN KEY (service_id) REFERENCES service(service_id),
-    UNIQUE(staff_id, service_id)
+    UNIQUE(staff_id)
 );
 
 -- [NHÓM 6: KHÁM BỆNH & CẬN LÂM SÀNG]
