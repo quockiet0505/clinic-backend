@@ -15,8 +15,10 @@ public class ServiceRequest {
     @NotBlank(message = "Service name is required")
     private String serviceName;
 
-    @NotNull(message = "Service type is required (e.g., EXAM, LAB_TEST, IMAGING)")
+    @NotNull(message = "Service type is required (e.g., EXAM, LAB_TEST, X_RAY, ULTRASOUND, CT_SCAN, MRI, ENDOSCOPY, OTHER)")
     private ServiceType serviceType;
+
+    private Integer estimatedDuration;
 
     @NotNull(message = "Original price is required")
     @DecimalMin(value = "0.0", inclusive = true, message = "Price cannot be negative")

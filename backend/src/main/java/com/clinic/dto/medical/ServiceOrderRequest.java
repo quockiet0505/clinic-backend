@@ -13,6 +13,11 @@ public class ServiceOrderRequest {
     private Integer recordId;
     @NotNull
     private Integer serviceId;
+    
+    private String customServiceName;
+    
+    private String doctorNote;
+    
     @NotNull
     private Integer orderedById;
     

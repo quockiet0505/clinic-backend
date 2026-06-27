@@ -15,6 +15,6 @@ public class AppointmentFilterRequest extends BaseFilterRequest {
     private Integer doctorId;
     private Integer patientId;
     private String source; // ONLINE, WALK_IN
-    private String serviceType; // EXAM, LAB_TEST, IMAGING
+    private String serviceType; // EXAM, LAB_TEST, X_RAY, ULTRASOUND
     private String tab; // all, today, upcoming, queue
 }

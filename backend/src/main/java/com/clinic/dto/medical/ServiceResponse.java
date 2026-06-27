@@ -15,6 +15,8 @@ public class ServiceResponse {
 
     private ServiceType serviceType;
 
+    private Integer estimatedDuration;
+
     private BigDecimal originalPrice;
 
     private BigDecimal discountPrice;

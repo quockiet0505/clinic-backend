@@ -42,8 +42,8 @@ public class ServiceResult {
     @Column(columnDefinition = "TEXT")
     private String conclusion;
 
-    @Column(name = "attachment_url")
-    private String attachmentUrl;
+    @Column(name = "attachment_urls", columnDefinition = "JSON")
+    private String attachmentUrls;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entered_by", nullable = false)

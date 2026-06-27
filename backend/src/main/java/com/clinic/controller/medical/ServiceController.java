@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.dto.common.ApiResponse;
@@ -40,19 +41,21 @@ public class ServiceController {
     }
 
     @GetMapping("/all")
-    public ApiResponse<List<ServiceResponse>> getAllLegacy() {
+    public ApiResponse<List<ServiceResponse>> getAllLegacy(
+            @RequestParam(required = false) Boolean bookableOnly) {
         return ResponseUtil.success(
                 "Services fetched successfully",
-                serviceService.getAllActive()
+                serviceService.getAllActive(bookableOnly)
         ).getBody();
     }
 
     @GetMapping("/featured")
     @PreAuthorize("permitAll()")
-    public ApiResponse<List<ServiceResponse>> getFeatured() {
+    public ApiResponse<List<ServiceResponse>> getFeatured(
+            @RequestParam(required = false) Boolean bookableOnly) {
         return ResponseUtil.success(
                 "Featured services fetched successfully",
-                serviceService.getFeaturedServices()
+                serviceService.getFeaturedServices(bookableOnly)
         ).getBody();
     }
 

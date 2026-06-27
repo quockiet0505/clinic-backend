@@ -16,6 +16,8 @@ public class ServiceOrderResponse {
     private Integer recordId;              
     private Integer serviceId;
     private String serviceName;
+    private String customServiceName;
+    private String doctorNote;
     private String patientName;
     private String doctorName;
     private String status;

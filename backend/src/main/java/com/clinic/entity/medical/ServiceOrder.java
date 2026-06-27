@@ -42,6 +42,12 @@ public class ServiceOrder {
     @JoinColumn(name = "service_id", nullable = false)
     private Service service;
 
+    @Column(name = "custom_service_name", length = 255)
+    private String customServiceName;
+
+    @Column(name = "doctor_note", columnDefinition = "TEXT")
+    private String doctorNote;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ordered_by", nullable = false)
     private Staff orderedBy;

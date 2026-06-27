@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.common.enums.ServiceType;
 import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.medical.ServiceFilterRequest;
 import com.clinic.dto.medical.ServiceRequest;
@@ -40,8 +41,10 @@ public class ServiceService {
     }
 
     @Transactional(readOnly = true)
-    public List<ServiceResponse> getAllActive() {
+    public List<ServiceResponse> getAllActive(Boolean bookableOnly) {
         return serviceRepository.findByIsDeleted(0).stream()
+                .filter(s -> !s.getServiceType().isHiddenEverywhere())
+                .filter(s -> !Boolean.TRUE.equals(bookableOnly) || s.getServiceType().isPatientBookable())
                 .map(serviceMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -61,8 +64,10 @@ public class ServiceService {
     }
 
     @Transactional(readOnly = true)
-    public List<ServiceResponse> getFeaturedServices() {
+    public List<ServiceResponse> getFeaturedServices(Boolean bookableOnly) {
         return serviceRepository.findByIsDeletedAndIsFeaturedOrderByFeaturedPriorityAsc(0, true).stream()
+                .filter(s -> !s.getServiceType().isHiddenEverywhere())
+                .filter(s -> !Boolean.TRUE.equals(bookableOnly) || s.getServiceType().isPatientBookable())
                 .map(serviceMapper::toResponse)
                 .collect(Collectors.toList());
     }

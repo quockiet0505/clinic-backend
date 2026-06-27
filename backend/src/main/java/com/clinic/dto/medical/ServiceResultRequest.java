@@ -9,7 +9,7 @@ public class ServiceResultRequest {
     private Integer orderId;
     private String resultData;
     private String conclusion;
-    private String attachmentUrl; 
+    private String attachmentUrls; 
     @NotNull
     private Integer enteredById;
 }

@@ -1,6 +1,6 @@
 # Luồng đặt lịch khám — Chi tiết đa nền tảng
 
-Tài liệu mô tả **4 chế độ đặt lịch** (`booking_mode`), **field nào được `NULL`**, cách **backend xử lý** khi frontend gửi hoặc bỏ trống field, và **thực trạng triển khai** trên admin-web, patient-web, mobile-app.
+Tài liệu mô tả **3 chế độ đặt lịch** (`booking_mode`), **field nào được `NULL`**, cách **backend xử lý** khi frontend gửi hoặc bỏ trống field, và **thực trạng triển khai** trên admin-web, patient-web, mobile-app.
 
 **Liên quan:**
 
@@ -10,9 +10,8 @@ Tài liệu mô tả **4 chế độ đặt lịch** (`booking_mode`), **field n
 | [`database_analysis.md`](database_analysis.md) | Tổng quan DB & luồng nghiệp vụ |
 | [`clinical_flows_analysis.md`](clinical_flows_analysis.md) | 6 luồng nghiệp vụ + edge case (từ flow.docx) |
 | [`../../docs/business-flows.md`](../../docs/business-flows.md) | Luồng nghiệp vụ toàn hệ thống |
-| `clinic-ai-chat/knowledge/ai_booking_guide.md` | Quy tắc AI book qua JWT |
 
-**Cập nhật:** 2026-06-24
+**Cập nhật:** 2026-06-28 (Kiến trúc v2 - Tối ưu KTV & Hàng Đợi)
 
 ---
 
@@ -20,17 +19,18 @@ Tài liệu mô tả **4 chế độ đặt lịch** (`booking_mode`), **field n
 
 ```sql
 -- Trích từ clinic_system.sql (bảng appointment)
-main_doctor_id          INT NULL      -- NULL: xét nghiệm/chụp, hoặc chờ gán BS
-service_id              INT NULL      -- NULL: khám BS/khoa thuần
-expertise_id            INT NULL      -- NULL: dịch vụ CLS, hoặc chờ gán khoa
+main_doctor_id          INT NULL      -- NULL: chờ gán BS/KTV
+service_id              INT NULL      -- NULL: khám bệnh thông thường (có chuyên khoa/Bác sĩ)
+expertise_id            INT NULL      -- NULL: chỉ áp dụng khi đặt luồng SERVICE (xét nghiệm trực tiếp)
 suggested_expertise_id  INT NULL      -- Chuyên khoa AI gợi ý (tham khảo)
-booking_mode            ENUM('DOCTOR','EXPERTISE','SERVICE','DIRECT') DEFAULT 'DOCTOR'
+booking_mode            ENUM('DOCTOR','EXPERTISE','SERVICE') DEFAULT 'DOCTOR'
 is_ai_suggested         BOOLEAN DEFAULT FALSE
 note                    TEXT NULL     -- Triệu chứng / lý do
 time_start, time_end    TIME NULL     -- DTO bắt buộc khi tạo
 ```
 
-**Index chống trùng slot:** `UNIQUE (main_doctor_id, appointment_date, time_start, is_deleted)` — chỉ áp dụng khi **có** `main_doctor_id`. Lịch Lab không gán BS → không bị ràng buộc unique theo BS ở DB.
+**Index chống trùng slot:** `UNIQUE (main_doctor_id, appointment_date, time_start, is_deleted)`. 
+*Lưu ý:* Khi đặt luồng `SERVICE`, hệ thống sẽ tự động gán một KTV (có role TECHNICIAN) vào cột `main_doctor_id` để áp dụng index chống trùng slot này.
 
 ---
 
@@ -50,8 +50,7 @@ time_start, time_end    TIME NULL     -- DTO bắt buộc khi tạo
 |-------|-----------------|---------|
 | `appointmentDate`, `timeStart`, `timeEnd` | `@NotNull` | Luôn bắt buộc |
 | `appointmentType`, `createdBy` | `@NotNull` | `ONLINE` + `PATIENT` từ app bệnh nhân |
-| `mainDoctorId`, `expertiseId`, `serviceId`, `bookingMode`, `note` | Không `@NotNull` | Logic theo `bookingMode` |
-| `suggestedExpertiseId`, `isAiSuggested` | Optional | AI / chat |
+| `mainDoctorId`, `expertiseId`, `serviceId`, `bookingMode`, `note` | Không `@NotNull` | Tùy luồng sẽ bị ràng buộc trong Service |
 
 **Suy luận mode** nếu client không gửi `bookingMode` (`AppointmentService.resolveBookingMode`):
 
@@ -59,7 +58,7 @@ time_start, time_end    TIME NULL     -- DTO bắt buộc khi tạo
 có mainDoctorId  → DOCTOR
 có serviceId     → SERVICE
 có expertiseId   → EXPERTISE
-còn lại          → DIRECT
+thiếu tất cả     → Báo lỗi (Không cho phép DIRECT)
 ```
 
 ---
@@ -68,74 +67,52 @@ còn lại          → DIRECT
 
 Nguồn: `AppointmentService.create()` + `getAvailableSlots()`.
 
-### 3.1. `DOCTOR` — Khám theo bác sĩ
+### 3.1. `DOCTOR` — Khám theo đích danh Bác sĩ
 
 | Input | Bắt buộc? | Backend xử lý |
 |-------|-----------|---------------|
 | `mainDoctorId` | **Có** | `loadDoctor()` — thiếu → exception |
 | `expertiseId` | Optional | Tự gán từ `staff.expertise_id` của BS |
 | `serviceId` | **NULL** | Không set dịch vụ |
-| `suggestedExpertiseId` | Optional | Lưu tham khảo AI |
 
 **Slot:** `GET /slots?doctorId=&date=`
-
-**Validate:** Kiểm tra ca BS (weekend, lễ, nghỉ phép, trùng slot, online ≥ 24h).
+**Validate:** Kiểm tra ca BS (weekend, lễ, nghỉ phép, trùng slot).
 
 ---
 
-### 3.2. `EXPERTISE` — Khám theo chuyên khoa
+### 3.2. `EXPERTISE` — Khám theo chuyên khoa (Bệnh nhân không chọn BS)
 
 | Input | Bắt buộc? | Backend xử lý |
 |-------|-----------|---------------|
 | `expertiseId` | **Có** | Thiếu → exception |
-| `mainDoctorId` | **Optional** | `null` → `autoAssignDoctor(expertiseId)` — lấy BS đầu tiên trong khoa |
+| `mainDoctorId` | **NULL** | `autoAssignDoctor(expertiseId)` — gán BS đang rảnh trong khung giờ đó |
 | `serviceId` | **NULL** | |
-| `suggestedExpertiseId` | Optional | Tách khỏi khoa BN chọn |
 
-**Slot:** `GET /slots?expertiseId=&date=` — gộp slot mọi BS thuộc khoa; response có thể có `doctorId`, `doctorName`.
-
-**Validate:** Sau auto-assign có `mainDoctorId` → validate như khám BS.
+**Slot:** `GET /slots?expertiseId=&date=` — gộp slot mọi BS thuộc khoa.
 
 ---
 
-### 3.3. `SERVICE` — Đặt dịch vụ (phân nhánh `service_type`)
+### 3.3. `SERVICE` — Đặt trực tiếp dịch vụ Cận Lâm Sàng
 
-| `service_type` | `mainDoctorId` sau create | `expertiseId` | Slot API |
-|----------------|---------------------------|---------------|----------|
-| `LAB_TEST`, `IMAGING` | **NULL** (giữ null) | **NULL** | `?serviceId=` → slot `LAB_TECH` |
-| `EXAM` | Auto-assign nếu null | Tự gán từ BS | `?serviceId=` → slot tất cả BS |
+Chỉ áp dụng cho các service có `service_type` IN (`LAB_TEST`, `IMAGING`, `CT_SCAN`, `MRI`, `ENDOSCOPY`). (Luồng `EXAM` tạm ẩn).
 
-**Input bắt buộc:** `serviceId`.
+| Input | Bắt buộc? | Backend xử lý |
+|-------|-----------|---------------|
+| `serviceId` | **Có** | Lấy ra `estimated_duration` của Service |
+| `mainDoctorId` | **NULL** | `autoAssignTechnician()` — tìm KTV rảnh và gán vào |
+| `expertiseId` | **NULL** | Không bắt buộc |
 
-**LAB / IMAGING — không cần BS, không cần chuyên khoa:**
-
-```java
-// SERVICE + LAB_TEST/IMAGING: doctor = null, validate doctorId null → bỏ qua check ca BS
-```
-
-**EXAM — gói khám có thể gán BS:**
-
-```java
-if (service.getServiceType() == EXAM) {
-    if (mainDoctorId != null) loadDoctor();
-    else autoAssignDoctor(expertiseId); // expertiseId có thể null → mọi BS
-}
-```
+**Slot:** `GET /slots?serviceId=&date=`
+Tính toán slot dựa trên thời gian thực hiện (`estimated_duration`) và tổng số lượng KTV (TECHNICIAN) đang trực. Đảm bảo KTV không bị dồn ứ bệnh nhân.
 
 ---
 
-### 3.4. `DIRECT` — Đặt trực tiếp / AI
+### 3.4. Chỉ định Cận Lâm Sàng (Trong quá trình Khám Bệnh)
 
-| Input | Backend xử lý |
-|-------|---------------|
-| `mainDoctorId` | Optional — có thì load BS |
-| `expertiseId` | Optional — có + không có BS → auto-assign |
-| `serviceId` | **NULL** |
-| `suggestedExpertiseId` | Thường từ AI — chỉ lưu, không thay `expertiseId` |
-
-**Kết quả có thể:** cả `main_doctor_id`, `expertise_id`, `service_id` đều **NULL** → lịch `PENDING`, admin gán sau.
-
-**Slot:** `GET /slots` không param → **`[]`**. UI/AI phải chuyển sang `EXPERTISE` + `expertiseId` hoặc AI gọi `book_appointment_tool` (JWT).
+Khác với đặt trực tiếp từ nhà (mục 3.3), khi bác sĩ đang khám (`IN_PROGRESS`) và kê chỉ định Cận Lâm Sàng:
+- **KHÔNG xếp Slot thời gian.**
+- Lệnh được đưa vào **Hàng đợi (FIFO Queue)** của phòng KTV. Bệnh nhân qua phòng KTV bốc số, chờ gọi tên thực hiện.
+- Hỗ trợ loại dịch vụ `OTHER` (Bác sĩ phải điền tên dịch vụ tự do vào cột `custom_service_name`).
 
 ---
 
@@ -144,10 +121,9 @@ if (service.getServiceType() == EXAM) {
 | Rule | Áp dụng |
 |------|---------|
 | Bệnh nhân không trùng giờ | Mọi mode |
-| Online ≥ 24h | `appointmentType = ONLINE` |
+| Không cho phép mode `DIRECT` | Bắt buộc chọn ít nhất Khoa, Bác sĩ, hoặc Dịch vụ |
 | Spam hủy ≥ 3 lần `[SPAM]` | Khóa đặt online |
-| Weekend / lễ / nghỉ / trùng slot BS | Chỉ khi **`mainDoctorId != null`** sau xử lý |
-| `doctorId == null` | **Return sớm** — bỏ qua check ca BS (phù hợp Lab) |
+| Weekend / lễ / nghỉ / trùng slot | Áp dụng cho BS và cả KTV (Technician) |
 
 ---
 

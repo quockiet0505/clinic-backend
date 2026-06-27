@@ -39,6 +39,9 @@ public class Service {
     @Column(name = "service_type", nullable = false)
     private ServiceType serviceType;
 
+    @Column(name = "estimated_duration")
+    private Integer estimatedDuration = 15;
+
     @Column(name = "original_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal originalPrice;
 

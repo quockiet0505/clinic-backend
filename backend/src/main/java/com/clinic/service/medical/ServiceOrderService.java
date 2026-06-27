@@ -51,7 +51,7 @@ public class ServiceOrderService {
                 .orElseThrow(() -> new RuntimeException("Staff member not found."));
 
         if (service.getServiceType() == com.clinic.common.enums.ServiceType.EXAM) {
-            throw new RuntimeException("Lỗi: Không được phép chỉ định dịch vụ Khám bệnh trong bệnh án. Chỉ được chỉ định Xét nghiệm (LAB_TEST) hoặc Chẩn đoán hình ảnh (IMAGING).");
+            throw new RuntimeException("Lỗi: Không được phép chỉ định dịch vụ Khám bệnh trong bệnh án. Chỉ được chỉ định Xét nghiệm (LAB_TEST) hoặc Chẩn đoán hình ảnh (X_RAY, ULTRASOUND).");
         }
 
         ServiceOrder order = serviceOrderMapper.toEntity(request);

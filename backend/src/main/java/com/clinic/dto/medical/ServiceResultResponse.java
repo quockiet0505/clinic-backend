@@ -13,7 +13,7 @@ public class ServiceResultResponse {
     private String doctorName;
     private String resultData;
     private String conclusion;
-    private String attachmentUrl; 
+    private String attachmentUrls; 
     private Integer enteredById;
     private String enteredByName;
     private LocalDateTime enteredAt;

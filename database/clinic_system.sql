@@ -270,7 +270,8 @@ CREATE INDEX idx_booking_mode ON appointment (booking_mode);
 CREATE TABLE service (
     service_id INT AUTO_INCREMENT PRIMARY KEY,
     service_name VARCHAR(255) NOT NULL,
-    service_type ENUM('EXAM','LAB_TEST','IMAGING') NOT NULL DEFAULT 'LAB_TEST',
+    service_type ENUM('EXAM','LAB_TEST','X_RAY','ULTRASOUND','CT_SCAN','MRI','ENDOSCOPY','OTHER') NOT NULL DEFAULT 'LAB_TEST',
+    estimated_duration INT DEFAULT 15,
     original_price DECIMAL(10,2) NOT NULL,
     discount_price DECIMAL(10,2),
     description TEXT,
@@ -334,8 +335,10 @@ CREATE TABLE service_order (
     order_id INT AUTO_INCREMENT PRIMARY KEY,
     record_id INT NOT NULL,
     service_id INT NOT NULL,
+    custom_service_name VARCHAR(255) NULL, -- Cho phép bác sĩ gõ tay khi loại dịch vụ là OTHER
+    doctor_note TEXT NULL,                 -- Ghi chú của bác sĩ cho KTV
     ordered_by INT NOT NULL,
-     price_at_time DECIMAL(10,2) NOT NULL, 
+    price_at_time DECIMAL(10,2) NOT NULL, 
     status ENUM('ORDERED','DONE','CANCELLED', 'REJECTED') DEFAULT 'ORDERED',
     rejection_reason TEXT,                 
     sample_collected_at DATETIME NULL,     
@@ -353,7 +356,7 @@ CREATE TABLE service_result (
     order_id INT NOT NULL UNIQUE,
     result_data TEXT,
     conclusion TEXT,
-    attachment_url VARCHAR(255) NULL, 
+    attachment_urls JSON NULL, -- Mảng các đường dẫn ảnh chụp (X-Quang, MRI, CT)
     entered_by INT NOT NULL,
     entered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES service_order(order_id),
