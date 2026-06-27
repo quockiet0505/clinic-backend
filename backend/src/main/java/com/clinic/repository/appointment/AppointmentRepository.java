@@ -60,4 +60,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
 
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.mainDoctor.staffId = :staffId AND a.status = 'COMPLETED' AND a.isDeleted = 0")
     Integer countCompletedAppointmentsByDoctorId(@Param("staffId") Integer staffId);
+
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.bookingMode = :bookingMode AND a.appointmentDate = :date AND a.timeStart = :timeStart AND a.isDeleted = 0")
+    long countByBookingModeAndDateAndTimeStart(
+            @Param("bookingMode") com.clinic.common.enums.BookingMode bookingMode,
+            @Param("date") LocalDate date,
+            @Param("timeStart") LocalTime timeStart);
 }

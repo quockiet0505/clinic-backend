@@ -41,6 +41,8 @@ public class AppointmentResponse {
     private Integer queueNumber;
     private CancelledByType cancelledBy;
     private String cancelReason;
+    private String rescheduleReason;
+    private Integer rescheduleCount;
     private String note;
     private Boolean isDoctorBusy;
 }

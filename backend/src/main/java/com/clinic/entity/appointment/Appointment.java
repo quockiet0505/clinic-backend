@@ -111,6 +111,12 @@ public class Appointment extends BaseEntity {
     @Column(name = "cancel_reason", columnDefinition = "TEXT")
     private String cancelReason;
 
+    @Column(name = "reschedule_reason")
+    private String rescheduleReason;
+
+    @Column(name = "reschedule_count", columnDefinition = "INT DEFAULT 0")
+    private Integer rescheduleCount = 0;
+
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 

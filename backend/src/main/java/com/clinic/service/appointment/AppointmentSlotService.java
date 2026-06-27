@@ -34,6 +34,10 @@ public class AppointmentSlotService {
     @Transactional(readOnly = true)
     public List<TimeSlotResponse> getAvailableSlots(
             Integer doctorId, Integer expertiseId, Integer serviceId, LocalDate date) {
+        if (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            return List.of();
+        }
+
         if (doctorId != null) {
             return buildSlotsForDoctor(doctorId, date, null);
         }
@@ -50,7 +54,9 @@ public class AppointmentSlotService {
                 throw new RuntimeException(
                         "Dịch vụ này chỉ được chỉ định trong quá trình khám, không đặt lịch trực tiếp.");
             }
-            Integer duration = service.getEstimatedDuration() != null ? service.getEstimatedDuration() : 15;
+            // Sử dụng thời gian ước tính của dịch vụ (mặc định 30p nếu null/0)
+            int duration = (service.getEstimatedDuration() != null && service.getEstimatedDuration() > 0) 
+                           ? service.getEstimatedDuration() : 30;
             return buildSlotsForLabStaff(date, duration);
         }
         return List.of();
@@ -77,25 +83,62 @@ public class AppointmentSlotService {
                 .collect(Collectors.toList());
     }
 
+    private int countAvailableKtvAtTime(List<Staff> labStaff, LocalDate date, LocalTime start, int slotMinutes) {
+        int count = 0;
+        for (Staff staff : labStaff) {
+            if (leaveRequestRepository.isDoctorOnLeave(staff.getStaffId(), date)) continue;
+            List<StaffSchedule> schedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(staff.getStaffId(), date);
+            for (StaffSchedule schedule : schedules) {
+                if (!start.isBefore(schedule.getStartTime()) && !start.plusMinutes(slotMinutes).isAfter(schedule.getEndTime())) {
+                    count++;
+                    break;
+                }
+            }
+        }
+        return count;
+    }
+
     private List<TimeSlotResponse> buildSlotsForLabStaff(LocalDate date, Integer intervalMinutes) {
         int slotMinutes = intervalMinutes != null && intervalMinutes > 0 ? intervalMinutes : 30;
         List<Staff> labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.LAB_TECH, 0);
         if (labStaff.isEmpty()) {
             labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.STAFF, 0);
         }
-        Map<String, TimeSlotResponse> merged = new LinkedHashMap<>();
+        
+        if (labStaff.isEmpty()) return List.of();
+
+        Set<LocalTime> availableStartTimes = new TreeSet<>();
         for (Staff staff : labStaff) {
-            for (TimeSlotResponse slot : buildSlotsForDoctor(staff.getStaffId(), date, staff, slotMinutes)) {
-                if (!slot.isAvailable()) {
-                    continue;
+            List<StaffSchedule> schedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(staff.getStaffId(), date);
+            if (leaveRequestRepository.isDoctorOnLeave(staff.getStaffId(), date)) continue;
+
+            for (StaffSchedule schedule : schedules) {
+                LocalTime current = schedule.getStartTime();
+                while (current.isBefore(schedule.getEndTime())
+                        && !current.plusMinutes(slotMinutes).isAfter(schedule.getEndTime())) {
+                    availableStartTimes.add(current);
+                    current = current.plusMinutes(slotMinutes);
                 }
-                String key = slot.getTimeStart() + "-" + slot.getTimeEnd();
-                merged.putIfAbsent(key, slot);
             }
         }
-        return merged.values().stream()
-                .sorted(Comparator.comparing(TimeSlotResponse::getTimeStart))
-                .collect(Collectors.toList());
+
+        List<TimeSlotResponse> finalSlots = new ArrayList<>();
+        for (LocalTime start : availableStartTimes) {
+            int activeKtvCount = countAvailableKtvAtTime(labStaff, date, start, slotMinutes);
+            if (activeKtvCount == 0) continue;
+            
+            int maxOnlineCapacity = Math.max(1, (int) (activeKtvCount * 0.5));
+            long bookedCount = appointmentRepository.countByBookingModeAndDateAndTimeStart(
+                    com.clinic.common.enums.BookingMode.SERVICE, date, start);
+            
+            TimeSlotResponse slot = new TimeSlotResponse();
+            slot.setTimeStart(start);
+            slot.setTimeEnd(start.plusMinutes(slotMinutes));
+            slot.setAvailable(bookedCount < maxOnlineCapacity);
+            finalSlots.add(slot);
+        }
+
+        return finalSlots;
     }
 
     private List<TimeSlotResponse> buildSlotsForDoctor(Integer doctorId, LocalDate date, Staff staffRef) {

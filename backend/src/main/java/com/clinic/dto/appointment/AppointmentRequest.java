@@ -45,4 +45,6 @@ public class AppointmentRequest {
     private CreatedByType createdBy;
 
     private String note;
+
+    private String rescheduleReason;
 }

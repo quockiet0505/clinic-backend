@@ -27,6 +27,9 @@ public interface ServiceOrderMapper {
     @Mapping(source = "orderedBy.fullName", target = "doctorName")
     @Mapping(source = "sampleCollectedBy.staffId", target = "sampleCollectedById")
     @Mapping(source = "sampleCollectedBy.fullName", target = "sampleCollectedByName")
+    @Mapping(source = "medicalRecord.appointment.appointmentDate", target = "appointmentDate")
+    @Mapping(source = "medicalRecord.appointment.timeStart", target = "timeStart")
+    @Mapping(source = "medicalRecord.appointment.timeEnd", target = "timeEnd")
     ServiceOrderResponse toResponse(ServiceOrder serviceOrder);
 
     @org.mapstruct.AfterMapping

@@ -20,4 +20,5 @@ public interface StaffRepository extends JpaRepository<Staff, Integer>, JpaSpeci
     List<Staff> findByStaffTypeAndIsDeletedAndIsFeaturedOrderByFeaturedPriorityAsc(StaffType staffType, Integer isDeleted, Boolean isFeatured);
     long countByExpertiseAndStaffType(Expertise expertise, StaffType staffType);
     Optional<Staff> findByAccount_AccountId(Integer accountId);
+    Optional<Staff> findByAccount_Email(String email);
 }

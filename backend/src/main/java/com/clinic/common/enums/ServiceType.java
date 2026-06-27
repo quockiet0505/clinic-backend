@@ -12,7 +12,7 @@ public enum ServiceType {
 
     /** BN đặt lịch trực tiếp (SERVICE mode): chỉ xét nghiệm và X-Quang. */
     public boolean isPatientBookable() {
-        return this == LAB_TEST || this == X_RAY;
+        return this != EXAM && this != OTHER;
     }
 
     /** EXAM tạm ẩn toàn hệ thống (catalog, booking). */

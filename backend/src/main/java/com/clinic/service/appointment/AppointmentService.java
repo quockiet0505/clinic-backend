@@ -45,6 +45,12 @@ import com.clinic.repository.staff.ExpertiseRepository;
 import com.clinic.repository.staff.StaffRepository;
 import com.clinic.repository.staff.StaffScheduleRepository;
 import com.clinic.repository.staff.LeaveRequestRepository;
+import com.clinic.repository.medical.MedicalRecordRepository;
+import com.clinic.repository.medical.ServiceOrderRepository;
+import com.clinic.entity.medical.MedicalRecord;
+import com.clinic.entity.medical.ServiceOrder;
+import com.clinic.common.enums.MedicalRecordStatus;
+import com.clinic.common.enums.ServiceOrderStatus;
 import com.clinic.specification.appointment.AppointmentSpecification;
 import com.clinic.util.FilterUtils;
 import com.clinic.util.HolidayUtils;
@@ -62,6 +68,8 @@ public class AppointmentService {
     private final ExpertiseRepository expertiseRepository;
     private final StaffScheduleRepository scheduleRepository;
     private final LeaveRequestRepository leaveRequestRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
+    private final ServiceOrderRepository serviceOrderRepository;
     private final AppointmentMapper appointmentMapper;
     private final com.clinic.service.crm.NotificationService notificationService;
 
@@ -125,7 +133,7 @@ public class AppointmentService {
             throw new RuntimeException("No lab technician available.");
         }
         
-        LocalTime slotEnd = slotStart.plusMinutes(durationMinutes != null ? durationMinutes : 15);
+        LocalTime slotEnd = slotStart.plusMinutes(durationMinutes != null ? durationMinutes : 30);
 
         for (Staff tech : techs) {
             if (!leaveRequestRepository.isDoctorOnLeave(tech.getStaffId(), date)) {
@@ -138,10 +146,15 @@ public class AppointmentService {
     }
 
     private boolean isSlotTakenByDoctor(Integer doctorId, LocalDate date, LocalTime slotStart, LocalTime slotEnd) {
+        return isSlotTakenByDoctor(doctorId, date, slotStart, slotEnd, null);
+    }
+
+    private boolean isSlotTakenByDoctor(Integer doctorId, LocalDate date, LocalTime slotStart, LocalTime slotEnd, Integer excludeAppointmentId) {
         List<Appointment> existing = appointmentRepository
                 .findByMainDoctor_StaffIdAndAppointmentDateAndIsDeleted(doctorId, date, 0);
         return existing.stream().anyMatch(a ->
-                a.getStatus() != AppointmentStatus.CANCELLED
+                (excludeAppointmentId == null || !a.getAppointmentId().equals(excludeAppointmentId))
+                        && a.getStatus() != AppointmentStatus.CANCELLED
                         && a.getStatus() != AppointmentStatus.NO_SHOW
                         && a.getTimeStart() != null
                         && (a.getTimeStart().equals(slotStart)
@@ -181,8 +194,8 @@ public class AppointmentService {
         LocalDate date = request.getAppointmentDate();
 
         // 1. Weekend check
-        if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            throw new RuntimeException("Cannot book on weekends.");
+        if (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            throw new RuntimeException("Phòng khám nghỉ Chủ nhật, vui lòng chọn ngày khác.");
         }
 
         // 2. Holiday check
@@ -226,7 +239,7 @@ public class AppointmentService {
                         .max(LocalTime::compareTo)
                         .orElse(LocalTime.MAX);
             }
-            if (request.getTimeStart().plusMinutes(15).isAfter(latestEndTime)) {
+            if (request.getTimeStart().plusMinutes(30).isAfter(latestEndTime)) {
                 throw new RuntimeException("Doctor is ending shift soon. Cannot accept more walk-ins.");
             }
         }
@@ -288,7 +301,7 @@ public class AppointmentService {
                             "Dịch vụ này chỉ được chỉ định trong quá trình khám, không đặt lịch trực tiếp.");
                 }
                 if (request.getTimeStart() != null) {
-                    Integer duration = service.getEstimatedDuration() != null ? service.getEstimatedDuration() : 15;
+                    Integer duration = 30; // Tạm thời fix cứng 30p theo yêu cầu
                     request.setTimeEnd(request.getTimeStart().plusMinutes(duration));
                     doctor = autoAssignTechnician(request.getAppointmentDate(), request.getTimeStart(), duration);
                     request.setMainDoctorId(doctor.getStaffId());
@@ -323,22 +336,157 @@ public class AppointmentService {
                         request.getAppointmentDate()).orElse(0);
                 appointment.setQueueNumber(maxQueue + 1);
             }
+            if (mode == BookingMode.SERVICE) {
+                // Tự động chuyển qua phòng Lab
+                appointment.setStatus(AppointmentStatus.WAITING_RESULT);
+            }
         }
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        // Auto-create medical record and service order for SERVICE mode walk-in
+        if (request.getAppointmentType() == AppointmentType.WALK_IN && mode == BookingMode.SERVICE && service != null) {
+            MedicalRecord record = new MedicalRecord();
+            record.setPatient(patient);
+            record.setAppointment(savedAppointment);
+            record.setStatus(MedicalRecordStatus.WAITING_RESULT);
+            MedicalRecord savedRecord = medicalRecordRepository.save(record);
+
+            ServiceOrder order = new ServiceOrder();
+            order.setMedicalRecord(savedRecord);
+            order.setService(service);
+            // Giá dịch vụ (ưu tiên giá khuyến mãi nếu có)
+            java.math.BigDecimal price = (service.getDiscountPrice() != null && service.getDiscountPrice().compareTo(java.math.BigDecimal.ZERO) > 0) 
+                                        ? service.getDiscountPrice() : service.getOriginalPrice();
+            order.setPriceAtTime(price);
+            order.setStatus(ServiceOrderStatus.ORDERED);
+            // System/Receptionist ordered it
+            if (request.getCreatedBy() != null && request.getCreatedBy().equals("STAFF")) {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.getName() != null) {
+                    staffRepository.findByAccount_Email(auth.getName()).ifPresent(order::setOrderedBy);
+                }
+            }
+            serviceOrderRepository.save(order);
+        }
 
         // Send Notification
         String dateStr = request.getAppointmentDate().toString();
         String timeStr = request.getTimeStart().toString();
         if (request.getAppointmentType() == AppointmentType.WALK_IN) {
-            notificationService.createAndSendNotification(
-                    patient.getAccount().getAccountId(),
-                    "Lịch khám trực tiếp của bạn đã được Check-in. Số thứ tự của bạn là " + savedAppointment.getQueueNumber() + ".",
-                    "SYSTEM");
+            if (mode == BookingMode.SERVICE) {
+                notificationService.createAndSendNotification(
+                        patient.getAccount().getAccountId(),
+                        "Bạn đã được tạo phiếu chỉ định. Vui lòng di chuyển đến phòng Xét nghiệm / Chụp chiếu.",
+                        "SYSTEM");
+            } else {
+                notificationService.createAndSendNotification(
+                        patient.getAccount().getAccountId(),
+                        "Lịch khám trực tiếp của bạn đã được Check-in. Số thứ tự của bạn là " + savedAppointment.getQueueNumber() + ".",
+                        "SYSTEM");
+            }
         } else {
             notificationService.createAndSendNotification(
                     patient.getAccount().getAccountId(),
                     "Lịch hẹn khám của bạn vào ngày " + dateStr + " lúc " + timeStr + " đã được tạo thành công.",
+                    "SYSTEM");
+        }
+
+        return enrichResponse(savedAppointment);
+    }
+
+    @Transactional
+    public AppointmentResponse updateAppointment(Integer id, AppointmentRequest request) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        
+        // 1. Status Validation
+        if (appointment.getStatus() == AppointmentStatus.COMPLETED || appointment.getStatus() == AppointmentStatus.CANCELLED || appointment.getStatus() == AppointmentStatus.NO_SHOW) {
+            throw new RuntimeException("Không thể dời lịch khi trạng thái là " + appointment.getStatus().name());
+        }
+
+        // 2. Limit Check
+        int currentCount = appointment.getRescheduleCount() != null ? appointment.getRescheduleCount() : 0;
+        if (currentCount >= 2) {
+            throw new RuntimeException("Lịch hẹn này đã đạt giới hạn số lần dời lịch (2 lần). Vui lòng liên hệ lễ tân để được hỗ trợ.");
+        }
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isPatient = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
+        
+        // 3. Time constraint for PATIENT
+        if (isPatient) {
+            if (appointment.getAppointmentDate() != null && appointment.getTimeStart() != null) {
+                LocalDateTime appointmentDateTime = LocalDateTime.of(appointment.getAppointmentDate(), appointment.getTimeStart());
+                if (LocalDateTime.now().isAfter(appointmentDateTime.minusHours(3))) {
+                    throw new RuntimeException("Chỉ được phép dời lịch trước thời gian khám hiện tại ít nhất 3 tiếng.");
+                }
+            }
+        }
+
+        LocalDate oldDate = appointment.getAppointmentDate();
+        LocalDate newDate = request.getAppointmentDate();
+        
+        // 4. Validate new slot
+        if (request.getMainDoctorId() != null || appointment.getMainDoctor() != null) {
+            Integer doctorId = request.getMainDoctorId() != null ? request.getMainDoctorId() : appointment.getMainDoctor().getStaffId();
+            
+            if (newDate.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+                throw new RuntimeException("Phòng khám nghỉ Chủ nhật, vui lòng chọn ngày khác.");
+            }
+            if (com.clinic.utils.HolidayUtils.isHoliday(newDate)) {
+                throw new RuntimeException("Không thể đặt lịch vào ngày nghỉ lễ.");
+            }
+            if (leaveRequestRepository.isDoctorOnLeave(doctorId, newDate)) {
+                throw new RuntimeException("Bác sĩ có lịch nghỉ vào ngày này.");
+            }
+            
+            List<com.clinic.entity.staff.StaffSchedule> dailySchedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(doctorId, newDate);
+            if (dailySchedules.isEmpty()) {
+                LocalTime start = request.getTimeStart();
+                if (start != null) {
+                    boolean isMorning = (!start.isBefore(LocalTime.of(7, 30)) && start.isBefore(LocalTime.of(11, 30)));
+                    boolean isAfternoon = (!start.isBefore(LocalTime.of(13, 30)) && start.isBefore(LocalTime.of(17, 0)));
+                    if (!isMorning && !isAfternoon) {
+                        throw new RuntimeException("Giờ khám nằm ngoài giờ làm việc mặc định.");
+                    }
+                }
+            }
+
+            if (isSlotTakenByDoctor(doctorId, newDate, request.getTimeStart(), request.getTimeEnd(), id)) {
+                throw new RuntimeException("Khung giờ này đã có người đặt, vui lòng chọn giờ khác.");
+            }
+        }
+        
+        // 5. Update data
+        appointment.setAppointmentDate(newDate);
+        appointment.setTimeStart(request.getTimeStart());
+        appointment.setTimeEnd(request.getTimeEnd());
+        appointment.setRescheduleReason(request.getRescheduleReason());
+        appointment.setRescheduleCount(currentCount + 1);
+        
+        if (request.getMainDoctorId() != null) {
+            Staff doctor = staffRepository.findById(request.getMainDoctorId())
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+            appointment.setMainDoctor(doctor);
+        }
+
+        if (oldDate != null && !oldDate.equals(newDate) && 
+            (appointment.getStatus() == AppointmentStatus.CHECKED_IN || appointment.getStatus() == AppointmentStatus.PENDING)) {
+            
+            Integer maxQueue = appointmentRepository.findMaxQueueNumberByDoctorAndDate(
+                    appointment.getMainDoctor() != null ? appointment.getMainDoctor().getStaffId() : null, 
+                    newDate).orElse(0);
+            appointment.setQueueNumber(maxQueue + 1);
+        }
+        
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        // 6. Notify Patient
+        if (!isPatient) {
+            notificationService.createAndSendNotification(
+                    appointment.getPatient().getAccount().getAccountId(),
+                    "Lịch hẹn khám của bạn đã được dời sang ngày " + newDate + " lúc " + request.getTimeStart() + ".",
                     "SYSTEM");
         }
 
@@ -367,6 +515,30 @@ public class AppointmentService {
             }
             
             justCheckedIn = true;
+            
+            // Auto-create Service Order for ONLINE/APP SERVICE mode when checking in
+            if (appointment.getBookingMode() == BookingMode.SERVICE && appointment.getService() != null) {
+                newStatus = AppointmentStatus.WAITING_RESULT;
+                
+                MedicalRecord record = new MedicalRecord();
+                record.setPatient(appointment.getPatient());
+                record.setAppointment(appointment);
+                record.setStatus(MedicalRecordStatus.WAITING_RESULT);
+                MedicalRecord savedRecord = medicalRecordRepository.save(record);
+
+                ServiceOrder order = new ServiceOrder();
+                order.setMedicalRecord(savedRecord);
+                order.setService(appointment.getService());
+                java.math.BigDecimal price = (appointment.getService().getDiscountPrice() != null && appointment.getService().getDiscountPrice().compareTo(java.math.BigDecimal.ZERO) > 0) 
+                                            ? appointment.getService().getDiscountPrice() : appointment.getService().getOriginalPrice();
+                order.setPriceAtTime(price);
+                order.setStatus(ServiceOrderStatus.ORDERED);
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.getName() != null) {
+                    staffRepository.findByAccount_Email(auth.getName()).ifPresent(order::setOrderedBy);
+                }
+                serviceOrderRepository.save(order);
+            }
         }
         if (newStatus == AppointmentStatus.COMPLETED && appointment.getStatus() != AppointmentStatus.COMPLETED) {
             appointment.setCheckoutTime(LocalDateTime.now());
@@ -377,10 +549,17 @@ public class AppointmentService {
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
         if (justCheckedIn) {
-            notificationService.createAndSendNotification(
-                    appointment.getPatient().getAccount().getAccountId(),
-                    "Bạn đã check-in thành công. Vui lòng chờ đến lượt khám. Số thứ tự của bạn là " + savedAppointment.getQueueNumber() + ".",
-                    "SYSTEM");
+            if (appointment.getBookingMode() == BookingMode.SERVICE) {
+                notificationService.createAndSendNotification(
+                        appointment.getPatient().getAccount().getAccountId(),
+                        "Bạn đã được tạo phiếu chỉ định. Vui lòng di chuyển đến phòng Xét nghiệm / Chụp chiếu.",
+                        "SYSTEM");
+            } else {
+                notificationService.createAndSendNotification(
+                        appointment.getPatient().getAccount().getAccountId(),
+                        "Bạn đã check-in thành công. Vui lòng chờ đến lượt khám. Số thứ tự của bạn là " + savedAppointment.getQueueNumber() + ".",
+                        "SYSTEM");
+            }
         } else if (justCompleted) {
             notificationService.createAndSendNotification(
                     appointment.getPatient().getAccount().getAccountId(),

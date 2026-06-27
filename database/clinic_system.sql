@@ -203,6 +203,10 @@ CREATE TABLE appointment (
     cancelled_by ENUM('PATIENT', 'CLINIC') NULL,
     cancel_reason TEXT,
     
+    -- Lịch sử dời lịch
+    reschedule_reason VARCHAR(255) NULL,
+    reschedule_count INT DEFAULT 0,
+    
     -- Ghi chú của bệnh nhân (mô tả triệu chứng, yêu cầu đặc biệt, ...)
     note TEXT NULL,
     

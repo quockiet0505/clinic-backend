@@ -1,6 +1,8 @@
 package com.clinic.dto.medical;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +22,9 @@ public class ServiceOrderResponse {
     private String doctorNote;
     private String patientName;
     private String doctorName;
+    private LocalDate appointmentDate;
+    private LocalTime timeStart;
+    private LocalTime timeEnd;
     private String status;
     private Integer orderedById;            
     private String orderedByName;          

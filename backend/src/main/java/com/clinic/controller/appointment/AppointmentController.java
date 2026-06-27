@@ -45,6 +45,14 @@ public class AppointmentController {
         return ResponseUtil.success("Appointment created successfully", appointmentService.create(request));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody AppointmentRequest request) {
+        return ResponseUtil.success("Appointment updated successfully", appointmentService.updateAppointment(id, request));
+    }
+
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> updateStatus(
