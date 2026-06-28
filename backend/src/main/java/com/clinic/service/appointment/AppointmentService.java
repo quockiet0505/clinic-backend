@@ -434,7 +434,7 @@ public class AppointmentService {
             if (newDate.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
                 throw new RuntimeException("Phòng khám nghỉ Chủ nhật, vui lòng chọn ngày khác.");
             }
-            if (com.clinic.utils.HolidayUtils.isHoliday(newDate)) {
+            if (HolidayUtils.isHoliday(newDate)) {
                 throw new RuntimeException("Không thể đặt lịch vào ngày nghỉ lễ.");
             }
             if (leaveRequestRepository.isDoctorOnLeave(doctorId, newDate)) {
