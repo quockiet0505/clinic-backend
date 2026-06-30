@@ -68,6 +68,6 @@ jobs:
             export JWT_SECRET=\$(gcloud secrets versions access latest --secret=JWT_SECRET)
             
             # Pull new image and restart backend
-            sudo -E docker compose pull backend
-            sudo -E docker compose up -d backend
+            sudo DB_PASSWORD="\$DB_PASSWORD" JWT_SECRET="\$JWT_SECRET" docker compose pull backend
+            sudo DB_PASSWORD="\$DB_PASSWORD" JWT_SECRET="\$JWT_SECRET" docker compose up -d backend
           "
