@@ -64,9 +64,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             log.info("Database already contains the admin account. Skipping seeder.");
         }
 
-        // Fix missing created_at in service_result
-        entityManager.createNativeQuery("UPDATE service_result SET created_at = entered_at WHERE created_at IS NULL AND entered_at IS NOT NULL").executeUpdate();
-        entityManager.createNativeQuery("UPDATE service_result SET created_at = NOW() WHERE created_at IS NULL").executeUpdate();
+
     }
 
     private void seedRoleIfNotFound(String roleCode, String roleName) {
