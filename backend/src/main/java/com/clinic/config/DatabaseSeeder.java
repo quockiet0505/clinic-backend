@@ -17,6 +17,13 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.clinic.entity.base.LogoSetting;
+import com.clinic.entity.base.BannerSetting;
+import com.clinic.entity.base.QuickAction;
+import com.clinic.repository.base.LogoSettingRepository;
+import com.clinic.repository.base.BannerSettingRepository;
+import com.clinic.repository.base.QuickActionRepository;
+
 import org.springframework.core.annotation.Order;
 
 @Slf4j
@@ -28,6 +35,9 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final AccountRepository accountRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LogoSettingRepository logoSettingRepository;
+    private final BannerSettingRepository bannerSettingRepository;
+    private final QuickActionRepository quickActionRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -64,7 +74,38 @@ public class DatabaseSeeder implements CommandLineRunner {
             log.info("Database already contains the admin account. Skipping seeder.");
         }
 
+        // 3. Seed Default Logos, Banners, and Quick Actions
+        seedDefaultLogos();
+        seedDefaultBanners();
+        seedDefaultQuickActions();
+    }
 
+    private void seedDefaultLogos() {
+        if (logoSettingRepository.count() == 0) {
+            log.info("Seeding default logo settings...");
+            logoSettingRepository.save(new LogoSetting("main", "/images/logo.png"));
+            logoSettingRepository.save(new LogoSetting("login", "/images/logo.png"));
+            logoSettingRepository.save(new LogoSetting("favicon", "/images/logo.png"));
+        }
+    }
+
+    private void seedDefaultBanners() {
+        if (bannerSettingRepository.count() == 0) {
+            log.info("Seeding default banner settings...");
+            bannerSettingRepository.save(BannerSetting.builder().bannerKey("main").imageUrl("/images/banners/hero-banner.jpg").isActive(true).displayOrder(1).build());
+            bannerSettingRepository.save(BannerSetting.builder().bannerKey("doctor").imageUrl("/images/banners/doctor.webp").isActive(true).displayOrder(2).build());
+            bannerSettingRepository.save(BannerSetting.builder().bannerKey("service").imageUrl("/images/banners/service.jpg").isActive(true).displayOrder(3).build());
+        }
+    }
+
+    private void seedDefaultQuickActions() {
+        if (quickActionRepository.count() == 0) {
+            log.info("Seeding default quick actions...");
+            quickActionRepository.save(QuickAction.builder().title("Đặt khám Bác sĩ").slug("dat-kham-bac-si").iconUrl("/icons/quick-actions/dat-kham-theo-bac-si.png").isActive(true).displayOrder(1).build());
+            quickActionRepository.save(QuickAction.builder().title("Đặt khám Chuyên khoa").slug("dat-kham-chuyen-khoa").iconUrl("/icons/quick-actions/dat-kham-chuyen-khoa.png").isActive(true).displayOrder(2).build());
+            quickActionRepository.save(QuickAction.builder().title("Đặt lịch Xét nghiệm").slug("dat-lich-xet-nghiem").iconUrl("/icons/quick-actions/dat-lich-xet-nghiem.png").isActive(true).displayOrder(3).build());
+            quickActionRepository.save(QuickAction.builder().title("Tư vấn sức khoẻ").slug("tu-van-suc-khoe").iconUrl("/icons/quick-actions/dat-kham-tai-co-so.png").isActive(true).displayOrder(4).build());
+        }
     }
 
     private void seedRoleIfNotFound(String roleCode, String roleName) {
