@@ -61,7 +61,7 @@ jobs:
             cd ~/deploy
             
             # Configure Docker Auth on VM to pull from Artifact Registry
-            sudo gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
+            gcloud auth print-access-token | sudo docker login -u oauth2accesstoken --password-stdin https://asia-southeast1-docker.pkg.dev
             
             # Fetch secrets from Secret Manager (nạp vào biến môi trường)
             export DB_PASSWORD=\$(gcloud secrets versions access latest --secret=DB_PASSWORD)
