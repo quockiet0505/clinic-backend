@@ -21,5 +21,8 @@ EXPOSE 8080
 # Copy the built JAR from the 'build' stage
 COPY --from=build /app/target/*.jar app.jar
 
+# Copy public directory containing static assets (images, icons)
+COPY public ./public
+
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
