@@ -23,7 +23,7 @@ services:
     image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/backend:latest
     container_name: backend
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/clinic_system?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true 
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/clinic_system?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
