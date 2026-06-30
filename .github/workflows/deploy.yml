@@ -69,5 +69,5 @@ jobs:
             
             # Pull new image and restart backend
             sudo DB_PASSWORD="\$DB_PASSWORD" JWT_SECRET="\$JWT_SECRET" docker compose pull backend
-            sudo DB_PASSWORD="\$DB_PASSWORD" JWT_SECRET="\$JWT_SECRET" docker compose up -d backend
+            sudo DB_PASSWORD="\$DB_PASSWORD" JWT_SECRET="\$JWT_SECRET" docker compose up -d backend nginx-proxy
           "
