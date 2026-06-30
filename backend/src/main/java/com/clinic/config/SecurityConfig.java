@@ -147,7 +147,9 @@ public class SecurityConfig {
 
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:*",
-                "http://127.0.0.1:*"
+                "http://127.0.0.1:*",
+                "http://*.duongquockiet.id.vn",
+                "https://*.duongquockiet.id.vn"
         ));
 
         configuration.setAllowedMethods(Arrays.asList(
