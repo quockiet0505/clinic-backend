@@ -557,26 +557,3 @@ CREATE TABLE IF NOT EXISTS contact_message (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (replied_by) REFERENCES staff(staff_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
--- SEED DEFAULT SETTINGS FOR WEBSITE (LOGO, BANNER, QUICK ACTIONS)
--- --------------------------------------------------------
-
-INSERT INTO logo_setting (logo_key, image_url) VALUES 
-('main', '/images/logo.png'),
-('login', '/images/logo.png'),
-('favicon', '/images/logo.png')
-ON DUPLICATE KEY UPDATE image_url = VALUES(image_url);
-
-INSERT INTO banner_setting (banner_key, image_url, display_order, is_active) VALUES
-('main', '/images/banners/hero-banner.jpg', 1, 1),
-('doctor', '/images/banners/doctor.webp', 2, 1),
-('service', '/images/banners/service.jpg', 3, 1)
-ON DUPLICATE KEY UPDATE image_url = VALUES(image_url);
-
-INSERT INTO quick_action (title, slug, icon_url, display_order, is_active) VALUES
-('Đặt khám Bác sĩ', 'dat-kham-bac-si', '/icons/quick-actions/dat-kham-theo-bac-si.png', 1, 1),
-('Đặt khám Chuyên khoa', 'dat-kham-chuyen-khoa', '/icons/quick-actions/dat-kham-chuyen-khoa.png', 2, 1),
-('Đặt lịch Xét nghiệm', 'dat-lich-xet-nghiem', '/icons/quick-actions/dat-lich-xet-nghiem.png', 3, 1),
-('Tư vấn sức khoẻ', 'tu-van-suc-khoe', '/icons/quick-actions/dat-kham-tai-co-so.png', 4, 1)
-ON DUPLICATE KEY UPDATE title = VALUES(title), icon_url = VALUES(icon_url), display_order = VALUES(display_order);
