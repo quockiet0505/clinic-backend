@@ -20,7 +20,7 @@ jobs:
       - name: Authenticate to Google Cloud (OIDC)
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: 'projects/1085023765253/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          workload_identity_provider: 'projects/1085023765253/locations/global/workloadIdentityPools/github-pool/providers/github-actions'
           service_account: 'github-deploy-sa@clinicqa-500817.iam.gserviceaccount.com'
 
       - name: Set up Cloud SDK
