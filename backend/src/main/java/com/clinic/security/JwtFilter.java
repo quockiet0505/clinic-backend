@@ -41,6 +41,7 @@ public class JwtFilter extends OncePerRequestFilter {
         if (
             uri.startsWith("/images/")
             || uri.startsWith("/icons/")
+            || uri.startsWith("/uploads/")
             || uri.startsWith("/error")
         ) {
             filterChain.doFilter(request, response);

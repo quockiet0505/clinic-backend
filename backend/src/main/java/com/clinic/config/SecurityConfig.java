@@ -85,6 +85,7 @@ public class SecurityConfig {
                                 "/error",
                                 "/images/**",
                                 "/icons/**",
+                                "/uploads/**",
                                 "/api/v1/auth/**",
                                 "/api/v1/static/**",
                                 "/api/v1/expertise",
