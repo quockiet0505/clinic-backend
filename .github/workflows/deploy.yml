@@ -41,13 +41,22 @@ jobs:
       - name: Deploy to VM via IAP SSH
         run: |
           # Create necessary directories
-          gcloud compute ssh clinic-vm --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" --command "mkdir -p ~/deploy/database"
+          gcloud compute ssh clinic-vm --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" --command "mkdir -p ~/deploy/database ~/deploy/nginx"
           
-          # Copy database script to VM
-          gcloud compute scp --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" ../database/clinic_system.sql clinic-vm:~/deploy/database/clinic_system.sql
+          # Copy deployment files and database script to VM
+          gcloud compute scp --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" deploy/docker-compose.yml clinic-vm:~/deploy/docker-compose.yml
+          gcloud compute scp --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" --recurse deploy/nginx/* clinic-vm:~/deploy/nginx/
+          gcloud compute scp --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" database/clinic_system.sql clinic-vm:~/deploy/database/clinic_system.sql
           
           # SSH into VM and restart the backend container
           gcloud compute ssh clinic-vm --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" --command "
+            # Install Docker if not exists
+            if ! command -v docker &> /dev/null; then
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sudo sh get-docker.sh
+              sudo usermod -aG docker \$USER
+            fi
+            
             # Navigate to deploy directory
             cd ~/deploy
             
