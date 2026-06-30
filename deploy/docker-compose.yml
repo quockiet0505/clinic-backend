@@ -1,0 +1,63 @@
+version: '3.8'
+
+x-logging: &default-logging
+  driver: gcplogs
+  options:
+    gcp-project: "clinicqa-500817"
+    gcp-log-cmd: "true"
+
+services:
+  mysql-db:
+    image: mysql:8
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: clinic_system
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/clinic_system.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    logging: *default-logging
+    restart: always
+
+  backend:
+    image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/backend:latest
+    container_name: backend
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/clinic_system?useSSL=false&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - mysql-db
+    logging: *default-logging
+    restart: always
+
+  admin-web:
+    image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/admin-web:latest
+    container_name: admin-web
+    logging: *default-logging
+    restart: always
+
+  patient-web:
+    image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/patient-web:latest
+    container_name: patient-web
+    logging: *default-logging
+    restart: always
+
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - admin-web
+      - patient-web
+    logging: *default-logging
+    restart: always
+
+volumes:
+  mysql-data:
