@@ -35,9 +35,15 @@ public class LeaveRequestService {
     private final LeaveRequestMapper leaveRequestMapper;
 
     @Transactional
-    public LeaveRequestResponse create(LeaveRequestRequest request) {
-        Staff staff = staffRepository.findById(request.getStaffId())
-                .orElseThrow(() -> new RuntimeException("Staff member not found."));
+    public LeaveRequestResponse create(LeaveRequestRequest request, String userEmail) {
+        Staff staff;
+        if (request.getStaffId() != null) {
+            staff = staffRepository.findById(request.getStaffId())
+                    .orElseThrow(() -> new RuntimeException("Staff member not found."));
+        } else {
+            staff = staffRepository.findByAccount_Email(userEmail)
+                    .orElseThrow(() -> new RuntimeException("Logged in staff member not found."));
+        }
 
         LeaveRequest leaveRequest = leaveRequestMapper.toEntity(request);
         leaveRequest.setStaff(staff);
@@ -78,6 +84,13 @@ public class LeaveRequestService {
         }
 
         return leaveRequestMapper.toResponse(leaveRequestRepository.save(leaveRequest));
+    }
+
+    @Transactional
+    public LeaveRequestResponse reviewLeaveRequest(Integer leaveId, LeaveStatus newStatus, String approverEmail, String rejectionReason) {
+        Staff approver = staffRepository.findByAccount_Email(approverEmail)
+                .orElseThrow(() -> new RuntimeException("Approver staff member not found."));
+        return reviewLeaveRequest(leaveId, newStatus, approver.getStaffId(), rejectionReason);
     }
 
     @Transactional

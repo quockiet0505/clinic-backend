@@ -4,16 +4,19 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.dto.staff.ReviewLeaveRequestRequest;
 import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.staff.LeaveRequestFilterRequest;
 import com.clinic.dto.staff.LeaveRequestRequest;
@@ -47,8 +50,11 @@ public class LeaveRequestController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
-    public ResponseEntity<ApiResponse<LeaveRequestResponse>> create(@Valid @RequestBody LeaveRequestRequest request) {
-        return ResponseUtil.success("Leave request created", leaveRequestService.create(request));
+    public ResponseEntity<ApiResponse<LeaveRequestResponse>> create(
+            @Valid @RequestBody LeaveRequestRequest request,
+            Authentication authentication
+    ) {
+        return ResponseUtil.success("Leave request created", leaveRequestService.create(request, authentication.getName()));
     }
 
     @DeleteMapping("/{id}")
@@ -56,5 +62,18 @@ public class LeaveRequestController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
         leaveRequestService.delete(id);
         return ResponseUtil.success("Leave request deleted", null);
+    }
+
+    @PutMapping("/{id}/review")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<LeaveRequestResponse>> review(
+            @PathVariable Integer id,
+            @Valid @RequestBody ReviewLeaveRequestRequest request,
+            Authentication authentication
+    ) {
+        return ResponseUtil.success(
+                "Leave request reviewed successfully",
+                leaveRequestService.reviewLeaveRequest(id, request.getStatus(), authentication.getName(), request.getRejectionReason())
+        );
     }
 }

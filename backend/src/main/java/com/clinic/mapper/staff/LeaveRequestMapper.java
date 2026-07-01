@@ -16,7 +16,11 @@ public interface LeaveRequestMapper {
 
     @Mapping(source = "staff.staffId", target = "staffId")
     @Mapping(source = "staff.fullName", target = "staffName")
+    @Mapping(source = "staff.fullName", target = "fullName")
+    @Mapping(source = "staff.staffType", target = "staffType")
     @Mapping(source = "approvedBy.staffId", target = "approvedById")
     @Mapping(source = "approvedBy.fullName", target = "approvedByName")
+    @Mapping(source = "approvedBy.fullName", target = "approvedBy")
+    @Mapping(source = "createdAt", target = "appliedAt")
     LeaveRequestResponse toResponse(LeaveRequest leaveRequest);
 }

@@ -7,7 +7,6 @@ import lombok.Data;
 
 @Data
 public class LeaveRequestRequest {
-    @NotNull
     private Integer staffId;
     @NotNull
     private LeaveType leaveType;

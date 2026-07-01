@@ -13,6 +13,8 @@ public class LeaveRequestResponse {
     private Integer leaveId;
     private Integer staffId;
     private String staffName;
+    private String fullName;
+    private com.clinic.common.enums.StaffType staffType;
     private LeaveType leaveType;
     private LocalDate fromDate;
     private LocalDate toDate;
@@ -20,6 +22,8 @@ public class LeaveRequestResponse {
     private LeaveStatus status;
     private Integer approvedById;
     private String approvedByName;
+    private String approvedBy;
     private String rejectionReason;
     private LocalDateTime reviewedAt;
+    private LocalDateTime appliedAt;
 }
