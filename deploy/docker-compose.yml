@@ -9,7 +9,6 @@ x-logging: &default-logging
 services:
   mysql-db:
     image: mysql:8
-    container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: clinic_system
@@ -17,37 +16,90 @@ services:
       - mysql-data:/var/lib/mysql
       - ./database/clinic_system.sql:/docker-entrypoint-initdb.d/init.sql:ro
     logging: *default-logging
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     restart: always
 
   backend:
     image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/backend:latest
-    container_name: backend
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/clinic_system?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
     depends_on:
       - mysql-db
     logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/public/quick-actions"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+      restart_policy:
+        condition: on-failure
     restart: always
 
   admin-web:
     image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/admin-web:latest
-    container_name: admin-web
     logging: *default-logging
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+        delay: 5s
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+      restart_policy:
+        condition: on-failure
     restart: always
 
   patient-web:
     image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/patient-web:latest
-    container_name: patient-web
     logging: *default-logging
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+        delay: 5s
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+      restart_policy:
+        condition: on-failure
     restart: always
 
   nginx-proxy:
     image: nginx:alpine
-    container_name: nginx-proxy
     ports:
       - "80:80"
       - "443:443"
@@ -58,6 +110,10 @@ services:
       - admin-web
       - patient-web
     logging: *default-logging
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     restart: always
 
 volumes:

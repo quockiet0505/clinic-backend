@@ -63,6 +63,12 @@ jobs:
               sudo usermod -aG docker \$USER
             fi
             
+            # Initialize Swarm if not active
+            if ! sudo docker info --format '{{.Swarm.LocalNodeState}}' | grep -q 'active'; then
+              echo 'Initializing Docker Swarm...'
+              sudo docker swarm init || true
+            fi
+            
             # Navigate to deploy directory
             cd ~/deploy
             
@@ -73,28 +79,6 @@ jobs:
             export DB_PASSWORD=\$(gcloud secrets versions access latest --secret=DB_PASSWORD)
             export JWT_SECRET=\$(gcloud secrets versions access latest --secret=JWT_SECRET)
             
-            # Save the current running image tag for rollback
-            PREV_IMAGE=\$(sudo docker inspect --format='{{.Config.Image}}' backend 2>/dev/null || echo '')
-            
-            # Pull new image and restart backend
-            sudo DB_PASSWORD=\"\$DB_PASSWORD\" JWT_SECRET=\"\$JWT_SECRET\" docker compose pull backend
-            sudo DB_PASSWORD=\"\$DB_PASSWORD\" JWT_SECRET=\"\$JWT_SECRET\" docker compose up -d backend nginx-proxy
-            
-            echo 'Waiting for backend to start...'
-            sleep 15
-            
-            # Health check
-            if ! curl -s -f http://localhost:8080/api/v1/public/quick-actions > /dev/null; then
-              echo 'Health check failed! Rolling back to previous version...'
-              if [ -n \"\$PREV_IMAGE\" ]; then
-                sudo sed -i \"s|image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/backend:${{ github.sha }}|image: \$PREV_IMAGE|g\" docker-compose.yml
-                sudo DB_PASSWORD=\"\$DB_PASSWORD\" JWT_SECRET=\"\$JWT_SECRET\" docker compose up -d backend
-                echo 'Rollback completed.'
-              else
-                echo 'No previous image found. Manual intervention required.'
-              fi
-              exit 1
-            else
-              echo 'Deployment successful and healthy!'
-            fi
+            # Deploy or update the stack in Docker Swarm
+            sudo DB_PASSWORD=\"\$DB_PASSWORD\" JWT_SECRET=\"\$JWT_SECRET\" docker stack deploy -c docker-compose.yml clinic --with-registry-auth --prune
           "
