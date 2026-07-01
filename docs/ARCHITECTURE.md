@@ -22,3 +22,7 @@ Dự án được xây dựng theo mô hình **Layered Architecture (N-Tier)**:
 - Có sự đồng bộ chặt chẽ về Entity `Appointment`, truyền cờ `isAiSuggested`.
 
 *Các file tài liệu lẻ tẻ trước đây đã được xóa bỏ, vui lòng tham khảo file này cho cấu trúc tổng thể và file `business-flows.md` để xem nghiệp vụ chi tiết.*
+
+## 5. Kế hoạch Phát triển Hạ tầng tương lai (Roadmap)
+- **Tự động hóa hạ tầng (IaC):** Chuyển đổi việc cấu hình máy ảo (VM), mạng nội bộ (VPC), Luật tường lửa (Firewall), và Load Balancer thủ công trên GCP Console sang quản lý hoàn toàn bằng mã nguồn bằng cách sử dụng **SST (Infrastructure as Code - IaC)** (tham khảo cấu trúc tại dự án `cloud-engineer/infra`). Việc này giúp dễ dàng nhân bản và đồng bộ hạ tầng cho các môi trường khác nhau như Staging, UAT, và Production.
+- **Tự động sao lưu Database (Auto Backup):** Tích hợp công cụ sao lưu dữ liệu MySQL định kỳ và đẩy lên Google Cloud Storage (GCS) tương tự như giải pháp sử dụng WAL-G cho Postgres để đảm bảo an toàn dữ liệu khi có sự cố hệ thống vật lý.
