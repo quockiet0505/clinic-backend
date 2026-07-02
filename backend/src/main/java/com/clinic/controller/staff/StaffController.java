@@ -102,6 +102,16 @@ public class StaffController {
         ).getBody();
     }
 
+    @GetMapping("/doctors/paginated")
+    @PreAuthorize("permitAll()")
+    public ApiResponse<PageResponse<StaffResponse>> getDoctorsPaginated(@ModelAttribute StaffFilterRequest filter) {
+        filter.setStaffType(StaffType.DOCTOR);
+        return ResponseUtil.success(
+                "Doctors fetched successfully",
+                staffService.getAll(filter)
+        ).getBody();
+    }
+
     @GetMapping("/doctors/featured")
     @PreAuthorize("permitAll()")
     public ApiResponse<List<StaffResponse>> getFeaturedDoctors() {

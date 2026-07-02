@@ -10,8 +10,12 @@ import lombok.EqualsAndHashCode;
 public class StaffFilterRequest extends BaseFilterRequest {
     private StaffType staffType;
     private Integer expertiseId;
+    private String expertiseName;
     private Integer isActive;
     private Integer minRating;
+    private String gender;
+    private java.math.BigDecimal minPrice;
+    private java.math.BigDecimal maxPrice;
 
     public StaffFilterRequest() {
         setSortBy("fullName");
