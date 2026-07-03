@@ -122,6 +122,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/api/v1/public/**",
+                                "/api/v1/health",
                                 "/api/v1/chat/**",
                                 "/api/v1/settings",
                                 "/api/v1/settings/**"
