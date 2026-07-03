@@ -79,7 +79,7 @@ jobs:
             fi
             
             # Initialize Swarm if not active
-            if ! sudo docker info --format '{{.Swarm.LocalNodeState}}' | grep -q 'active'; then
+            if ! sudo docker info --format '{{.Swarm.LocalNodeState}}' | grep -qw 'active'; then
               echo 'Initializing Docker Swarm...'
               sudo docker swarm init || true
             fi
