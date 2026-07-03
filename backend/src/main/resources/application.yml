@@ -27,6 +27,7 @@ spring:
 
     database-platform: org.hibernate.dialect.MySQLDialect
 application:
+  ai-server-url: http://localhost:8000
   security:
     jwt:
       secret-key: VGhpc0lzQVN1cGVyU2VjdXJlSldUU2VjcmV0S2V5Rm9yQ2xpbmljU3lzdGVtMTIz

@@ -33,11 +33,11 @@ services:
       - mysql-db
     logging: *default-logging
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/api/v1/public/quick-actions"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/api/v1/health > /dev/null || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     deploy:
       replicas: 1
       update_config:
