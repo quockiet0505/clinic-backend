@@ -33,7 +33,7 @@ services:
       - mysql-db
     logging: *default-logging
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/public/quick-actions"]
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/api/v1/public/quick-actions"]
       interval: 10s
       timeout: 5s
       retries: 3
