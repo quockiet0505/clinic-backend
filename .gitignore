@@ -17,3 +17,10 @@ build/
 .env
 
 backend/public/uploads/
+
+# Terraform
+.terraform/
+.terraform.*
+*.tfstate
+*.tfstate.backup
+*.exe

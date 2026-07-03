@@ -1,10 +1,10 @@
 name: Deploy Backend to VM
 
 on:
-  workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
+  # workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -28,6 +28,21 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: 'clinicqa-500817'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Terraform Init
+        run: |
+          cd infra/terraform
+          terraform init
+
+      - name: Terraform Apply
+        run: |
+          cd infra/terraform
+          terraform apply -auto-approve
 
       - name: Configure Docker to use Artifact Registry
         run: |
