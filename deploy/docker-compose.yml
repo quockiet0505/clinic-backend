@@ -56,7 +56,7 @@ services:
     image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/admin-web:latest
     logging: *default-logging
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:80"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -79,7 +79,7 @@ services:
     image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/patient-web:latest
     logging: *default-logging
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:80"]
       interval: 10s
       timeout: 5s
       retries: 3
