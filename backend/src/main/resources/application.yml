@@ -19,6 +19,8 @@ spring:
     baseline-on-migrate: true
     baseline-version: "1"
     encoding: UTF-8
+    validate-on-migrate: false
+    out-of-order: true
 
     show-sql: true
 
