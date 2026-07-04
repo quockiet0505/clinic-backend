@@ -54,9 +54,8 @@ public class AppointmentSlotService {
                 throw new RuntimeException(
                         "Dịch vụ này chỉ được chỉ định trong quá trình khám, không đặt lịch trực tiếp.");
             }
-            // Sử dụng thời gian ước tính của dịch vụ (mặc định 30p nếu null/0)
-            int duration = (service.getEstimatedDuration() != null && service.getEstimatedDuration() > 0) 
-                           ? service.getEstimatedDuration() : 30;
+            // Ép buộc thời lượng 30 phút/slot cho dịch vụ theo yêu cầu
+            int duration = 30;
             return buildSlotsForLabStaff(date, duration);
         }
         return List.of();
