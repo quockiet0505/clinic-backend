@@ -5,7 +5,7 @@ spring:
       max-request-size: 10MB
 
   datasource:
-    url: jdbc:mysql://localhost:3306/clinic_system?useUnicode=true&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/clinic_system?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull
     username: root
     password: 12345678
     driver-class-name: com.mysql.cj.jdbc.Driver

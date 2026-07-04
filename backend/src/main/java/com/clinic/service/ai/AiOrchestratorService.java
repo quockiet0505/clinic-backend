@@ -62,7 +62,7 @@ public class AiOrchestratorService {
 
                 log.info("Sending /analyze to AI Server");
                 ResponseEntity<AnalyzeResponseDTO> analyzeResponse = restTemplate.postForEntity(
-                        aiServerUrl + "/api/v1/analyze",
+                        aiServerUrl + "/api/v1/chat/analyze",
                         entity,
                         AnalyzeResponseDTO.class
                 );
@@ -91,7 +91,7 @@ public class AiOrchestratorService {
                 String requestBody = objectMapper.writeValueAsString(generateRequest);
 
                 HttpRequest httpRequest = HttpRequest.newBuilder()
-                        .uri(URI.create(aiServerUrl + "/api/v1/generate"))
+                        .uri(URI.create(aiServerUrl + "/api/v1/chat/generate"))
                         .header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                         .build();
@@ -156,7 +156,7 @@ public class AiOrchestratorService {
             HttpEntity<AnalyzeRequestDTO> entity = new HttpEntity<>(analyzeRequest, headers);
 
             ResponseEntity<AnalyzeResponseDTO> analyzeResponse = restTemplate.postForEntity(
-                    aiServerUrl + "/api/v1/analyze",
+                    aiServerUrl + "/api/v1/chat/analyze",
                     entity,
                     AnalyzeResponseDTO.class
             );
@@ -180,7 +180,7 @@ public class AiOrchestratorService {
             String requestBody = objectMapper.writeValueAsString(generateRequest);
 
             HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(aiServerUrl + "/api/v1/generate"))
+                    .uri(URI.create(aiServerUrl + "/api/v1/chat/generate"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
