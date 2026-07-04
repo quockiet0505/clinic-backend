@@ -29,6 +29,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+      - APPLICATION_AI_SERVER_URL=https://judiciary-suitably-perpetual.ngrok-free.dev
     depends_on:
       - mysql-db
     logging: *default-logging
