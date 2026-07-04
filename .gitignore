@@ -24,3 +24,4 @@ backend/public/uploads/
 *.tfstate
 *.tfstate.backup
 *.exe
+reset-remote-db.*
