@@ -16,6 +16,7 @@ import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.prescription.PrescriptionFilterRequest;
 import com.clinic.dto.prescription.PrescriptionRequest;
 import com.clinic.dto.prescription.PrescriptionResponse;
+import com.clinic.dto.prescription.DrugInteractionWarning;
 import com.clinic.service.prescription.PrescriptionService;
 import org.springframework.web.bind.annotation.PutMapping;
 import com.clinic.util.ResponseUtil;
@@ -81,5 +82,12 @@ public class PrescriptionController {
                 "Prescription dispensed", 
                 (Void) null
         ).getBody(); 
+    }
+
+    @PostMapping("/check-interactions")
+    public ApiResponse<List<DrugInteractionWarning>> checkInteractions(@RequestBody List<Integer> medicineIds) {
+        List<DrugInteractionWarning> warnings = prescriptionService.checkInteractions(medicineIds);
+        String message = warnings.isEmpty() ? "An toàn, không phát hiện tương tác thuốc" : "Phát hiện có tương tác thuốc!";
+        return ResponseUtil.success(message, warnings).getBody();
     }
 }

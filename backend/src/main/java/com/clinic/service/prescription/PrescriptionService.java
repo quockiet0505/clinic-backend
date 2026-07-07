@@ -17,6 +17,7 @@ import com.clinic.dto.prescription.PrescriptionFilterRequest;
 import com.clinic.dto.prescription.PrescriptionItemRequest;
 import com.clinic.dto.prescription.PrescriptionRequest;
 import com.clinic.dto.prescription.PrescriptionResponse;
+import com.clinic.dto.prescription.DrugInteractionWarning;
 import com.clinic.entity.medical.MedicalRecord;
 import com.clinic.entity.prescription.Medicine;
 import com.clinic.entity.prescription.Prescription;
@@ -25,6 +26,7 @@ import com.clinic.entity.prescription.PrescriptionItemKey;
 import com.clinic.mapper.prescription.PrescriptionMapper;
 import com.clinic.repository.medical.MedicalRecordRepository;
 import com.clinic.repository.medical.ServiceOrderRepository;
+import com.clinic.repository.prescription.DrugInteractionRepository;
 import com.clinic.repository.prescription.MedicineRepository;
 import com.clinic.repository.prescription.PrescriptionRepository;
 import com.clinic.specification.prescription.PrescriptionSpecification;
@@ -41,6 +43,7 @@ public class PrescriptionService {
     private final MedicalRecordRepository medicalRecordRepository;
     private final ServiceOrderRepository serviceOrderRepository;
     private final MedicineRepository medicineRepository;
+    private final DrugInteractionRepository drugInteractionRepository;
     private final PatientRepository patientRepository;
     private final PrescriptionMapper prescriptionMapper;
 
@@ -54,6 +57,22 @@ public class PrescriptionService {
                 .anyMatch(o -> o.getStatus() == ServiceOrderStatus.ORDERED);
         if (hasPendingLabOrders) {
             throw new RuntimeException("Không thể kê đơn khi còn chỉ định cận lâm sàng chưa có kết quả.");
+        }
+
+        // Tự động kiểm tra tương tác thuốc trước khi lưu
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
+            List<Integer> medicineIds = request.getItems().stream()
+                    .map(PrescriptionItemRequest::getMedicineId)
+                    .collect(Collectors.toList());
+            List<DrugInteractionWarning> warnings = checkInteractions(medicineIds);
+            if (!warnings.isEmpty()) {
+                StringBuilder errorMsg = new StringBuilder("CẢNH BÁO TƯƠNG TÁC THUỐC NGHIÊM TRỌNG:\n");
+                for (DrugInteractionWarning w : warnings) {
+                    errorMsg.append(String.format("- %s và %s:\n  + Cơ chế: %s\n  + Hậu quả: %s\n  + Xử trí: %s\n\n", 
+                            w.getMedicine1(), w.getMedicine2(), w.getMechanism(), w.getConsequence(), w.getManagement()));
+                }
+                throw new RuntimeException(errorMsg.toString());
+            }
         }
 
         Prescription prescription = prescriptionMapper.toEntity(request);
@@ -117,5 +136,54 @@ public class PrescriptionService {
                 .orElseThrow(() -> new RuntimeException("Prescription not found."));
         prescription.setStatus("DISPENSED");
         prescriptionRepository.save(prescription);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DrugInteractionWarning> checkInteractions(List<Integer> medicineIds) {
+        List<DrugInteractionWarning> warnings = new ArrayList<>();
+        if (medicineIds == null || medicineIds.size() < 2) return warnings;
+
+        List<Medicine> medicines = medicineRepository.findAllById(medicineIds);
+        
+        for (int i = 0; i < medicines.size(); i++) {
+            for (int j = i + 1; j < medicines.size(); j++) {
+                Medicine m1 = medicines.get(i);
+                Medicine m2 = medicines.get(j);
+                
+                if (m1.getActiveElement() == null || m2.getActiveElement() == null) continue;
+
+                // Split, trim and sanitize
+                String[] elements1 = m1.getActiveElement().split("[,+]");
+                String[] elements2 = m2.getActiveElement().split("[,+]");
+
+                for (String e1 : elements1) {
+                    for (String e2 : elements2) {
+                        String cleanE1 = e1.trim().toLowerCase();
+                        String cleanE2 = e2.trim().toLowerCase();
+                        
+                        if (cleanE1.isEmpty() || cleanE2.isEmpty()) continue;
+
+                        List<com.clinic.entity.prescription.DrugInteraction> interactions = 
+                                drugInteractionRepository.findInteractions(cleanE1, cleanE2);
+                        
+                        for (com.clinic.entity.prescription.DrugInteraction interaction : interactions) {
+                            DrugInteractionWarning warning = new DrugInteractionWarning(
+                                    m1.getName(), m2.getName(), 
+                                    interaction.getMechanism(), 
+                                    interaction.getConsequence(), 
+                                    interaction.getManagement());
+                            
+                            boolean exists = warnings.stream().anyMatch(w -> 
+                                (w.getMedicine1().equals(warning.getMedicine1()) && w.getMedicine2().equals(warning.getMedicine2()))
+                            );
+                            if (!exists) {
+                                warnings.add(warning);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return warnings;
     }
 }
