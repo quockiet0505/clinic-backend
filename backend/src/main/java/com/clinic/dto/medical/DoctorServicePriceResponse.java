@@ -13,7 +13,7 @@ public class DoctorServicePriceResponse {
     private String doctorName;
 
     private BigDecimal originalPrice;
-    private BigDecimal discountPrice;
+    private BigDecimal discountAmount;
     private BigDecimal finalPrice;
 
     private String imageUrl;

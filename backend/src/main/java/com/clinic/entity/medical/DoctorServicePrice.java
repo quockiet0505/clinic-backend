@@ -46,8 +46,8 @@ public class DoctorServicePrice {
     @Column(name = "original_price", nullable = false)
     private BigDecimal originalPrice;
 
-    @Column(name = "discount_price", nullable = false)
-    private BigDecimal discountPrice;
+    @Column(name = "discount_amount")
+    private BigDecimal discountAmount;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

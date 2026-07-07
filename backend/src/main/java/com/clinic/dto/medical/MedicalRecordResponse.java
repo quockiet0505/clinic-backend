@@ -23,8 +23,7 @@ public class MedicalRecordResponse {
     private MedicalRecordStatus status;
     private LocalDateTime createdAt;
     
-    private java.math.BigDecimal consultationFee;
-    private java.math.BigDecimal serviceFee;
+    private java.math.BigDecimal consultationFinalFee;
     
     // Thêm lưu vết
     private Integer updatedByDoctorId;

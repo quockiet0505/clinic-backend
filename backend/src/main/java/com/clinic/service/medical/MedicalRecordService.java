@@ -115,20 +115,21 @@ public class MedicalRecordService {
                 if (consultationFee == null) {
                     consultationFee = new java.math.BigDecimal("300000"); // Giá mặc định nếu chưa cấu hình
                 }
-                record.setConsultationFee(consultationFee);
-
-                // Tự động tính tổng giá dịch vụ cận lâm sàng (Lab/Imaging)
-                java.math.BigDecimal totalServiceFee = java.math.BigDecimal.ZERO;
-                java.util.List<com.clinic.entity.medical.ServiceOrder> orders = serviceOrderRepository.findByMedicalRecordId(record.getRecordId());
-                for (com.clinic.entity.medical.ServiceOrder order : orders) {
-                    if (order.getStatus() != com.clinic.common.enums.ServiceOrderStatus.CANCELLED) {
-                        java.math.BigDecimal price = order.getPriceAtTime();
-                        if (price != null) {
-                            totalServiceFee = totalServiceFee.add(price);
-                        }
-                    }
+                var priceConfig = doctorServicePriceRepository.findActivePriceByDoctorId(record.getMainDoctor().getStaffId());
+                
+                if (priceConfig != null) {
+                    record.setConsultationOriginalFee(priceConfig.getOriginalPrice());
+                    record.setConsultationDiscount(priceConfig.getDiscountAmount());
+                    record.setConsultationFinalFee(
+                        priceConfig.getDiscountAmount() != null && priceConfig.getDiscountAmount().compareTo(java.math.BigDecimal.ZERO) > 0 
+                        ? priceConfig.getDiscountAmount() 
+                        : priceConfig.getOriginalPrice()
+                    );
+                } else {
+                    record.setConsultationOriginalFee(consultationFee);
+                    record.setConsultationDiscount(java.math.BigDecimal.ZERO);
+                    record.setConsultationFinalFee(consultationFee);
                 }
-                record.setServiceFee(totalServiceFee);
 
                 appointmentService.updateStatus(record.getAppointment().getAppointmentId(), com.clinic.common.enums.AppointmentStatus.COMPLETED, false);
             }
@@ -160,7 +161,6 @@ public class MedicalRecordService {
         vitalProfile.setBloodType(request.getBloodType());
         vitalProfile.setAllergies(request.getAllergies());
         vitalProfile.setMedicalHistory(request.getChronicDiseases());
-        // Temperature is not in DB, so we omit or add it to DB later. For now omit.
         
         vitalProfileRepository.save(vitalProfile);
 
@@ -238,8 +238,7 @@ public class MedicalRecordService {
                 .status(record.getStatus() != null ? record.getStatus().name() : null)
                 .createdAt(record.getCreatedAt())
                 .updatedAt(record.getUpdatedAt())
-                .consultationFee(record.getConsultationFee())
-                .serviceFee(record.getServiceFee())
+                .consultationFinalFee(record.getConsultationFinalFee())
                 .prescription(prescriptionResponse)
                 .serviceOrders(orderResponses)
                 .followUps(followUpResponses)

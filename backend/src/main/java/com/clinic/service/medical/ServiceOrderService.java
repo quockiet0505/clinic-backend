@@ -60,9 +60,9 @@ public class ServiceOrderService {
         order.setOrderedBy(orderedBy);
         order.setStatus(ServiceOrderStatus.ORDERED);
 
-        java.math.BigDecimal price = service.getDiscountPrice() != null ? service.getDiscountPrice() : service.getOriginalPrice();
-        if (price == null) price = java.math.BigDecimal.ZERO;
-        order.setPriceAtTime(price);
+        order.setServiceOriginalFee(service.getOriginalPrice());
+        order.setServiceDiscount(service.getDiscountAmount());
+        order.setServiceFinalFee(service.getDiscountAmount() != null && service.getDiscountAmount().compareTo(java.math.BigDecimal.ZERO) > 0 ? service.getDiscountAmount() : service.getOriginalPrice());
 
         return serviceOrderMapper.toResponse(serviceOrderRepository.save(order));
     }

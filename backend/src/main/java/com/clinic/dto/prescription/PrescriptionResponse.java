@@ -13,8 +13,7 @@ public class PrescriptionResponse {
     private String patientName;
     private String doctorName;
     private String diagnosis;
-    private BigDecimal consultationFee;
-    private BigDecimal serviceFee;
+    private BigDecimal consultationFinalFee;
     private String status;
     private LocalDateTime createdAt;
     private List<PrescriptionItemResponse> items;

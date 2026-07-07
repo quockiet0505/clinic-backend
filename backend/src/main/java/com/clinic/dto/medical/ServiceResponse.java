@@ -19,7 +19,7 @@ public class ServiceResponse {
 
     private BigDecimal originalPrice;
 
-    private BigDecimal discountPrice;
+    private BigDecimal discountAmount;
 
     private String description;
 

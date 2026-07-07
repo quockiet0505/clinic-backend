@@ -1,6 +1,7 @@
 package com.clinic.dto.medical;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 import com.clinic.common.enums.ServiceOrderStatus;
 
@@ -25,6 +26,9 @@ public class ServiceOrderRequest {
     
     // Cập nhật lấy mẫu / từ chối
     private String rejectionReason;
+    private BigDecimal serviceOriginalFee;
+    private BigDecimal serviceDiscount;
+    private BigDecimal serviceFinalFee;
     private LocalDateTime sampleCollectedAt;
     private Integer sampleCollectedById;
 }

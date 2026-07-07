@@ -36,8 +36,7 @@ public class MedicalRecordDetailResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    private java.math.BigDecimal consultationFee;
-    private java.math.BigDecimal serviceFee;
+    private java.math.BigDecimal consultationFinalFee;
     
     private PrescriptionResponse prescription;
     private List<ServiceOrderResponse> serviceOrders;

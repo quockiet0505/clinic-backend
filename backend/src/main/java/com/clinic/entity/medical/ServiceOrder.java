@@ -52,8 +52,14 @@ public class ServiceOrder {
     @JoinColumn(name = "ordered_by", nullable = false)
     private Staff orderedBy;
 
-    @Column(name = "price_at_time", precision = 10, scale = 2, nullable = false)
-    private java.math.BigDecimal priceAtTime;
+    @Column(name = "service_original_fee", precision = 10, scale = 2)
+    private java.math.BigDecimal serviceOriginalFee;
+
+    @Column(name = "service_discount", precision = 10, scale = 2)
+    private java.math.BigDecimal serviceDiscount;
+
+    @Column(name = "service_final_fee", precision = 10, scale = 2, nullable = false)
+    private java.math.BigDecimal serviceFinalFee;
 
     @Enumerated(EnumType.STRING)
     private ServiceOrderStatus status = ServiceOrderStatus.ORDERED;

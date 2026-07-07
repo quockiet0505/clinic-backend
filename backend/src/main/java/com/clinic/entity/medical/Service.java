@@ -45,8 +45,8 @@ public class Service {
     @Column(name = "original_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal originalPrice;
 
-    @Column(name = "discount_price", precision = 10, scale = 2)
-    private BigDecimal discountPrice;
+    @Column(name = "discount_amount", precision = 10, scale = 2)
+    private BigDecimal discountAmount;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;

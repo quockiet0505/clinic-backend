@@ -31,6 +31,8 @@ public class ServiceOrderResponse {
     private Integer sampleCollectedById;    
     private String sampleCollectedByName;  
     private LocalDateTime createdAt;
-    private java.math.BigDecimal price;
+    private java.math.BigDecimal serviceOriginalFee;
+    private java.math.BigDecimal serviceDiscount;
+    private java.math.BigDecimal serviceFinalFee;
     private ServiceResultResponse result;  
 }

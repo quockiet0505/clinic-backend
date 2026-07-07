@@ -13,11 +13,14 @@ public interface DoctorServicePriceRepository extends JpaRepository<DoctorServic
 
     @Query("""
         SELECT CASE
-            WHEN dsp.discountPrice IS NOT NULL AND dsp.discountPrice > 0 THEN dsp.discountPrice
+            WHEN dsp.discountAmount IS NOT NULL AND dsp.discountAmount > 0 THEN dsp.discountAmount
             ELSE dsp.originalPrice
         END
         FROM DoctorServicePrice dsp
         WHERE dsp.staff.staffId = :staffId
         """)
     java.math.BigDecimal getBaseConsultationFeeByDoctorId(@Param("staffId") Integer staffId);
+
+    @Query("SELECT dsp FROM DoctorServicePrice dsp WHERE dsp.staff.staffId = :staffId")
+    DoctorServicePrice findActivePriceByDoctorId(@Param("staffId") Integer staffId);
 }

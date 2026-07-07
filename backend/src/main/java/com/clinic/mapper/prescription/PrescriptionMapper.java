@@ -21,8 +21,7 @@ public interface PrescriptionMapper {
     @Mapping(source = "medicalRecord.patient.fullName", target = "patientName")
     @Mapping(source = "medicalRecord.mainDoctor.fullName", target = "doctorName")
     @Mapping(source = "medicalRecord.diagnosis", target = "diagnosis")
-    @Mapping(source = "medicalRecord.consultationFee", target = "consultationFee")
-    @Mapping(source = "medicalRecord.serviceFee", target = "serviceFee")
+    @Mapping(source = "medicalRecord.consultationFinalFee", target = "consultationFinalFee")
     PrescriptionResponse toResponse(Prescription prescription);
 
     @Mapping(target = "prescription", ignore = true)

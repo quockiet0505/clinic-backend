@@ -65,7 +65,7 @@ public class DoctorServicePriceService {
 
         priceConfig.setStaff(staff);
         priceConfig.setOriginalPrice(request.getOriginalPrice());
-        priceConfig.setDiscountPrice(request.getDiscountPrice());
+        priceConfig.setDiscountAmount(request.getDiscountPrice());
 
         return priceMapper.toResponse(priceRepository.save(priceConfig));
     }

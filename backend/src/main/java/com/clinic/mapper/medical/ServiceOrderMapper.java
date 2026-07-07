@@ -21,7 +21,9 @@ public interface ServiceOrderMapper {
     @Mapping(source = "medicalRecord.patient.fullName", target = "patientName")
     @Mapping(source = "service.serviceId", target = "serviceId")
     @Mapping(source = "service.serviceName", target = "serviceName")
-    @Mapping(source = "priceAtTime", target = "price")
+    @Mapping(source = "serviceOriginalFee", target = "serviceOriginalFee")
+    @Mapping(source = "serviceDiscount", target = "serviceDiscount")
+    @Mapping(source = "serviceFinalFee", target = "serviceFinalFee")
     @Mapping(source = "orderedBy.staffId", target = "orderedById")
     @Mapping(source = "orderedBy.fullName", target = "orderedByName")
     @Mapping(source = "orderedBy.fullName", target = "doctorName")
@@ -34,14 +36,10 @@ public interface ServiceOrderMapper {
 
     @org.mapstruct.AfterMapping
     default void fallbackPrice(ServiceOrder entity, @org.mapstruct.MappingTarget ServiceOrderResponse response) {
-        if (response.getPrice() == null || response.getPrice().compareTo(java.math.BigDecimal.ZERO) == 0) {
-            if (entity.getService() != null) {
-                if (entity.getService().getDiscountPrice() != null && entity.getService().getDiscountPrice().compareTo(java.math.BigDecimal.ZERO) > 0) {
-                    response.setPrice(entity.getService().getDiscountPrice());
-                } else if (entity.getService().getOriginalPrice() != null) {
-                    response.setPrice(entity.getService().getOriginalPrice());
-                }
-            }
+        if (entity.getService() != null) {
+            response.setServiceOriginalFee(entity.getService().getOriginalPrice());
+            response.setServiceDiscount(entity.getService().getDiscountAmount());
+            response.setServiceFinalFee(entity.getService().getDiscountAmount() != null && entity.getService().getDiscountAmount().compareTo(java.math.BigDecimal.ZERO) > 0 ? entity.getService().getDiscountAmount() : entity.getService().getOriginalPrice());
         }
     }
 }

@@ -60,11 +60,14 @@ public class MedicalRecord extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private MedicalRecordStatus status = MedicalRecordStatus.IN_PROGRESS;
 
-    @Column(name = "consultation_fee")
-    private BigDecimal consultationFee = BigDecimal.ZERO;
+    @Column(name = "consultation_original_fee")
+    private BigDecimal consultationOriginalFee = BigDecimal.ZERO;
 
-    @Column(name = "service_fee")
-    private BigDecimal serviceFee = BigDecimal.ZERO;
+    @Column(name = "consultation_discount")
+    private BigDecimal consultationDiscount = BigDecimal.ZERO;
+
+    @Column(name = "consultation_final_fee")
+    private BigDecimal consultationFinalFee = BigDecimal.ZERO;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by_doctor_id")

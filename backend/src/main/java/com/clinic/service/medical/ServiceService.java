@@ -62,7 +62,7 @@ public class ServiceService {
         }
         service.setServiceType(request.getServiceType());
         service.setOriginalPrice(request.getOriginalPrice());
-        service.setDiscountPrice(request.getDiscountPrice());
+        service.setDiscountAmount(request.getDiscountPrice());
         service.setImageUrl(request.getImageUrl());
         service.setIsFeatured(request.getIsFeatured());
         service.setFeaturedPriority(request.getFeaturedPriority());

@@ -356,9 +356,9 @@ public class AppointmentService {
             order.setMedicalRecord(savedRecord);
             order.setService(service);
             // Giá dịch vụ (ưu tiên giá khuyến mãi nếu có)
-            java.math.BigDecimal price = (service.getDiscountPrice() != null && service.getDiscountPrice().compareTo(java.math.BigDecimal.ZERO) > 0) 
-                                        ? service.getDiscountPrice() : service.getOriginalPrice();
-            order.setPriceAtTime(price);
+            order.setServiceOriginalFee(service.getOriginalPrice());
+            order.setServiceDiscount(service.getDiscountAmount());
+            order.setServiceFinalFee(service.getDiscountAmount() != null && service.getDiscountAmount().compareTo(java.math.BigDecimal.ZERO) > 0 ? service.getDiscountAmount() : service.getOriginalPrice());
             order.setStatus(ServiceOrderStatus.ORDERED);
             // System/Receptionist ordered it
             if (request.getCreatedBy() != null && request.getCreatedBy().equals("STAFF")) {
@@ -529,9 +529,9 @@ public class AppointmentService {
                 ServiceOrder order = new ServiceOrder();
                 order.setMedicalRecord(savedRecord);
                 order.setService(appointment.getService());
-                java.math.BigDecimal price = (appointment.getService().getDiscountPrice() != null && appointment.getService().getDiscountPrice().compareTo(java.math.BigDecimal.ZERO) > 0) 
-                                            ? appointment.getService().getDiscountPrice() : appointment.getService().getOriginalPrice();
-                order.setPriceAtTime(price);
+                order.setServiceOriginalFee(appointment.getService().getOriginalPrice());
+                order.setServiceDiscount(appointment.getService().getDiscountAmount());
+                order.setServiceFinalFee(appointment.getService().getDiscountAmount() != null && appointment.getService().getDiscountAmount().compareTo(java.math.BigDecimal.ZERO) > 0 ? appointment.getService().getDiscountAmount() : appointment.getService().getOriginalPrice());
                 order.setStatus(ServiceOrderStatus.ORDERED);
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 if (auth != null && auth.getName() != null) {

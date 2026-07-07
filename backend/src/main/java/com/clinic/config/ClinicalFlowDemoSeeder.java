@@ -243,7 +243,7 @@ public class ClinicalFlowDemoSeeder implements CommandLineRunner {
         s.setServiceName("Xét nghiệm máu tổng quát");
         s.setServiceType(ServiceType.LAB_TEST);
         s.setOriginalPrice(new BigDecimal("150000"));
-        s.setDiscountPrice(new BigDecimal("120000"));
+        s.setDiscountAmount(new BigDecimal("120000"));
         s.setIsDeleted(0);
         return serviceRepository.save(s);
     }
@@ -311,7 +311,9 @@ public class ClinicalFlowDemoSeeder implements CommandLineRunner {
         order.setMedicalRecord(record);
         order.setService(service);
         order.setOrderedBy(orderedBy);
-        order.setPriceAtTime(service.getDiscountPrice() != null ? service.getDiscountPrice() : service.getOriginalPrice());
+        order.setServiceOriginalFee(service.getOriginalPrice());
+        order.setServiceDiscount(service.getDiscountAmount());
+        order.setServiceFinalFee(service.getDiscountAmount() != null && service.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0 ? service.getDiscountAmount() : service.getOriginalPrice());
         order.setStatus(status);
         return serviceOrderRepository.save(order);
     }
