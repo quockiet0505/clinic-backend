@@ -149,6 +149,9 @@ public class AppointmentQueueService {
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
+        // Đồng bộ trạng thái bệnh án về IN_PROGRESS để bác sĩ tiếp tục làm việc
+        syncMedicalRecordStatus(appointmentId, MedicalRecordStatus.IN_PROGRESS);
+
         if (appointment.getPatient().getAccount() != null) {
             notificationService.createAndSendNotification(
                     appointment.getPatient().getAccount().getAccountId(),

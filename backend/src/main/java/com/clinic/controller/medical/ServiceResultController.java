@@ -28,7 +28,7 @@ public class ServiceResultController {
     private final ServiceResultService resultService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('LAB_TECH', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('LAB_TECH', 'DOCTOR', 'ADMIN')")
     public ApiResponse<ServiceResultResponse> submitResult(
             @Valid @RequestBody ServiceResultRequest request
     ) {

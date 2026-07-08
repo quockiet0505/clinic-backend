@@ -13,6 +13,7 @@ Nâng cấp giao diện kê đơn thuốc (PrescriptionBuilder) của Bác sĩ t
 
 ## 2. Trang "Tra cứu Tương tác thuốc" riêng biệt (DrugInteractionChecker.tsx)
 - Tạo một trang Frontend (Page) hoàn toàn mới chuyên biệt cho chức năng tra cứu tương tác thuốc (ví dụ URL: `/pharmacy/interaction-checker` hoặc `/medical/interaction-checker`).
+- không làm chung với trang danh mục thuốc
 - Giao diện tra cứu không nằm dạng Modal (Dialog) nhỏ nữa mà sẽ chiếm một trang độc lập, thoải mái không gian để người dùng thao tác.
 - **Tính năng chính của trang:**
   - Cung cấp ô Searchable Dropdown (cho phép chọn nhiều loại thuốc cùng lúc - ít nhất 2 loại).
@@ -22,6 +23,7 @@ Nâng cấp giao diện kê đơn thuốc (PrescriptionBuilder) của Bác sĩ t
   - **Có tương tác (Warning/Danger):** Hiển thị kết quả tra cứu chi tiết bằng giao diện Accordion (thu gọn/mở rộng) bao gồm Cơ chế, Hậu quả, và Cách xử lý.
 
 ## 3. Tích hợp chặn lúc Lưu Đơn Thuốc (Submit)
+- cho hiện cảnh báo nếu thuốc tương tác và nêu lý do
 - Khi Bác sĩ bấm nút "Lưu Đơn Thuốc" trong lúc khám bệnh, Backend sẽ tự động kiểm tra tương tác.
 - Nếu Backend trả về lỗi (do API Create có tích hợp sẵn chặn tương tác), Frontend phải bắt lỗi `RuntimeException` và hiển thị Modal hoặc Toast cảnh báo đỏ để Bác sĩ cân nhắc sửa đổi.
 - Có thể thiết kế thêm checkbox "Bỏ qua cảnh báo và tiếp tục lưu" nếu Bác sĩ chủ động quyết định (Yêu cầu thêm tính năng `override_warning` ở Backend sau này nếu cần thiết).
