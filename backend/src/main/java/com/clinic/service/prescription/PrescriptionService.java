@@ -22,7 +22,6 @@ import com.clinic.entity.medical.MedicalRecord;
 import com.clinic.entity.prescription.Medicine;
 import com.clinic.entity.prescription.Prescription;
 import com.clinic.entity.prescription.PrescriptionItem;
-import com.clinic.entity.prescription.PrescriptionItemKey;
 import com.clinic.mapper.prescription.PrescriptionMapper;
 import com.clinic.repository.medical.MedicalRecordRepository;
 import com.clinic.repository.medical.ServiceOrderRepository;
@@ -63,6 +62,7 @@ public class PrescriptionService {
         if (request.getItems() != null && !request.getItems().isEmpty()) {
             List<Integer> medicineIds = request.getItems().stream()
                     .map(PrescriptionItemRequest::getMedicineId)
+                    .filter(id -> id != null)
                     .collect(Collectors.toList());
             List<DrugInteractionWarning> warnings = checkInteractions(medicineIds);
             if (!warnings.isEmpty()) {
@@ -84,12 +84,15 @@ public class PrescriptionService {
 
         if (request.getItems() != null && !request.getItems().isEmpty()) {
             for (PrescriptionItemRequest itemReq : request.getItems()) {
-                Medicine medicine = medicineRepository.findById(itemReq.getMedicineId())
-                        .orElseThrow(() -> new RuntimeException("Medicine not found: " + itemReq.getMedicineId()));
+                Medicine medicine = null;
+                if (itemReq.getMedicineId() != null) {
+                    medicine = medicineRepository.findById(itemReq.getMedicineId())
+                            .orElseThrow(() -> new RuntimeException("Medicine not found: " + itemReq.getMedicineId()));
+                }
                 PrescriptionItem item = prescriptionMapper.toItemEntity(itemReq);
                 item.setPrescription(saved);
                 item.setMedicine(medicine);
-                item.setId(new PrescriptionItemKey(saved.getPrescriptionId(), medicine.getMedicineId()));
+                item.setMedicineName(itemReq.getMedicineName());
                 saved.getItems().add(item);
             }
             prescriptionRepository.save(saved);

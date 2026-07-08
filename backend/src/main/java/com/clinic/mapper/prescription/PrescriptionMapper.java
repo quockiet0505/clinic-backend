@@ -30,6 +30,5 @@ public interface PrescriptionMapper {
     PrescriptionItem toItemEntity(PrescriptionItemRequest request);
 
     @Mapping(source = "medicine.medicineId", target = "medicineId")
-    @Mapping(source = "medicine.name", target = "medicineName")
     PrescriptionItemResponse toItemResponse(PrescriptionItem item);
 }

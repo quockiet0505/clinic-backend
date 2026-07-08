@@ -3,12 +3,13 @@ package com.clinic.entity.prescription;
 import java.math.BigDecimal;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,18 +24,21 @@ import lombok.Setter;
 @AllArgsConstructor
 public class PrescriptionItem {
 
-    @EmbeddedId
-    private PrescriptionItemKey id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "prescription_item_id")
+    private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("prescriptionId")
-    @JoinColumn(name = "prescription_id")
+    @JoinColumn(name = "prescription_id", nullable = false)
     private Prescription prescription;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("medicineId")
     @JoinColumn(name = "medicine_id")
     private Medicine medicine;
+
+    @Column(name = "medicine_name", length = 255)
+    private String medicineName;
 
     @Column(length = 50, nullable = false)
     private String unit;

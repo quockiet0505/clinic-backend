@@ -42,7 +42,7 @@ public class StaffSpecification {
             predicates.add(cb.like(cb.lower(root.get("fullName")), pattern));
             predicates.add(cb.like(root.get("phone"), pattern));
             predicates.add(cb.like(cb.lower(accountJoin.get("email")), pattern));
-            predicates.add(cb.like(cb.lower(expertiseJoin.get("name")), pattern));
+            predicates.add(cb.like(cb.lower(expertiseJoin.get("expertiseName")), pattern));
             return cb.or(predicates.toArray(new Predicate[0]));
         };
     }
@@ -57,7 +57,7 @@ public class StaffSpecification {
     private static Specification<Staff> expertiseNameEquals(String expertiseName) {
         return (root, query, cb) -> {
             if (expertiseName == null || expertiseName.isEmpty()) return cb.conjunction();
-            return cb.equal(root.get("expertise").get("name"), expertiseName);
+            return cb.equal(root.get("expertise").get("expertiseName"), expertiseName);
         };
     }
 
@@ -93,7 +93,7 @@ public class StaffSpecification {
             Root<DoctorServicePrice> priceRoot = priceSubquery.from(DoctorServicePrice.class);
             
             var actualPrice = cb.selectCase()
-                .when(cb.and(cb.isNotNull(priceRoot.get("discountPrice")), cb.greaterThan(priceRoot.get("discountPrice"), java.math.BigDecimal.ZERO)), priceRoot.get("discountPrice"))
+                .when(cb.and(cb.isNotNull(priceRoot.get("discountAmount")), cb.greaterThan(priceRoot.get("discountAmount"), java.math.BigDecimal.ZERO)), priceRoot.get("discountAmount"))
                 .otherwise(priceRoot.get("originalPrice")).as(java.math.BigDecimal.class);
                 
             priceSubquery.select(actualPrice);

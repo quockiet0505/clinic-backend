@@ -26,6 +26,6 @@ public class StaffResponse {
     private Integer isDeleted;
     private Double rating;
     private Integer isActive;
-    private java.math.BigDecimal consultationFee;
+    private java.math.BigDecimal consultationFinalFee;
     private Integer patientCount;
 }

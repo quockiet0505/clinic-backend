@@ -61,9 +61,9 @@ public class StaffService {
 
             java.math.BigDecimal fee = doctorServicePriceRepository.getBaseConsultationFeeByDoctorId(staff.getStaffId());
             if (fee != null) {
-                response.setConsultationFee(fee);
+                response.setConsultationFinalFee(fee);
             } else {
-                response.setConsultationFee(new java.math.BigDecimal("300000")); // default if not configured
+                response.setConsultationFinalFee(new java.math.BigDecimal("300000")); // default if not configured
             }
         }
         if (staff.getIsDeleted() != null && staff.getIsDeleted() == 0) {

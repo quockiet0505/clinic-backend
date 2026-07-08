@@ -7,8 +7,10 @@ import lombok.Data;
 
 @Data
 public class PrescriptionItemRequest {
-    @NotNull
     private Integer medicineId;
+    
+    @NotNull
+    private String medicineName;
     
     @NotNull
     private String unit;

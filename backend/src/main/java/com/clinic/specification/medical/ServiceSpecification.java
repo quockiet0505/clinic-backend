@@ -11,6 +11,7 @@ public class ServiceSpecification {
 
     public static Specification<Service> filterBy(ServiceFilterRequest filter) {
         return Specification.where(BaseSpecification.<Service>notDeleted())
+                .and((root, query, cb) -> cb.notEqual(root.get("serviceType"), com.clinic.common.enums.ServiceType.EXAM))
                 .and(BaseSpecification.searchLike(filter.getSearch(), "serviceName"))
                 .and(BaseSpecification.equalIfPresent("serviceType", filter.getServiceType()));
     }
