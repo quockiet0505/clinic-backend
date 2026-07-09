@@ -22,6 +22,7 @@ import com.clinic.dto.auth.LoginRequest;
 import com.clinic.dto.auth.RegisterRequest;
 import com.clinic.dto.auth.GoogleAuthRequest;
 import com.clinic.dto.auth.GoogleRegisterRequest;
+import com.clinic.dto.auth.AuthResponse;
 import com.clinic.exception.RequiresRegistrationException;
 import com.clinic.entity.auth.Account;
 import com.clinic.entity.auth.Role;
