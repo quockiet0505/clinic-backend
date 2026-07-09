@@ -6,11 +6,14 @@ import com.clinic.dto.crm.NotificationFilterRequest;
 import com.clinic.dto.crm.NotificationResponse;
 import com.clinic.dto.crm.NotificationRequest;
 import com.clinic.dto.crm.PatientNotificationResponse;
+import com.clinic.dto.crm.FcmTokenRequest;
 import com.clinic.service.crm.NotificationService;
 import com.clinic.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +24,14 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
+
+    @PostMapping("/fcm-token")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> saveFcmToken(@RequestBody FcmTokenRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        notificationService.saveFcmToken(auth.getName(), request.getToken(), request.getDeviceType());
+        return ResponseUtil.success("FCM Token saved successfully", null);
+    }
 
     @GetMapping("/my")
     @PreAuthorize("hasRole('PATIENT')")

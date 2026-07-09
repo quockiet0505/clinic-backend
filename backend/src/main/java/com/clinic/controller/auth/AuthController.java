@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.clinic.dto.auth.AuthResponse;
 import com.clinic.dto.auth.LoginRequest;
 import com.clinic.dto.auth.RegisterRequest;
+import com.clinic.dto.auth.GoogleAuthRequest;
+import com.clinic.dto.auth.GoogleRegisterRequest;
 import com.clinic.dto.common.ApiResponse;
+import com.clinic.exception.RequiresRegistrationException;
 import com.clinic.entity.auth.Account;
 import com.clinic.repository.auth.AccountRepository;
 import com.clinic.security.JwtService;
@@ -85,6 +88,36 @@ public class AuthController {
                 "Staff login successful",
                 res
         );
+    }
+
+    @PostMapping("/google/login")
+    public ResponseEntity<ApiResponse<Object>> googleLogin(
+            @RequestBody GoogleAuthRequest request,
+            HttpServletResponse response
+    ) {
+        try {
+            AuthResponse res = authService.googleLogin(request, response);
+            return ResponseUtil.success("Google login successful", res);
+        } catch (RequiresRegistrationException e) {
+            return ResponseEntity.status(404).body(ApiResponse.<Object>builder()
+                    .success(false)
+                    .message("REQUIRES_REGISTRATION")
+                    .data(Map.of(
+                            "email", e.getEmail(),
+                            "name", e.getName() != null ? e.getName() : "",
+                            "picture", e.getPicture() != null ? e.getPicture() : ""
+                    ))
+                    .build());
+        }
+    }
+
+    @PostMapping("/google/register")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleRegister(
+            @RequestBody GoogleRegisterRequest request,
+            HttpServletResponse response
+    ) {
+        AuthResponse res = authService.googleRegister(request, response);
+        return ResponseUtil.success("Google registration successful", res);
     }
 
     @GetMapping("/me")

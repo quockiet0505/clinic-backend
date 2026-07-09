@@ -11,6 +11,8 @@ import com.clinic.entity.crm.Notification;
 import com.clinic.mapper.crm.NotificationMapper;
 import com.clinic.repository.auth.AccountRepository;
 import com.clinic.repository.crm.NotificationRepository;
+import com.clinic.repository.auth.DeviceTokenRepository;
+import com.clinic.entity.auth.DeviceToken;
 import com.clinic.specification.crm.NotificationSpecification;
 import com.clinic.util.FilterUtils;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,8 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final AccountRepository accountRepository;
     private final NotificationMapper notificationMapper;
+    private final DeviceTokenRepository deviceTokenRepository;
+    private final FcmService fcmService;
 
     @Transactional(readOnly = true)
     public PageResponse<NotificationResponse> getAll(NotificationFilterRequest filter) {
@@ -62,6 +66,36 @@ public class NotificationService {
         }
         notification.setSentAt(LocalDateTime.now());
         notificationRepository.save(notification);
+
+        // Bắn Push Notification cho Mobile App nếu có Token
+        if (request.getAccountId() != null) {
+            String subject = deriveSubject(request.getContent());
+            List<DeviceToken> tokens = deviceTokenRepository.findByAccount_AccountId(request.getAccountId());
+            for (DeviceToken token : tokens) {
+                fcmService.sendPushNotification(token.getToken(), subject, request.getContent());
+            }
+        }
+    }
+
+    @Transactional
+    public void saveFcmToken(String email, String token, String deviceType) {
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        deviceTokenRepository.findByToken(token).ifPresentOrElse(
+                existingToken -> {
+                    existingToken.setAccount(account);
+                    existingToken.setDeviceType(deviceType);
+                    deviceTokenRepository.save(existingToken);
+                },
+                () -> {
+                    DeviceToken newToken = new DeviceToken();
+                    newToken.setAccount(account);
+                    newToken.setToken(token);
+                    newToken.setDeviceType(deviceType);
+                    deviceTokenRepository.save(newToken);
+                }
+        );
     }
 
     @Transactional

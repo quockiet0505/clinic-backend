@@ -15,10 +15,14 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
 
-import com.clinic.dto.auth.AuthResponse;
 import com.clinic.dto.auth.LoginRequest;
 import com.clinic.dto.auth.RegisterRequest;
+import com.clinic.dto.auth.GoogleAuthRequest;
+import com.clinic.dto.auth.GoogleRegisterRequest;
+import com.clinic.exception.RequiresRegistrationException;
 import com.clinic.entity.auth.Account;
 import com.clinic.entity.auth.Role;
 import com.clinic.entity.patient.Patient;
@@ -148,6 +152,65 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
         } catch (Exception e) {
             log.error("Staff login failed: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    @Transactional
+    public AuthResponse googleLogin(GoogleAuthRequest request, HttpServletResponse response) {
+        try {
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
+            String email = decodedToken.getEmail();
+            String name = decodedToken.getName();
+            String picture = decodedToken.getPicture();
+
+            if (email == null) {
+                throw new RuntimeException("Email not found in Google token");
+            }
+
+            return accountRepository.findByEmail(email).map(account -> {
+                // User exists, login
+                CustomUserDetails userDetails = new CustomUserDetails(account);
+                String token = jwtService.generateToken(userDetails);
+                setCookie(response, token);
+                
+                List<String> roles = userDetails.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.toList());
+
+                return AuthResponse.builder()
+                        .accountId(account.getAccountId())
+                        .email(account.getEmail())
+                        .token(token)
+                        .roles(roles)
+                        .build();
+            }).orElseThrow(() -> new RequiresRegistrationException(email, name, picture));
+
+        } catch (RequiresRegistrationException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Google login failed: {}", e.getMessage());
+            throw new RuntimeException("Invalid Google Token");
+        }
+    }
+
+    @Transactional
+    public AuthResponse googleRegister(GoogleRegisterRequest request, HttpServletResponse response) {
+        try {
+            // Verify token again to ensure it's legit
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
+            String email = decodedToken.getEmail();
+
+            if (email == null || !email.equals(request.getEmail())) {
+                throw new RuntimeException("Email mismatch or not found in Google token");
+            }
+
+            // Register using existing logic but mock a random password since it's Google Auth
+            request.setPassword(java.util.UUID.randomUUID().toString() + "Gg@1");
+            return registerPatient(request, response);
+
+        } catch (Exception e) {
+            log.error("Google register failed: {}", e.getMessage());
+            throw new RuntimeException("Google registration failed: " + e.getMessage());
         }
     }
 
