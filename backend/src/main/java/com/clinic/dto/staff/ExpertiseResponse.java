@@ -16,5 +16,7 @@ public class ExpertiseResponse {
     // ExpertiseResponse.java
     private Integer doctorCount;
 
+    private Integer technicianCount;
+
     private LocalDateTime createdAt;
 }

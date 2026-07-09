@@ -44,7 +44,9 @@ public class ExpertiseService {
         return FilterUtils.buildPageResponse(page.map(expertise -> {
             ExpertiseResponse response = expertiseMapper.toResponse(expertise);
             long doctorCount = staffRepository.countByExpertiseAndStaffType(expertise, StaffType.DOCTOR);
+            long technicianCount = staffRepository.countByExpertiseAndStaffType(expertise, StaffType.LAB_TECH);
             response.setDoctorCount((int) doctorCount);
+            response.setTechnicianCount((int) technicianCount);
             return response;
         }));
     }
@@ -55,7 +57,9 @@ public class ExpertiseService {
             .map(expertise -> {
                 ExpertiseResponse response = expertiseMapper.toResponse(expertise);
                 long doctorCount = staffRepository.countByExpertiseAndStaffType(expertise, StaffType.DOCTOR);
+                long technicianCount = staffRepository.countByExpertiseAndStaffType(expertise, StaffType.LAB_TECH);
                 response.setDoctorCount((int) doctorCount);
+                response.setTechnicianCount((int) technicianCount);
                 return response;
             })
             .collect(Collectors.toList());
