@@ -75,4 +75,16 @@ public class DoctorFeedbackController {
         doctorFeedbackService.replyDoctorFeedback(id, request.getReply(), authentication.getName());
         return ResponseUtil.success("Reply sent successfully", null);
     }
+
+    @PutMapping("/{id}/ai-status")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> updateAiStatus(
+            @PathVariable Integer id,
+            @RequestParam String status,
+            Authentication authentication
+    ) {
+        doctorFeedbackService.updateAiStatus(id, status, authentication.getName());
+        return ResponseUtil.success("AI Moderation status updated successfully", null);
+    }
+
 }

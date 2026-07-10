@@ -125,7 +125,8 @@ public class SecurityConfig {
                                 "/api/v1/health",
                                 "/api/v1/chat/**",
                                 "/api/v1/settings",
-                                "/api/v1/settings/**"
+                                "/api/v1/settings/**",
+                                "/api/v1/feedbacks/clinic/landing"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

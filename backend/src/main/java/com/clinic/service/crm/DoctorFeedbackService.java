@@ -3,11 +3,13 @@ package com.clinic.service.crm;
 import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.crm.DoctorFeedbackFilterRequest;
 import com.clinic.dto.crm.DoctorFeedbackResponse;
+import com.clinic.dto.crm.LandingReviewResponse;
 import com.clinic.entity.crm.DoctorReview;
 import com.clinic.entity.staff.Staff;
 import com.clinic.mapper.crm.DoctorFeedbackMapper;
 import com.clinic.repository.crm.DoctorReviewRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.service.ai.AiModerationService;
 import com.clinic.specification.crm.DoctorFeedbackSpecification;
 import com.clinic.dto.crm.DoctorFeedbackSubmitRequest;
 import com.clinic.entity.appointment.Appointment;
@@ -17,6 +19,7 @@ import com.clinic.repository.patient.PatientRepository;
 import com.clinic.util.FilterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,7 @@ public class DoctorFeedbackService {
     private final DoctorFeedbackMapper doctorFeedbackMapper;
     private final PatientRepository patientRepository;
     private final AppointmentRepository appointmentRepository;
+    private final AiModerationService aiModerationService;
 
     @Transactional(readOnly = true)
     public PageResponse<DoctorFeedbackResponse> getAll(DoctorFeedbackFilterRequest filter) {
@@ -82,8 +86,10 @@ public class DoctorFeedbackService {
         review.setComment(request.getComment());
         review.setIsAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false);
         review.setCreatedAt(LocalDateTime.now());
+        review.setAiStatus("PENDING");
 
-        doctorReviewRepository.save(review);
+        DoctorReview saved = doctorReviewRepository.save(review);
+        aiModerationService.moderateDoctorReviewAsync(saved.getReviewId());
     }
 
     @Transactional
@@ -101,10 +107,21 @@ public class DoctorFeedbackService {
             throw new RuntimeException("Chỉ có thể sửa đánh giá trong vòng 24 giờ sau khi gửi");
         }
 
+        boolean commentChanged = !java.util.Objects.equals(review.getComment(), request.getComment());
+
         review.setRating(request.getRating());
         review.setComment(request.getComment());
         review.setIsAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false);
+
+        if (commentChanged) {
+            review.setAiStatus("PENDING");
+        }
+
         doctorReviewRepository.save(review);
+
+        if (commentChanged) {
+            aiModerationService.moderateDoctorReviewAsync(review.getReviewId());
+        }
     }
 
     @Transactional(readOnly = true)
@@ -127,5 +144,46 @@ public class DoctorFeedbackService {
                 .orElseThrow(() -> new RuntimeException("Staff not found"));
         review.setRepliedBy(staff);
         doctorReviewRepository.save(review);
+    }
+
+    @Transactional
+    public void updateAiStatus(Integer reviewId, String status, String email) {
+        DoctorReview review = doctorReviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Doctor review not found"));
+        review.setAiStatus(status);
+        review.setAiModerationNote("Cập nhật thủ công bởi: " + email);
+        doctorReviewRepository.save(review);
+    }
+
+
+    /**
+     * Lấy danh sách đánh giá bác sĩ để hiển thị trên Landing Page.
+     */
+    @Transactional(readOnly = true)
+    public List<LandingReviewResponse> getLandingDoctorReviews(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return doctorReviewRepository.findLandingReviews(4, pageable).stream()
+                .map(r -> {
+                    LandingReviewResponse dto = new LandingReviewResponse();
+                    dto.setType("DOCTOR");
+                    dto.setId(r.getReviewId());
+                    dto.setRating(r.getRating());
+                    dto.setComment(r.getComment());
+                    dto.setCreatedAt(r.getCreatedAt());
+                    dto.setIsAnonymous(r.getIsAnonymous());
+                    if (Boolean.TRUE.equals(r.getIsAnonymous())) {
+                        dto.setPatientName("Bệnh nhân ẩn danh");
+                    } else if (r.getPatient() != null) {
+                        dto.setPatientName(r.getPatient().getFullName());
+                    }
+                    if (r.getDoctor() != null) {
+                        dto.setDoctorName(r.getDoctor().getFullName());
+                        dto.setDoctorExpertise(
+                            r.getDoctor().getExpertise() != null ? r.getDoctor().getExpertise().getExpertiseName() : null
+                        );
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 }

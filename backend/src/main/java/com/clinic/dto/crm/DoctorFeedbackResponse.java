@@ -18,4 +18,6 @@ public class DoctorFeedbackResponse {
     private LocalDateTime repliedAt;
     private String repliedBy;
     private Boolean isAnonymous;
-}
+    private String aiStatus;
+    private String aiModerationNote;
+}

@@ -33,4 +33,10 @@ public class Feedback {
     @ManyToOne
     @JoinColumn(name = "replied_by")
     private Staff repliedBy;
+
+    @Column(name = "ai_status", length = 20)
+    private String aiStatus = "PENDING"; // PENDING, APPROVED, REJECTED
+
+    @Column(name = "ai_moderation_note", length = 500)
+    private String aiModerationNote;
 }

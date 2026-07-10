@@ -16,4 +16,6 @@ public class ClinicFeedbackResponse {
     private LocalDateTime repliedAt;
     private String repliedBy; // tên nhân viên phản hồi
     private Boolean isAnonymous;
-}
+    private String aiStatus;
+    private String aiModerationNote;
+}

@@ -3,11 +3,13 @@ package com.clinic.service.crm;
 import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.crm.ClinicFeedbackFilterRequest;
 import com.clinic.dto.crm.ClinicFeedbackResponse;
+import com.clinic.dto.crm.LandingReviewResponse;
 import com.clinic.entity.crm.Feedback;
 import com.clinic.entity.staff.Staff;
 import com.clinic.mapper.crm.ClinicFeedbackMapper;
 import com.clinic.repository.crm.FeedbackRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.service.ai.AiModerationService;
 import com.clinic.specification.crm.ClinicFeedbackSpecification;
 import com.clinic.dto.crm.ClinicFeedbackSubmitRequest;
 import com.clinic.entity.medical.MedicalRecord;
@@ -17,6 +19,7 @@ import com.clinic.repository.patient.PatientRepository;
 import com.clinic.util.FilterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,7 @@ public class ClinicFeedbackService {
     private final ClinicFeedbackMapper clinicFeedbackMapper;
     private final PatientRepository patientRepository;
     private final MedicalRecordRepository medicalRecordRepository;
+    private final AiModerationService aiModerationService;
 
     @Transactional(readOnly = true)
     public PageResponse<ClinicFeedbackResponse> getAll(ClinicFeedbackFilterRequest filter) {
@@ -81,8 +85,11 @@ public class ClinicFeedbackService {
         feedback.setComment(request.getComment());
         feedback.setIsAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false);
         feedback.setCreatedAt(LocalDateTime.now());
+        feedback.setAiStatus("PENDING");
 
-        feedbackRepository.save(feedback);
+        Feedback saved = feedbackRepository.save(feedback);
+        // Kích hoạt kiểm duyệt AI bất đồng bộ (không block HTTP response)
+        aiModerationService.moderateFeedbackAsync(saved.getFeedbackId());
     }
 
     @Transactional
@@ -101,10 +108,22 @@ public class ClinicFeedbackService {
             throw new RuntimeException("Chỉ có thể sửa đánh giá trong vòng 24 giờ sau khi gửi");
         }
 
+        boolean commentChanged = !java.util.Objects.equals(feedback.getComment(), request.getComment());
+
         feedback.setRating(request.getRating());
         feedback.setComment(request.getComment());
         feedback.setIsAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false);
+
+        // Chỉ reset PENDING và chạy lại AI nếu nội dung bình luận thay đổi
+        if (commentChanged) {
+            feedback.setAiStatus("PENDING");
+        }
+
         feedbackRepository.save(feedback);
+
+        if (commentChanged) {
+            aiModerationService.moderateFeedbackAsync(feedback.getFeedbackId());
+        }
     }
 
     @Transactional(readOnly = true)
@@ -126,5 +145,45 @@ public class ClinicFeedbackService {
                 .orElseThrow(() -> new RuntimeException("Staff not found"));
         feedback.setRepliedBy(staff);
         feedbackRepository.save(feedback);
+    }
+
+    @Transactional
+    public void updateAiStatus(Integer feedbackId, String status, String email) {
+        Feedback feedback = feedbackRepository.findById(feedbackId)
+                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+        feedback.setAiStatus(status);
+        feedback.setAiModerationNote("Cập nhật thủ công bởi: " + email);
+        feedbackRepository.save(feedback);
+    }
+
+
+
+    /**
+     * Lấy danh sách đánh giá phòng khám để hiển thị trên Landing Page.
+     * Chỉ trả về các đánh giá đã được AI phê duyệt (aiStatus = APPROVED) và rating >= 4.
+     * Tối đa 6 bản ghi mới nhất (dùng cho Grid hiển thị mặc định).
+     */
+    @Transactional(readOnly = true)
+    public List<LandingReviewResponse> getLandingClinicReviews(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return feedbackRepository.findLandingFeedbacks(4, pageable).stream()
+                .map(f -> {
+                    LandingReviewResponse dto = new LandingReviewResponse();
+                    dto.setType("CLINIC");
+                    dto.setId(f.getFeedbackId());
+                    dto.setRating(f.getRating());
+                    dto.setComment(f.getComment());
+                    dto.setCreatedAt(f.getCreatedAt());
+                    dto.setIsAnonymous(f.getIsAnonymous());
+                    if (Boolean.TRUE.equals(f.getIsAnonymous())) {
+                        dto.setPatientName("Bệnh nhân ẩn danh");
+                    } else if (f.getMedicalRecord() != null && f.getMedicalRecord().getPatient() != null) {
+                        dto.setPatientName(f.getMedicalRecord().getPatient().getFullName());
+                    } else {
+                        dto.setPatientName("Bệnh nhân");
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 }
