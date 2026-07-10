@@ -16,6 +16,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
 
     List<Appointment> findByIsDeleted(Integer isDeleted);
 
+    List<Appointment> findByStatusAndCreatedAtBeforeAndIsDeleted(
+            AppointmentStatus status, java.time.LocalDateTime dateTime, Integer isDeleted);
+
     boolean existsByMainDoctor_StaffIdAndAppointmentDateAndTimeStartAndIsDeleted(
             Integer doctorId, LocalDate date, LocalTime timeStart, Integer isDeleted);
 
