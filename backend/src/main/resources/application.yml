@@ -21,7 +21,7 @@ server:
   forward-headers-strategy: framework
 
 application:
-  ai-server-url: http://localhost:8000
+  ai-server-url: https://duongquockiet0511--clinic-ai-chat-fastapi-app.modal.run
   security:
     jwt:
       secret-key: VGhpc0lzQVN1cGVyU2VjdXJlSldUU2VjcmV0S2V5Rm9yQ2xpbmljU3lzdGVtMTIz

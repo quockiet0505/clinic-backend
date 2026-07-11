@@ -1,5 +1,6 @@
 package com.clinic.service.ai;
 
+import com.clinic.repository.base.SystemSettingRepository;
 import com.clinic.repository.crm.DoctorReviewRepository;
 import com.clinic.repository.crm.FeedbackRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class AiModerationService {
     private final FeedbackRepository feedbackRepository;
     private final DoctorReviewRepository doctorReviewRepository;
     private final RestTemplate restTemplate;
+    private final SystemSettingRepository systemSettingRepository;
 
     @Value("${application.ai-server-url}")
     private String aiServerUrl;
@@ -44,17 +46,25 @@ public class AiModerationService {
     public void moderateFeedbackAsync(Integer feedbackId) {
         feedbackRepository.findById(feedbackId).ifPresent(feedback -> {
             try {
+                boolean aiEnabled = systemSettingRepository.findById("AI_MODERATION_ENABLED")
+                        .map(setting -> "true".equalsIgnoreCase(setting.getSettingValue()))
+                        .orElse(false);
+
+                if (!aiEnabled) {
+                    log.info("[AI Moderation] Feedback #{} - AI Moderation disabled, leaving as PENDING for manual review", feedbackId);
+                    return;
+                }
+
                 ModerationResult result = callModerationApi(feedback.getComment(), feedback.getRating());
                 feedback.setAiStatus(result.approved() ? "APPROVED" : "REJECTED");
                 feedback.setAiModerationNote(result.reason());
                 feedbackRepository.save(feedback);
                 log.info("[AI Moderation] Feedback #{} => {} | Reason: {}", feedbackId, feedback.getAiStatus(), result.reason());
             } catch (Exception e) {
-                // Nếu AI Server lỗi (tắt máy, timeout), fallback về APPROVED để không block trải nghiệm
-                feedback.setAiStatus("APPROVED");
-                feedback.setAiModerationNote("AI Server unavailable - auto-approved");
+                // Nếu AI Server lỗi (tắt máy, timeout), giữ nguyên PENDING và ghi chú lỗi để Admin duyệt bằng cơm
+                feedback.setAiModerationNote("AI Server error: " + e.getMessage());
                 feedbackRepository.save(feedback);
-                log.warn("[AI Moderation] Feedback #{} - AI Server error, auto-approved: {}", feedbackId, e.getMessage());
+                log.warn("[AI Moderation] Feedback #{} - AI Server error, left as PENDING: {}", feedbackId, e.getMessage());
             }
         });
     }
@@ -67,16 +77,25 @@ public class AiModerationService {
     public void moderateDoctorReviewAsync(Integer reviewId) {
         doctorReviewRepository.findById(reviewId).ifPresent(review -> {
             try {
+                boolean aiEnabled = systemSettingRepository.findById("AI_MODERATION_ENABLED")
+                        .map(setting -> "true".equalsIgnoreCase(setting.getSettingValue()))
+                        .orElse(false);
+
+                if (!aiEnabled) {
+                    log.info("[AI Moderation] DoctorReview #{} - AI Moderation disabled, leaving as PENDING for manual review", reviewId);
+                    return;
+                }
+
                 ModerationResult result = callModerationApi(review.getComment(), review.getRating());
                 review.setAiStatus(result.approved() ? "APPROVED" : "REJECTED");
                 review.setAiModerationNote(result.reason());
                 doctorReviewRepository.save(review);
                 log.info("[AI Moderation] DoctorReview #{} => {} | Reason: {}", reviewId, review.getAiStatus(), result.reason());
             } catch (Exception e) {
-                review.setAiStatus("APPROVED");
-                review.setAiModerationNote("AI Server unavailable - auto-approved");
+                // Nếu AI Server lỗi, giữ nguyên PENDING và ghi chú lỗi để Admin duyệt bằng cơm
+                review.setAiModerationNote("AI Server error: " + e.getMessage());
                 doctorReviewRepository.save(review);
-                log.warn("[AI Moderation] DoctorReview #{} - AI Server error, auto-approved: {}", reviewId, e.getMessage());
+                log.warn("[AI Moderation] DoctorReview #{} - AI Server error, left as PENDING: {}", reviewId, e.getMessage());
             }
         });
     }
