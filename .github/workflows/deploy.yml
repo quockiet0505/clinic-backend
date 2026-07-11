@@ -62,8 +62,8 @@ jobs:
 
       - name: Deploy to VM via IAP SSH
         run: |
-          # Create necessary directories
-          gcloud compute ssh clinic-vm --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" --command "mkdir -p ~/deploy/database ~/deploy/nginx"
+          # Create necessary directories and fix permissions to avoid Permission denied on scp
+          gcloud compute ssh clinic-vm --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" --command "sudo mkdir -p ~/deploy/database ~/deploy/nginx && sudo chown -R \$USER:\$USER ~/deploy"
           
           # Replace 'latest' with commit SHA in docker-compose.yml before copying
           sed -i "s|image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/backend:latest|image: asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/backend:${{ github.sha }}|g" deploy/docker-compose.yml
@@ -71,7 +71,7 @@ jobs:
           # Copy deployment files and database script to VM
           gcloud compute scp --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" deploy/docker-compose.yml clinic-vm:~/deploy/docker-compose.yml
           gcloud compute scp --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" --recurse deploy/nginx/* clinic-vm:~/deploy/nginx/
-          gcloud compute scp --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" database/clinic_system.sql clinic-vm:~/deploy/database/clinic_system.sql
+          gcloud compute scp --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" database/backup/clinic_system_full.sql clinic-vm:~/deploy/database/clinic_system.sql
           
           # SSH into VM and restart the backend container
           gcloud compute ssh clinic-vm --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" --command "

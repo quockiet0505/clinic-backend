@@ -14,7 +14,7 @@ services:
       MYSQL_DATABASE: clinic_system
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./database/backup/clinic_system_full.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./database/clinic_system.sql:/docker-entrypoint-initdb.d/init.sql:ro
     logging: *default-logging
     deploy:
       replicas: 1
