@@ -43,7 +43,7 @@ CREATE TABLE `account` (
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`account_id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=101 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=251 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -83,7 +83,7 @@ DROP TABLE IF EXISTS `appointment`;
 -- Lưu thông tin đặt lịch hẹn khám của bệnh nhân (thời gian, bác sĩ, khoa, trạng thái).
 -- =======================================================
 CREATE TABLE `appointment` (
-  `appointment_id` int NOT NULL AUTO_INCREMENT COMMENT 'ID Lịch hẹn',
+  `appointment_id` int NOT NULL AUTO_INCREMENT,
   `patient_id` int NOT NULL,
   `main_doctor_id` int DEFAULT NULL,
   `service_id` int DEFAULT NULL,
@@ -93,7 +93,7 @@ CREATE TABLE `appointment` (
   `time_start` time DEFAULT NULL,
   `time_end` time DEFAULT NULL,
   `appointment_type` enum('ONLINE','WALK_IN') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` enum('PENDING','CONFIRMED','CHECKED_IN','IN_PROGRESS','WAITING_RESULT','COMPLETED','SKIPPED','CANCELLED','NO_SHOW') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING' COMMENT 'Trạng thái hiện tại của bản ghi (PENDING, COMPLETED, CANCELLED, v.v)',
+  `status` enum('PENDING','CONFIRMED','CHECKED_IN','IN_PROGRESS','WAITING_RESULT','COMPLETED','SKIPPED','CANCELLED','NO_SHOW') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING',
   `created_by` enum('PATIENT','STAFF') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `booking_mode` enum('DOCTOR','EXPERTISE','SERVICE','DIRECT') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'DOCTOR',
   `is_ai_suggested` tinyint(1) DEFAULT '0',
@@ -101,7 +101,7 @@ CREATE TABLE `appointment` (
   `queue_number` int DEFAULT NULL,
   `cancelled_by` enum('PATIENT','CLINIC') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `cancel_reason` text COLLATE utf8mb4_unicode_ci,
-  `is_deleted` int DEFAULT '0' COMMENT 'Cờ đánh dấu xóa mềm (0: Đang dùng, 1: Đã xóa, ẩn khỏi UI)',
+  `is_deleted` int DEFAULT '0',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime(6) DEFAULT NULL,
   `note` text COLLATE utf8mb4_unicode_ci,
@@ -122,7 +122,7 @@ CREATE TABLE `appointment` (
   CONSTRAINT `appointment_ibfk_expertise` FOREIGN KEY (`expertise_id`) REFERENCES `expertise` (`expertise_id`),
   CONSTRAINT `appointment_ibfk_suggested_expertise` FOREIGN KEY (`suggested_expertise_id`) REFERENCES `expertise` (`expertise_id`),
   CONSTRAINT `fk_appointment_service` FOREIGN KEY (`service_id`) REFERENCES `service` (`service_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1068 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1082 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -220,7 +220,7 @@ CREATE TABLE `contact_message` (
   `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `subject` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Khác',
   `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` enum('PENDING','PROCESSING','RESOLVED','REJECTED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING' COMMENT 'Trạng thái hiện tại của bản ghi (PENDING, COMPLETED, CANCELLED, v.v)',
+  `status` enum('PENDING','PROCESSING','RESOLVED','REJECTED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING',
   `replied_at` datetime DEFAULT NULL,
   `reply_content` text COLLATE utf8mb4_unicode_ci,
   `replied_by` int DEFAULT NULL,
@@ -254,7 +254,9 @@ CREATE TABLE `doctor_review` (
   `replied_at` datetime DEFAULT NULL,
   `replied_by` int DEFAULT NULL,
   `is_anonymous` bit(1) DEFAULT NULL,
-  `appointment_id` int DEFAULT NULL COMMENT 'ID Lịch hẹn',
+  `appointment_id` int DEFAULT NULL,
+  `ai_status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING',
+  `ai_moderation_note` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`review_id`),
   UNIQUE KEY `unique_review` (`doctor_id`,`patient_id`),
   KEY `patient_id` (`patient_id`),
@@ -286,18 +288,15 @@ DROP TABLE IF EXISTS `doctor_service_price`;
 CREATE TABLE `doctor_service_price` (
   `id` int NOT NULL AUTO_INCREMENT,
   `staff_id` int NOT NULL,
-  `service_id` int NOT NULL,
   `original_price` decimal(38,2) NOT NULL,
-  `discount_amount` decimal(10,2) DEFAULT NULL,
+  `discount_amount` decimal(38,2) DEFAULT NULL,
   `created_at` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `staff_id` (`staff_id`,`service_id`),
-  UNIQUE KEY `UKat5udm71bj6mo9vtmcqec2y26` (`staff_id`,`service_id`),
+  UNIQUE KEY `staff_id` (`staff_id`),
+  UNIQUE KEY `UKat5udm71bj6mo9vtmcqec2y26` (`staff_id`),
   UNIQUE KEY `UK5p2hx2iqtierm8cg97gp51h0t` (`staff_id`),
-  KEY `service_id` (`service_id`),
-  CONSTRAINT `doctor_service_price_ibfk_1` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`staff_id`),
-  CONSTRAINT `doctor_service_price_ibfk_2` FOREIGN KEY (`service_id`) REFERENCES `service` (`service_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=539 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  CONSTRAINT `doctor_service_price_ibfk_1` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`staff_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=669 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -321,7 +320,7 @@ CREATE TABLE `expertise` (
   `icon_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`expertise_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -341,7 +340,7 @@ DROP TABLE IF EXISTS `feedback`;
 -- =======================================================
 CREATE TABLE `feedback` (
   `feedback_id` int NOT NULL AUTO_INCREMENT,
-  `record_id` int NOT NULL COMMENT 'ID của Bệnh án (liên kết với đợt khám)',
+  `record_id` int NOT NULL,
   `rating` int DEFAULT NULL,
   `comment` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -349,6 +348,8 @@ CREATE TABLE `feedback` (
   `replied_at` datetime DEFAULT NULL,
   `replied_by` int DEFAULT NULL,
   `is_anonymous` bit(1) DEFAULT NULL,
+  `ai_status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING',
+  `ai_moderation_note` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`feedback_id`),
   KEY `record_id` (`record_id`),
   KEY `replied_by` (`replied_by`),
@@ -374,15 +375,15 @@ DROP TABLE IF EXISTS `follow_up`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `follow_up` (
   `follow_up_id` int NOT NULL AUTO_INCREMENT,
-  `record_id` int NOT NULL COMMENT 'ID của Bệnh án (liên kết với đợt khám)',
+  `record_id` int NOT NULL,
   `patient_id` int NOT NULL,
   `doctor_id` int NOT NULL,
   `scheduled_datetime` datetime NOT NULL,
   `note` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('PENDING','CONFIRMED','COMPLETED','CANCELLED','MISSED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING' COMMENT 'Trạng thái hiện tại của bản ghi (PENDING, COMPLETED, CANCELLED, v.v)',
+  `status` enum('PENDING','CONFIRMED','COMPLETED','CANCELLED','MISSED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime(6) DEFAULT NULL,
-  `appointment_id` int DEFAULT NULL COMMENT 'ID Lịch hẹn',
+  `appointment_id` int DEFAULT NULL,
   `confirmed_at` datetime DEFAULT NULL,
   `reminder_sent_at` datetime DEFAULT NULL,
   `cancel_reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -396,7 +397,7 @@ CREATE TABLE `follow_up` (
   CONSTRAINT `follow_up_ibfk_2` FOREIGN KEY (`patient_id`) REFERENCES `patient` (`patient_id`),
   CONSTRAINT `follow_up_ibfk_3` FOREIGN KEY (`doctor_id`) REFERENCES `staff` (`staff_id`),
   CONSTRAINT `follow_up_ibfk_4` FOREIGN KEY (`appointment_id`) REFERENCES `appointment` (`appointment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10025 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10046 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -421,7 +422,7 @@ CREATE TABLE `leave_request` (
   `from_date` date NOT NULL,
   `to_date` date NOT NULL,
   `reason` text COLLATE utf8mb4_unicode_ci,
-  `status` enum('PENDING','APPROVED','REJECTED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING' COMMENT 'Trạng thái hiện tại của bản ghi (PENDING, COMPLETED, CANCELLED, v.v)',
+  `status` enum('PENDING','APPROVED','REJECTED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING',
   `approved_by` int DEFAULT NULL,
   `rejection_reason` text COLLATE utf8mb4_unicode_ci,
   `reviewed_at` datetime DEFAULT NULL,
@@ -473,23 +474,25 @@ DROP TABLE IF EXISTS `medical_record`;
 -- Hồ sơ bệnh án điện tử của một buổi khám bệnh (Lưu lý do khám, chẩn đoán, kết luận của bác sĩ).
 -- =======================================================
 CREATE TABLE `medical_record` (
-  `record_id` int NOT NULL AUTO_INCREMENT COMMENT 'ID của Bệnh án (liên kết với đợt khám)',
+  `record_id` int NOT NULL AUTO_INCREMENT,
   `patient_id` int NOT NULL,
-  `appointment_id` int DEFAULT NULL COMMENT 'ID Lịch hẹn',
+  `appointment_id` int DEFAULT NULL,
   `main_doctor_id` int NOT NULL,
-  `diagnosis` text COLLATE utf8mb4_unicode_ci COMMENT 'Chẩn đoán bệnh của bác sĩ (Mã ICD-10 hoặc mô tả)',
+  `diagnosis` text COLLATE utf8mb4_unicode_ci,
   `treatment` text COLLATE utf8mb4_unicode_ci,
   `note` text COLLATE utf8mb4_unicode_ci,
-  `status` enum('IN_PROGRESS','WAITING_RESULT','DONE','CANCELLED','PENDING') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'IN_PROGRESS' COMMENT 'Trạng thái hiện tại của bản ghi (PENDING, COMPLETED, CANCELLED, v.v)',
+  `status` enum('IN_PROGRESS','WAITING_RESULT','DONE','CANCELLED','PENDING') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'IN_PROGRESS',
   `updated_by_doctor_id` int DEFAULT NULL,
   `edit_reason` text COLLATE utf8mb4_unicode_ci,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `is_deleted` tinyint DEFAULT '0' COMMENT 'Cờ đánh dấu xóa mềm (0: Đang dùng, 1: Đã xóa, ẩn khỏi UI)',
+  `consultation_fee` decimal(38,2) DEFAULT NULL,
+  `service_fee` decimal(38,2) DEFAULT NULL,
+  `is_deleted` tinyint DEFAULT '0',
   `vitals_taken` bit(1) DEFAULT NULL,
-  `consultation_original_fee` decimal(10,2) DEFAULT NULL,
-  `consultation_discount` decimal(10,2) DEFAULT NULL,
-  `consultation_final_fee` decimal(10,2) DEFAULT NULL,
+  `consultation_discount` decimal(38,2) DEFAULT NULL,
+  `consultation_final_fee` decimal(38,2) DEFAULT NULL,
+  `consultation_original_fee` decimal(38,2) DEFAULT NULL,
   PRIMARY KEY (`record_id`),
   KEY `patient_id` (`patient_id`),
   KEY `appointment_id` (`appointment_id`),
@@ -499,7 +502,7 @@ CREATE TABLE `medical_record` (
   CONSTRAINT `medical_record_ibfk_2` FOREIGN KEY (`appointment_id`) REFERENCES `appointment` (`appointment_id`),
   CONSTRAINT `medical_record_ibfk_3` FOREIGN KEY (`main_doctor_id`) REFERENCES `staff` (`staff_id`),
   CONSTRAINT `medical_record_ibfk_4` FOREIGN KEY (`updated_by_doctor_id`) REFERENCES `staff` (`staff_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10063 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10112 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -518,12 +521,12 @@ DROP TABLE IF EXISTS `medical_record_vital`;
 -- Lưu các chỉ số sinh tồn của bệnh nhân được y tá đo trước khi vào khám (Huyết áp, Nhịp tim, Cân nặng, Chiều cao, Nhiệt độ).
 -- =======================================================
 CREATE TABLE `medical_record_vital` (
-  `record_id` int NOT NULL COMMENT 'ID của Bệnh án (liên kết với đợt khám)',
+  `record_id` int NOT NULL,
   `weight` decimal(5,2) DEFAULT NULL,
   `blood_pressure` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pulse` int DEFAULT NULL,
   `recorded_by` int DEFAULT NULL,
-  `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Trạng thái hiện tại của bản ghi (PENDING, COMPLETED, CANCELLED, v.v)',
+  `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`record_id`),
   KEY `recorded_by` (`recorded_by`),
   CONSTRAINT `medical_record_vital_ibfk_1` FOREIGN KEY (`record_id`) REFERENCES `medical_record` (`record_id`) ON DELETE CASCADE,
@@ -552,12 +555,15 @@ CREATE TABLE `medicine` (
   `active_element` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `packing_standard` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `base_unit` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `sell_price` decimal(10,2) DEFAULT NULL,
   `usage_note` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `is_deleted` int DEFAULT '0' COMMENT 'Cờ đánh dấu xóa mềm (0: Đang dùng, 1: Đã xóa, ẩn khỏi UI)',
+  `is_deleted` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime(6) DEFAULT NULL,
+  `consultation_fee` decimal(38,2) DEFAULT NULL,
+  `service_fee` decimal(38,2) DEFAULT NULL,
   PRIMARY KEY (`medicine_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=735 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=885 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -584,7 +590,7 @@ CREATE TABLE `notification` (
   PRIMARY KEY (`notification_id`),
   KEY `account_id` (`account_id`),
   CONSTRAINT `notification_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `account` (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10061 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10118 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -611,13 +617,13 @@ CREATE TABLE `patient` (
   `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `avatar_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `is_deleted` int DEFAULT '0' COMMENT 'Cờ đánh dấu xóa mềm (0: Đang dùng, 1: Đã xóa, ẩn khỏi UI)',
+  `is_deleted` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`patient_id`),
   UNIQUE KEY `account_id` (`account_id`),
   CONSTRAINT `patient_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `account` (`account_id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=158 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=229 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -637,10 +643,10 @@ CREATE TABLE `patient_vital_profile` (
   `weight` decimal(5,2) DEFAULT NULL,
   `blood_pressure` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pulse` int DEFAULT NULL,
-  `blood_type` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nhóm máu của bệnh nhân',
+  `blood_type` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `allergies` text COLLATE utf8mb4_unicode_ci,
   `chronic_diseases` text COLLATE utf8mb4_unicode_ci,
-  `medical_history` text COLLATE utf8mb4_unicode_ci COMMENT 'Tiền sử bệnh nền của bệnh nhân (Tiểu đường, cao huyết áp...)',
+  `medical_history` text COLLATE utf8mb4_unicode_ci,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`patient_id`),
   CONSTRAINT `patient_vital_profile_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patient` (`patient_id`) ON DELETE CASCADE
@@ -664,10 +670,10 @@ DROP TABLE IF EXISTS `prescription`;
 -- =======================================================
 CREATE TABLE `prescription` (
   `prescription_id` int NOT NULL AUTO_INCREMENT,
-  `record_id` int NOT NULL COMMENT 'ID của Bệnh án (liên kết với đợt khám)',
+  `record_id` int NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING' COMMENT 'Trạng thái hiện tại của bản ghi (PENDING, COMPLETED, CANCELLED, v.v)',
-  `is_deleted` tinyint DEFAULT '0' COMMENT 'Cờ đánh dấu xóa mềm (0: Đang dùng, 1: Đã xóa, ẩn khỏi UI)',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING',
+  `is_deleted` tinyint DEFAULT '0',
   PRIMARY KEY (`prescription_id`),
   KEY `record_id` (`record_id`),
   CONSTRAINT `prescription_ibfk_1` FOREIGN KEY (`record_id`) REFERENCES `medical_record` (`record_id`)
@@ -690,16 +696,20 @@ DROP TABLE IF EXISTS `prescription_item`;
 -- Chi tiết từng loại thuốc trong đơn thuốc (số lượng, liều dùng, ghi chú sử dụng).
 -- =======================================================
 CREATE TABLE `prescription_item` (
+  `prescription_item_id` int NOT NULL AUTO_INCREMENT,
   `prescription_id` int NOT NULL,
-  `medicine_id` int NOT NULL,
+  `medicine_id` int DEFAULT NULL,
+  `medicine_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `unit` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `quantity` decimal(8,2) NOT NULL,
   `dosage` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`prescription_id`,`medicine_id`),
+  PRIMARY KEY (`prescription_item_id`),
+  UNIQUE KEY `prescription_item_id` (`prescription_item_id`),
   KEY `medicine_id` (`medicine_id`),
-  CONSTRAINT `prescription_item_ibfk_1` FOREIGN KEY (`prescription_id`) REFERENCES `prescription` (`prescription_id`),
-  CONSTRAINT `prescription_item_ibfk_2` FOREIGN KEY (`medicine_id`) REFERENCES `medicine` (`medicine_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `FK_prescription_item_prescription` (`prescription_id`),
+  CONSTRAINT `FK_prescription_item_medicine` FOREIGN KEY (`medicine_id`) REFERENCES `medicine` (`medicine_id`),
+  CONSTRAINT `FK_prescription_item_prescription` FOREIGN KEY (`prescription_id`) REFERENCES `prescription` (`prescription_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -768,16 +778,17 @@ CREATE TABLE `service` (
   `service_id` int NOT NULL AUTO_INCREMENT,
   `service_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `service_type` enum('EXAM','LAB_TEST','X_RAY','ULTRASOUND','CT_SCAN','MRI','ENDOSCOPY','OTHER') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'LAB_TEST',
-  `estimated_duration` int DEFAULT '30',
+  `estimated_duration` int DEFAULT '15',
   `original_price` decimal(10,2) NOT NULL,
-  `is_deleted` int DEFAULT '0' COMMENT 'Cờ đánh dấu xóa mềm (0: Đang dùng, 1: Đã xóa, ẩn khỏi UI)',
+  `is_deleted` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `image_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `discount_amount` decimal(10,2) DEFAULT NULL,
+  `discount_price` decimal(10,2) DEFAULT NULL,
   `description` text COLLATE utf8mb4_unicode_ci,
   `is_featured` tinyint(1) DEFAULT '0',
   `featured_priority` int DEFAULT '0',
   `updated_at` datetime(6) DEFAULT NULL,
+  `discount_amount` decimal(10,2) DEFAULT NULL,
   PRIMARY KEY (`service_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=92 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -799,21 +810,22 @@ DROP TABLE IF EXISTS `service_order`;
 -- =======================================================
 CREATE TABLE `service_order` (
   `order_id` int NOT NULL AUTO_INCREMENT,
-  `record_id` int NOT NULL COMMENT 'ID của Bệnh án (liên kết với đợt khám)',
+  `record_id` int NOT NULL,
   `service_id` int NOT NULL,
   `custom_service_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `doctor_note` text COLLATE utf8mb4_unicode_ci,
-  `service_original_fee` decimal(10,2) DEFAULT NULL,
-  `service_discount` decimal(10,2) DEFAULT NULL,
-  `service_final_fee` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `price_at_time` decimal(10,2) NOT NULL DEFAULT '0.00',
   `ordered_by` int NOT NULL,
-  `status` enum('ORDERED','DONE','CANCELLED','REJECTED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'ORDERED' COMMENT 'Trạng thái hiện tại của bản ghi (PENDING, COMPLETED, CANCELLED, v.v)',
+  `status` enum('ORDERED','DONE','CANCELLED','REJECTED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'ORDERED',
   `rejection_reason` text COLLATE utf8mb4_unicode_ci,
   `sample_collected_at` datetime DEFAULT NULL,
   `sample_collected_by` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime(6) DEFAULT NULL,
-  `is_deleted` tinyint DEFAULT '0' COMMENT 'Cờ đánh dấu xóa mềm (0: Đang dùng, 1: Đã xóa, ẩn khỏi UI)',
+  `is_deleted` tinyint DEFAULT '0',
+  `service_discount` decimal(10,2) DEFAULT NULL,
+  `service_final_fee` decimal(10,2) NOT NULL,
+  `service_original_fee` decimal(10,2) DEFAULT NULL,
   PRIMARY KEY (`order_id`),
   KEY `record_id` (`record_id`),
   KEY `service_id` (`service_id`),
@@ -823,7 +835,7 @@ CREATE TABLE `service_order` (
   CONSTRAINT `service_order_ibfk_2` FOREIGN KEY (`service_id`) REFERENCES `service` (`service_id`),
   CONSTRAINT `service_order_ibfk_3` FOREIGN KEY (`ordered_by`) REFERENCES `staff` (`staff_id`),
   CONSTRAINT `service_order_ibfk_4` FOREIGN KEY (`sample_collected_by`) REFERENCES `staff` (`staff_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10032 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10053 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -851,13 +863,13 @@ CREATE TABLE `service_result` (
   `entered_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
-  `is_deleted` tinyint DEFAULT '0' COMMENT 'Cờ đánh dấu xóa mềm (0: Đang dùng, 1: Đã xóa, ẩn khỏi UI)',
+  `is_deleted` tinyint DEFAULT '0',
   PRIMARY KEY (`result_id`),
   UNIQUE KEY `order_id` (`order_id`),
   KEY `entered_by` (`entered_by`),
   CONSTRAINT `service_result_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `service_order` (`order_id`),
   CONSTRAINT `service_result_ibfk_2` FOREIGN KEY (`entered_by`) REFERENCES `staff` (`staff_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10015 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10023 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -885,7 +897,7 @@ CREATE TABLE `staff` (
   `image_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `is_featured` tinyint(1) DEFAULT '0',
   `featured_priority` int DEFAULT '0',
-  `is_deleted` int DEFAULT '0' COMMENT 'Cờ đánh dấu xóa mềm (0: Đang dùng, 1: Đã xóa, ẩn khỏi UI)',
+  `is_deleted` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `avg_rating` decimal(2,1) DEFAULT '0.0',
@@ -896,7 +908,7 @@ CREATE TABLE `staff` (
   KEY `expertise_id` (`expertise_id`),
   CONSTRAINT `staff_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `account` (`account_id`) ON DELETE CASCADE,
   CONSTRAINT `staff_ibfk_2` FOREIGN KEY (`expertise_id`) REFERENCES `expertise` (`expertise_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=151 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=177 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -916,12 +928,12 @@ CREATE TABLE `staff_schedule` (
   `working_date` date NOT NULL,
   `start_time` time NOT NULL,
   `end_time` time NOT NULL,
-  `status` enum('WORKING','OFF') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'WORKING' COMMENT 'Trạng thái hiện tại của bản ghi (PENDING, COMPLETED, CANCELLED, v.v)',
+  `status` enum('WORKING','OFF') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'WORKING',
   `note` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`schedule_id`),
   KEY `idx_schedule_staff_date` (`staff_id`,`working_date`),
   CONSTRAINT `staff_schedule_ibfk_1` FOREIGN KEY (`staff_id`) REFERENCES `staff` (`staff_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7489 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10087 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -975,17 +987,17 @@ DROP TABLE IF EXISTS `drug_interaction`;
 -- =======================================================
 CREATE TABLE `drug_interaction` (
   `interaction_id` int NOT NULL AUTO_INCREMENT,
-  `active_element_1` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Hoạt chất 1 (dùng để quét tương tác chéo)',
-  `active_element_2` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Hoạt chất 2 (dùng để quét tương tác chéo)',
-  `mechanism` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Cơ chế sinh ra tương tác (Lý do khoa học)',
-  `consequence` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Hậu quả nếu dùng chung (Nguy hiểm ntn)',
-  `management` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Cách xử lý/hướng dẫn bác sĩ khắc phục',
+  `active_element_1` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `active_element_2` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `mechanism` text COLLATE utf8mb4_unicode_ci,
+  `consequence` text COLLATE utf8mb4_unicode_ci,
+  `management` text COLLATE utf8mb4_unicode_ci,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`interaction_id`),
   KEY `idx_element_1` (`active_element_1`),
   KEY `idx_element_2` (`active_element_2`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=634 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 

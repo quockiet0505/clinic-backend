@@ -14,7 +14,7 @@ services:
       MYSQL_DATABASE: clinic_system
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./database/clinic_system.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./database/backup/clinic_system_full.sql:/docker-entrypoint-initdb.d/init.sql:ro
     logging: *default-logging
     deploy:
       replicas: 1
@@ -29,7 +29,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
-      - APPLICATION_AI_SERVER_URL=https://judiciary-suitably-perpetual.ngrok-free.dev
+      - APPLICATION_AI_SERVER_URL=https://duongquockiet0511--clinic-ai-chat-fastapi-app.modal.run
     depends_on:
       - mysql-db
     logging: *default-logging
