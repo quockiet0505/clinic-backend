@@ -101,7 +101,7 @@ public class AppointmentSlotService {
         int slotMinutes = intervalMinutes != null && intervalMinutes > 0 ? intervalMinutes : 30;
         List<Staff> labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.LAB_TECH, 0);
         if (labStaff.isEmpty()) {
-            labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.STAFF, 0);
+            labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.NURSE, 0);
         }
         
         if (labStaff.isEmpty()) return List.of();

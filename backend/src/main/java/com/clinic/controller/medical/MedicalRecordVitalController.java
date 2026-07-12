@@ -26,7 +26,7 @@ public class MedicalRecordVitalController {
     private final MedicalRecordVitalService vitalService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('STAFF', 'DOCTOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'NURSE', 'DOCTOR', 'ADMIN')")
     public ApiResponse<MedicalRecordVitalResponse> saveOrUpdate(
             @Valid @RequestBody MedicalRecordVitalRequest request
     ) {
@@ -38,7 +38,7 @@ public class MedicalRecordVitalController {
     }
 
     @GetMapping("/record/{recordId}")
-    @PreAuthorize("hasAnyRole('STAFF', 'DOCTOR', 'ADMIN', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'NURSE', 'DOCTOR', 'ADMIN', 'PATIENT')")
     public ApiResponse<MedicalRecordVitalResponse> getByRecordId(
             @PathVariable Integer recordId
     ) {

@@ -35,7 +35,7 @@ public class PatientController {
     private final PatientService patientService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<PageResponse<PatientResponse>>> getAll(
             @ModelAttribute PatientFilterRequest filter
     ) {
@@ -43,13 +43,13 @@ public class PatientController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<List<PatientResponse>>> getAllLegacy() {
         return ResponseUtil.success("Patients fetched successfully", patientService.getAllActive());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR', 'PATIENT')")
     public ApiResponse<PatientResponse> getById(@PathVariable Integer id) {
         return ResponseUtil.success(
                 "Patient fetched successfully",
@@ -58,7 +58,7 @@ public class PatientController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
     public ApiResponse<PatientResponse> create(
             @Valid @RequestBody PatientRequest request
     ) {
@@ -69,7 +69,7 @@ public class PatientController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'PATIENT')")
     public ApiResponse<PatientResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody PatientRequest request
@@ -117,6 +117,13 @@ public class PatientController {
                 "Profile updated successfully",
                 patientService.updateMyProfile(email, request)
         ).getBody();
+    }
+
+    @PutMapping("/{id}/unlock-booking")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
+    public ApiResponse<String> unlockBooking(@PathVariable Integer id) {
+        patientService.unlockBooking(id);
+        return ResponseUtil.success("Patient online booking unlocked successfully", "Booking unlocked").getBody();
     }
 }
 

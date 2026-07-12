@@ -28,25 +28,25 @@ public class AppointmentController {
     private final AppointmentSlotService appointmentSlotService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<PageResponse<AppointmentResponse>>> getAll(@ModelAttribute AppointmentFilterRequest filter) {
         return ResponseUtil.success("Appointments retrieved successfully", appointmentService.getAll(filter));
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getAllLegacy() {
         return ResponseUtil.success("Appointments retrieved successfully", appointmentService.getAllActive());
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'PATIENT')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> create(@Valid @RequestBody AppointmentRequest request) {
         return ResponseUtil.success("Appointment created successfully", appointmentService.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> update(
             @PathVariable Integer id,
             @Valid @RequestBody AppointmentRequest request) {
@@ -54,7 +54,7 @@ public class AppointmentController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> updateStatus(
             @PathVariable Integer id,
             @RequestParam AppointmentStatus status,
@@ -75,7 +75,7 @@ public class AppointmentController {
     }
 
     @PatchMapping("/{id}/queue/return")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> returnToQueue(@PathVariable Integer id) {
         return ResponseUtil.success("Patient returned to queue", appointmentQueueService.returnToQueue(id));
     }
@@ -87,13 +87,13 @@ public class AppointmentController {
     }
 
     @PatchMapping("/{id}/queue/return-from-lab")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> returnFromLab(@PathVariable Integer id) {
         return ResponseUtil.success("Patient returned from lab (Re-exam)", appointmentQueueService.returnFromLab(id));
     }
 
     @PatchMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'PATIENT')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> cancelByPatient(
             @PathVariable Integer id,
             @RequestParam String reason) {
@@ -101,7 +101,7 @@ public class AppointmentController {
     }
 
     @PatchMapping("/{id}/transfer")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> transferDoctor(
             @PathVariable Integer id,
             @RequestParam Integer newDoctorId) {
@@ -115,7 +115,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> getDetail(@PathVariable Integer id) {
         return ResponseUtil.success("Appointment detail retrieved successfully", appointmentService.getDetail(id));
     }

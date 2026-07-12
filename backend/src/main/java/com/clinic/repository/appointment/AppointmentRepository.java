@@ -31,6 +31,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     long countByPatient_PatientIdAndStatusAndCancelReasonContainingAndIsDeleted(
             Integer patientId, AppointmentStatus status, String cancelReasonKeyword, Integer isDeleted);
 
+    List<Appointment> findByPatient_PatientIdAndStatusAndCancelReasonContainingAndIsDeleted(
+            Integer patientId, AppointmentStatus status, String cancelReasonKeyword, Integer isDeleted);
+
     List<Appointment> findByPatient_PatientIdAndIsDeletedOrderByAppointmentDateDesc(
             Integer patientId, Integer isDeleted);
 

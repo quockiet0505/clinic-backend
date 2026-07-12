@@ -35,6 +35,7 @@ public class PatientService {
     private final PatientVitalProfileRepository vitalRepository;
     private final AccountRepository accountRepository;
     private final PatientMapper patientMapper;
+    private final com.clinic.repository.appointment.AppointmentRepository appointmentRepository;
 
     // Internal Validation replacing the Validator folder
     private void validatePatientData(PatientRequest request) {
@@ -175,5 +176,26 @@ public class PatientService {
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
 
         return update(patient.getPatientId(), request);
+    }
+
+    @Transactional
+    public void unlockBooking(Integer patientId) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
+
+        List<com.clinic.entity.appointment.Appointment> spamAppointments = appointmentRepository
+                .findByPatient_PatientIdAndStatusAndCancelReasonContainingAndIsDeleted(
+                        patientId, com.clinic.common.enums.AppointmentStatus.CANCELLED, "[SPAM]", 0);
+
+        for (com.clinic.entity.appointment.Appointment app : spamAppointments) {
+            if (app.getCancelReason() != null) {
+                app.setCancelReason(app.getCancelReason().replace("[SPAM]", "[UNLOCKED]"));
+            }
+        }
+        appointmentRepository.saveAll(spamAppointments);
+        
+        patient.setBookingLocked(false);
+        patient.setCancelSpamCount(0);
+        patientRepository.save(patient);
     }
 }

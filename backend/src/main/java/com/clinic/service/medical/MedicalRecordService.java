@@ -67,6 +67,7 @@ public class MedicalRecordService {
     private final FollowUpMapper followUpMapper;
     private final com.clinic.service.appointment.AppointmentService appointmentService;
     private final PatientVitalProfileRepository vitalProfileRepository;
+    private final InvoiceService invoiceService;
 
     @Transactional
     public MedicalRecordResponse create(MedicalRecordRequest request) {
@@ -132,6 +133,7 @@ public class MedicalRecordService {
                 }
 
                 appointmentService.updateStatus(record.getAppointment().getAppointmentId(), com.clinic.common.enums.AppointmentStatus.COMPLETED, false);
+                invoiceService.generateInvoice(record.getRecordId());
             }
         }
 

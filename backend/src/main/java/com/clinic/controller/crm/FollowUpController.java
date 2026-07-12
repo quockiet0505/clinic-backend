@@ -49,7 +49,7 @@ public class FollowUpController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<PageResponse<FollowUpResponse>>> getAll(
             @ModelAttribute FollowUpFilterRequest filter
     ) {
@@ -57,13 +57,13 @@ public class FollowUpController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<List<FollowUpResponse>>> getAllLegacy() {
         return ResponseUtil.success("Follow-ups retrieved successfully", followUpService.getAll());
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<FollowUpResponse>> updateStatus(
             @PathVariable Integer id,
             @RequestParam FollowUpStatus status,
@@ -80,7 +80,7 @@ public class FollowUpController {
     }
 
     @PatchMapping("/{id}/appointment/{appointmentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<FollowUpResponse>> linkAppointment(
             @PathVariable Integer id,
             @PathVariable Integer appointmentId

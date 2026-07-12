@@ -16,6 +16,7 @@ public class PatientResponse {
     private String phone;
     private String address;
     private String avatarUrl;
+    private Integer isActive;
     
     // Vitals data
     private Integer height;
@@ -25,4 +26,6 @@ public class PatientResponse {
     private String bloodType;
     private String allergies;
     private String medicalHistory;
+    private Boolean bookingLocked;
+    private Integer cancelSpamCount;
 }

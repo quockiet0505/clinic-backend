@@ -35,7 +35,7 @@ public class LeaveRequestController {
     private final LeaveRequestService leaveRequestService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<PageResponse<LeaveRequestResponse>>> getAll(
             @ModelAttribute LeaveRequestFilterRequest filter
     ) {
@@ -43,13 +43,13 @@ public class LeaveRequestController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<List<LeaveRequestResponse>>> getAllLegacy() {
         return ResponseUtil.success("Leave requests retrieved successfully", leaveRequestService.getAllLegacy());
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<LeaveRequestResponse>> create(
             @Valid @RequestBody LeaveRequestRequest request,
             Authentication authentication
@@ -58,14 +58,14 @@ public class LeaveRequestController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
         leaveRequestService.delete(id);
         return ResponseUtil.success("Leave request deleted", null);
     }
 
     @PutMapping("/{id}/review")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
     public ResponseEntity<ApiResponse<LeaveRequestResponse>> review(
             @PathVariable Integer id,
             @Valid @RequestBody ReviewLeaveRequestRequest request,

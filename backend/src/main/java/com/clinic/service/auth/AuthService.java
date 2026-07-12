@@ -138,8 +138,9 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
                 .anyMatch(role ->
                         role.equals("ROLE_ADMIN") ||
                         role.equals("ROLE_DOCTOR") ||
-                        role.equals("ROLE_STAFF") ||
-                        role.equals("ROLE_LAB_TECH"));
+                        role.equals("ROLE_LAB_TECH") ||
+                        role.equals("ROLE_RECEPTIONIST") ||
+                        role.equals("ROLE_NURSE"));
             if (!isStaff) {
                 log.warn("Account {} is not staff", request.getEmail());
                 throw new RuntimeException("Access Denied: Staff privileges required.");

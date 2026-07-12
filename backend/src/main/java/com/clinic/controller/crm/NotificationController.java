@@ -55,7 +55,7 @@ public class NotificationController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ApiResponse<Void> createNotification(@RequestBody NotificationRequest request) {
         notificationService.createNotification(request);
         return ApiResponse.<Void>builder()

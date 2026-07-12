@@ -40,7 +40,7 @@ public class ServiceResultController {
     }
 
     @GetMapping("/order/{orderId}")
-    @PreAuthorize("hasAnyRole('DOCTOR', 'LAB_TECH', 'PATIENT', 'STAFF')")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'LAB_TECH', 'PATIENT', 'RECEPTIONIST', 'NURSE')")
     public ApiResponse<ServiceResultResponse> getByOrderId(
             @PathVariable Integer orderId
     ) {
@@ -62,7 +62,7 @@ public class ServiceResultController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'LAB_TECH')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR', 'LAB_TECH')")
     public ApiResponse<PageResponse<ServiceResultResponse>> getAll(
             @ModelAttribute ServiceResultFilterRequest filter
     ) {
@@ -73,7 +73,7 @@ public class ServiceResultController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'LAB_TECH')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR', 'LAB_TECH')")
     public ApiResponse<java.util.List<ServiceResultResponse>> getAllLegacy() {
         return ResponseUtil.success(
                 "Service results fetched successfully",

@@ -251,7 +251,7 @@ public class AppointmentService {
         if (request.getPatientId() != null) {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             boolean isStaffOrAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF") || a.getAuthority().equals("ROLE_ADMIN"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_RECEPTIONIST") || a.getAuthority().equals("ROLE_NURSE") || a.getAuthority().equals("ROLE_ADMIN"));
             if (isStaffOrAdmin) {
                 patient = patientRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new RuntimeException("Patient not found"));
@@ -361,7 +361,7 @@ public class AppointmentService {
             order.setServiceFinalFee(service.getDiscountAmount() != null && service.getDiscountAmount().compareTo(java.math.BigDecimal.ZERO) > 0 ? service.getDiscountAmount() : service.getOriginalPrice());
             order.setStatus(ServiceOrderStatus.ORDERED);
             // System/Receptionist ordered it
-            if (request.getCreatedBy() != null && request.getCreatedBy().equals("STAFF")) {
+            if (request.getCreatedBy() != null && request.getCreatedBy().equals("RECEPTIONIST") || request.getCreatedBy().equals("NURSE")) {
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 if (auth != null && auth.getName() != null) {
                     staffRepository.findByAccount_Email(auth.getName()).ifPresent(order::setOrderedBy);
@@ -688,7 +688,7 @@ public class AppointmentService {
     private List<TimeSlotResponse> buildSlotsForLabStaff(LocalDate date, Integer intervalMinutes) {
         List<Staff> labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.LAB_TECH, 0);
         if (labStaff.isEmpty()) {
-            labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.STAFF, 0);
+            labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.NURSE, 0);
         }
         Map<String, TimeSlotResponse> merged = new LinkedHashMap<>();
         for (Staff staff : labStaff) {

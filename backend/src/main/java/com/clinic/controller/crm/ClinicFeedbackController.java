@@ -76,7 +76,7 @@ public class ClinicFeedbackController {
     }
 
     @PostMapping("/{id}/reply")
-    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'NURSE', 'ADMIN')")
     public ResponseEntity<ApiResponse<Void>> replyClinicFeedback(
             @PathVariable Integer id,
             @RequestBody ClinicFeedbackReplyRequest request,
@@ -87,7 +87,7 @@ public class ClinicFeedbackController {
     }
 
     @PutMapping("/{id}/ai-status")
-    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'NURSE', 'ADMIN')")
     public ResponseEntity<ApiResponse<Void>> updateAiStatus(
             @PathVariable Integer id,
             @RequestParam String status,

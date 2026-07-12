@@ -2,5 +2,8 @@ package com.clinic.common.enums;
 
 public enum CreatedByType {
     PATIENT,
-    STAFF
+    RECEPTIONIST,
+    NURSE,
+    ADMIN,
+    DOCTOR
 }

@@ -31,7 +31,7 @@ public class DoctorServicePriceController {
     private final DoctorServicePriceService priceService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ApiResponse<PageResponse<DoctorServicePriceResponse>> getAll(
             @ModelAttribute DoctorServicePriceFilterRequest filter
     ) {
@@ -42,7 +42,7 @@ public class DoctorServicePriceController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ApiResponse<List<DoctorServicePriceResponse>> getAllLegacy() {
         return ResponseUtil.success(
                 "Doctor prices fetched successfully",

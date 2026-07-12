@@ -44,7 +44,7 @@ public class ServiceOrderController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'LAB_TECH')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR', 'LAB_TECH')")
     public ApiResponse<PageResponse<ServiceOrderResponse>> getAll(
             @ModelAttribute ServiceOrderFilterRequest filter
     ) {
@@ -55,7 +55,7 @@ public class ServiceOrderController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'LAB_TECH')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR', 'LAB_TECH')")
     public ApiResponse<List<ServiceOrderResponse>> getAllLegacy() {
         return ResponseUtil.success(
                 "Service orders fetched successfully",

@@ -126,7 +126,8 @@ public class SecurityConfig {
                                 "/api/v1/chat/**",
                                 "/api/v1/settings",
                                 "/api/v1/settings/**",
-                                "/api/v1/feedbacks/clinic/landing"
+                                "/api/v1/feedbacks/clinic/landing",
+                                "/api/v1/webhooks/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

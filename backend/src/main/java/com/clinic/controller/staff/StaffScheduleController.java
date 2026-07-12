@@ -31,7 +31,7 @@ public class StaffScheduleController {
     private final StaffScheduleService scheduleService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ApiResponse<List<StaffScheduleResponse>> getAll() {
         return ResponseUtil.success(
                 "Schedules fetched successfully",
@@ -40,7 +40,7 @@ public class StaffScheduleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
     public ApiResponse<StaffScheduleResponse> create(
             @Valid @RequestBody StaffScheduleRequest request
     ) {
@@ -51,7 +51,7 @@ public class StaffScheduleController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
     public ApiResponse<StaffScheduleResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody StaffScheduleRequest request

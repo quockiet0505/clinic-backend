@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   servlet:
     multipart:
       max-file-size: 10MB
@@ -34,3 +36,7 @@ logging:
     org.hibernate.orm.jdbc.bind: TRACE
     org.springframework.web: DEBUG
     com.clinic: DEBUG
+
+sepay:
+  api-key: ${SEPAY_API_KEY}
+  webhook-secret: ${SEPAY_WEBHOOK_SECRET}

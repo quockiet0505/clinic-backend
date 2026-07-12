@@ -23,16 +23,15 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return account.getRoles()
-                .stream()
-                .map(role -> {
-                    String roleName = role.getRoleCode();
-                    if (!roleName.startsWith("ROLE_")) {
-                        roleName = "ROLE_" + roleName;
-                    }
-                    return new SimpleGrantedAuthority(roleName);
-                })
-                .collect(Collectors.toList());
+        java.util.List<GrantedAuthority> authorities = new java.util.ArrayList<>();
+        for (com.clinic.entity.auth.Role role : account.getRoles()) {
+            String roleName = role.getRoleCode();
+            if (!roleName.startsWith("ROLE_")) {
+                roleName = "ROLE_" + roleName;
+            }
+            authorities.add(new SimpleGrantedAuthority(roleName));
+        }
+        return authorities;
     }
 
     @Override

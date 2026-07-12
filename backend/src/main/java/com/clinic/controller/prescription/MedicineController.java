@@ -33,7 +33,7 @@ public class MedicineController {
     private final MedicineService medicineService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ApiResponse<PageResponse<MedicineResponse>> getAll(
             @ModelAttribute MedicineFilterRequest filter
     ) {
@@ -44,7 +44,7 @@ public class MedicineController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ApiResponse<List<MedicineResponse>> getAllLegacy() {
         return ResponseUtil.success(
                 "Medicines fetched successfully",
@@ -53,7 +53,7 @@ public class MedicineController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
     public ApiResponse<MedicineResponse> create(
             @Valid @RequestBody MedicineRequest request
     ) {
@@ -64,7 +64,7 @@ public class MedicineController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
     public ApiResponse<MedicineResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody MedicineRequest request

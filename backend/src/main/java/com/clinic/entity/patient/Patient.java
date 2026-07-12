@@ -58,6 +58,12 @@ public class Patient {
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;
 
+    @Column(name = "booking_locked")
+    private Boolean bookingLocked = false;
+
+    @Column(name = "cancel_spam_count")
+    private Integer cancelSpamCount = 0;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

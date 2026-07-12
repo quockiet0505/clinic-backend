@@ -620,6 +620,8 @@ CREATE TABLE `patient` (
   `is_deleted` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `booking_locked` tinyint(1) DEFAULT '0',
+  `cancel_spam_count` int DEFAULT '0',
   PRIMARY KEY (`patient_id`),
   UNIQUE KEY `account_id` (`account_id`),
   CONSTRAINT `patient_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `account` (`account_id`) ON DELETE SET NULL

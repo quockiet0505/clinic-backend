@@ -35,11 +35,15 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
+
+
         // 1. Initialize System Roles (KHÔNG có tiền tố ROLE_)
         seedRoleIfNotFound("ADMIN", "Administrator");
         seedRoleIfNotFound("DOCTOR", "Doctor");
-        seedRoleIfNotFound("STAFF", "Clinic Staff");
+        // seedRoleIfNotFound("STAFF", "Clinic Staff");
         seedRoleIfNotFound("PATIENT", "Patient");
+        seedRoleIfNotFound("RECEPTIONIST", "Receptionist");
+        seedRoleIfNotFound("NURSE", "Nurse");
 
         // 2. Initialize Master Admin Account
         String adminEmail = "kiet@gmail.com";

@@ -33,6 +33,7 @@ public class QuickAction {
     @Column(name = "display_order")
     private Integer displayOrder;
 
+    @Builder.Default
     @Column(name = "is_active")
     private Boolean isActive = true;
 

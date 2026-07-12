@@ -44,7 +44,7 @@ public class MedicalRecordController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ApiResponse<PageResponse<MedicalRecordResponse>> getAll(
             @ModelAttribute MedicalRecordFilterRequest filter
     ) {
@@ -55,7 +55,7 @@ public class MedicalRecordController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ApiResponse<List<MedicalRecordResponse>> getAllLegacy() {
         return ResponseUtil.success(
                 "Medical records fetched successfully",
@@ -64,7 +64,7 @@ public class MedicalRecordController {
     }
 
     @PostMapping("/{id}/triage")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ApiResponse<MedicalRecordResponse> updateTriage(
             @PathVariable Integer id,
             @Valid @RequestBody TriageRequest request
@@ -97,7 +97,7 @@ public class MedicalRecordController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'DOCTOR', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR', 'PATIENT')")
     public ApiResponse<MedicalRecordDetailResponse> getRecordDetail(
             @PathVariable Integer id
     ) {
