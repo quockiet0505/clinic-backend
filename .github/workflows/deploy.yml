@@ -91,13 +91,10 @@ jobs:
             # Navigate to deploy directory
             cd ~/deploy
             
-            # Configure Docker Auth on VM to pull from Artifact Registry
-            gcloud auth print-access-token | sudo docker login -u oauth2accesstoken --password-stdin https://asia-southeast1-docker.pkg.dev
-            
             # Fetch secrets from Secret Manager
             export DB_PASSWORD=\$(gcloud secrets versions access latest --secret=DB_PASSWORD)
             export JWT_SECRET=\$(gcloud secrets versions access latest --secret=JWT_SECRET)
             
-            # Deploy or update the stack in Docker Swarm
-            sudo DB_PASSWORD=\"\$DB_PASSWORD\" JWT_SECRET=\"\$JWT_SECRET\" docker stack deploy -c docker-compose.yml clinic --with-registry-auth --prune
+            # Deploy or update the stack in Docker Swarm (uses VM's local GCR credential helper)
+            sudo DB_PASSWORD=\"\$DB_PASSWORD\" JWT_SECRET=\"\$JWT_SECRET\" docker stack deploy -c docker-compose.yml clinic --prune
           "
