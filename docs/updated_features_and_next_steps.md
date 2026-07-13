@@ -48,12 +48,15 @@ Trong pha này, hệ thống đang thực hiện quá trình huấn luyện và 
    - Đã chọn 2 mô hình LLM tương tự hạng cân 7B để so sánh với `Qwen2.5-7B-Instruct`: `vilm/vinallama-7b-chat` và `SeaLLMs/SeaLLM-7B-v2.5` (nhằm tối ưu Tiếng Việt và tránh lỗi bản quyền Gated Repo của Llama-3).
    - Đã tạo các script huấn luyện độc lập (`modal_train_vinallama.py` và `modal_train_seallm.py`) sử dụng Modal.com với GPU H100.
    - Siêu tham số (Hyperparameters) và Random Seed (42) được giữ nguyên tuyệt đối giữa 3 mô hình để đảm bảo tính công bằng (Fairness).
-2. **Xây dựng kịch bản Đánh giá Đa Chiều (Sắp thực hiện)**:
-   - Thay vì chỉ dùng BLEU (so khớp từ vựng), hệ thống sẽ tích hợp **ROUGE**, **BERTScore (Semantic Similarity)** và **Tốc độ phản hồi (Tokens/s)**.
-   - Tập Test gồm 100 câu độc lập được tách riêng từ một tập dữ liệu y tế khác để đảm bảo tính khách quan (tránh Data Leakage).
+2. **Xây dựng kịch bản Đánh giá Đa Chiều cho 3 Mô hình (Sắp thực hiện)**:
+   - **Lưu ý quan trọng**: Việc đánh giá AI ở đây **KHÔNG PHẢI** là đánh giá độ hài lòng của người dùng khi chat thực tế. Thay vào đó, hệ thống sẽ đưa **100 câu hỏi y tế độc lập** (chưa từng xuất hiện lúc train) cho cả 3 mô hình cùng trả lời, sau đó so sánh đối chiếu kết quả.
+   - Các tiêu chí chấm điểm (Metrics): **BLEU, ROUGE, BERTScore (Semantic Similarity)** và **Tốc độ phản hồi (Tokens/s)**.
 3. **Trang Dashboard Đánh giá trên Admin Web**:
-   - Sẽ hiển thị bảng so sánh trực quan các chỉ số kỹ thuật và tốc độ của 3 mô hình.
-4. **Bộ lọc Triệu chứng Khẩn cấp (Safety Guardrails)**:
+   - Sẽ hiển thị bảng so sánh trực quan các chỉ số kỹ thuật và tốc độ của 3 mô hình dựa trên kết quả test 100 câu hỏi trên.
+4. **Cơ chế Lọc Bình luận (Comment/Review Filtering)**:
+   - **Dùng gì để lọc?** Hệ thống sẽ sử dụng thuật toán phân loại ngôn ngữ tự nhiên (Ví dụ: Mô hình *PhoBERT Toxic Classifier* hoặc *LLM phân tích sắc thái*) kết hợp với bộ từ điển cấm (Blacklist Keywords) để quét tự động các bình luận rác, ngôn từ thô tục hoặc spam.
+   - **Đánh giá độ chính xác của bộ lọc bằng cách nào?** Ta sẽ chuẩn bị một tập dữ liệu kiểm thử (Test dataset) gồm khoảng 200 bình luận mẫu đã được con người dán nhãn sẵn (100 bình luận sạch, 100 bình luận vi phạm). Cho bộ lọc chạy qua 200 câu này và đo lường bằng các chỉ số Toán học: **Precision (Độ chuẩn xác), Recall (Độ bao phủ) và F1-Score**. Nếu F1-Score đạt > 90%, chứng tỏ bộ lọc chạy cực kỳ chính xác, không bắt nhầm người vô tội và không bỏ lọt spam.
+5. **Bộ lọc Triệu chứng Khẩn cấp (Safety Guardrails)**:
    - Xây dựng bộ lọc từ khóa chặn trả lời và hiển thị cảnh báo đỏ khi phát hiện triệu chứng nguy kịch (đau ngực, đột quỵ...).
 
 ---
