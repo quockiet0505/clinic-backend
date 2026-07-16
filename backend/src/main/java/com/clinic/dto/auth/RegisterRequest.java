@@ -21,4 +21,12 @@ public class RegisterRequest {
 
     private String phone;
 
+    @NotBlank(message = "Gender is required")
+    private String gender;
+
+    @NotNull(message = "Date of birth is required")
+    private java.time.LocalDate dateOfBirth;
+
+    @NotBlank(message = "Address is required")
+    private String address;
 }

@@ -78,6 +78,9 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
     patient.setAccount(account);
     patient.setFullName(request.getFullName());
     patient.setPhone(request.getPhone());
+    patient.setGender(request.getGender());
+    patient.setDateOfBirth(request.getDateOfBirth());
+    patient.setAddress(request.getAddress());
     patient.setIsDeleted(0);
     Patient savedPatient = patientRepository.save(patient);
 
