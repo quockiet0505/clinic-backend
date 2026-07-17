@@ -28,4 +28,5 @@ public class StaffResponse {
     private Integer isActive;
     private java.math.BigDecimal consultationFinalFee;
     private Integer patientCount;
+    private Integer accountId;
 }

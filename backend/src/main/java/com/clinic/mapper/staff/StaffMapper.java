@@ -17,6 +17,7 @@ public interface StaffMapper {
 
     @Mapping(source = "account.email", target = "email")
     @Mapping(source = "account.isActive", target = "isActive")
+    @Mapping(source = "account.accountId", target = "accountId")
     @Mapping(source = "expertise.expertiseId", target = "expertiseId")
     @Mapping(source = "expertise.expertiseName", target = "expertiseName")
     StaffResponse toResponse(Staff staff);
