@@ -163,16 +163,38 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
     @Transactional
     public AuthResponse googleLogin(GoogleAuthRequest request, HttpServletResponse response) {
         try {
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
-            String email = decodedToken.getEmail();
-            String name = decodedToken.getName();
-            String picture = decodedToken.getPicture();
+            String email;
+            String name;
+            String picture;
+            
+            try {
+                FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
+                email = decodedToken.getEmail();
+                name = decodedToken.getName();
+                picture = decodedToken.getPicture();
+            } catch (Exception ex) {
+                log.warn("Firebase verify failed, falling back to Google API: {}", ex.getMessage());
+                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + request.getIdToken();
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> tokenInfo = restTemplate.getForObject(url, java.util.Map.class);
+                if (tokenInfo == null || tokenInfo.containsKey("error")) {
+                    throw new RuntimeException("Invalid Google Token");
+                }
+                email = (String) tokenInfo.get("email");
+                name = (String) tokenInfo.get("name");
+                picture = (String) tokenInfo.get("picture");
+            }
 
-            if (email == null) {
+            final String finalEmail = email;
+            final String finalName = name;
+            final String finalPicture = picture;
+
+            if (finalEmail == null) {
                 throw new RuntimeException("Email not found in Google token");
             }
 
-            return accountRepository.findByEmail(email).map(account -> {
+            return accountRepository.findByEmail(finalEmail).map(account -> {
                 // User exists, login
                 CustomUserDetails userDetails = new CustomUserDetails(account);
                 String token = jwtService.generateToken(userDetails);
@@ -188,7 +210,7 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
                         .token(token)
                         .roles(roles)
                         .build();
-            }).orElseThrow(() -> new RequiresRegistrationException(email, name, picture));
+            }).orElseThrow(() -> new RequiresRegistrationException(finalEmail, finalName, finalPicture));
 
         } catch (RequiresRegistrationException e) {
             throw e;
@@ -201,9 +223,21 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
     @Transactional
     public AuthResponse googleRegister(GoogleRegisterRequest request, HttpServletResponse response) {
         try {
-            // Verify token again to ensure it's legit
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
-            String email = decodedToken.getEmail();
+            String email;
+            try {
+                FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
+                email = decodedToken.getEmail();
+            } catch (Exception ex) {
+                log.warn("Firebase verify failed, falling back to Google API: {}", ex.getMessage());
+                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + request.getIdToken();
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> tokenInfo = restTemplate.getForObject(url, java.util.Map.class);
+                if (tokenInfo == null || tokenInfo.containsKey("error")) {
+                    throw new RuntimeException("Invalid Google Token");
+                }
+                email = (String) tokenInfo.get("email");
+            }
 
             if (email == null || !email.equals(request.getEmail())) {
                 throw new RuntimeException("Email mismatch or not found in Google token");
