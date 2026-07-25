@@ -1,4 +1,4 @@
-CREATE TABLE account (
+﻿CREATE TABLE account (
     account_id INT NOT NULL AUTO_INCREMENT,
     email VARCHAR(100) UNIQUE DEFAULT NULL,
     password VARCHAR(255) DEFAULT NULL,
@@ -22,7 +22,9 @@ CREATE TABLE role (
 CREATE TABLE account_role (
     account_id INT NOT NULL,
     role_id INT NOT NULL,
-    PRIMARY KEY (account_id, role_id)
+    PRIMARY KEY (account_id, role_id),
+    CONSTRAINT "cấp cho" FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE,
+    CONSTRAINT "quyền" FOREIGN KEY (role_id) REFERENCES role(role_id)
 );
 
 CREATE TABLE expertise (
@@ -53,7 +55,9 @@ CREATE TABLE staff (
     avg_rating DECIMAL(2,1) DEFAULT 0.0,
     total_reviews INT DEFAULT 0,
     specialty_treatment VARCHAR(255) DEFAULT NULL,
-    PRIMARY KEY (staff_id)
+    PRIMARY KEY (staff_id),
+    CONSTRAINT "có" FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE,
+    CONSTRAINT "thuộc" FOREIGN KEY (expertise_id) REFERENCES expertise(expertise_id)
 );
 
 CREATE TABLE patient (
@@ -70,7 +74,8 @@ CREATE TABLE patient (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     booking_locked TINYINT(1) DEFAULT 0,
     cancel_spam_count INT DEFAULT 0,
-    PRIMARY KEY (patient_id)
+    PRIMARY KEY (patient_id),
+    CONSTRAINT "có" FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE SET NULL
 );
 
 CREATE TABLE patient_vital_profile (
@@ -84,7 +89,8 @@ CREATE TABLE patient_vital_profile (
     chronic_diseases TEXT DEFAULT NULL,
     medical_history TEXT DEFAULT NULL,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (patient_id)
+    PRIMARY KEY (patient_id),
+    CONSTRAINT "của" FOREIGN KEY (patient_id) REFERENCES patient(patient_id) ON DELETE CASCADE
 );
 
 CREATE TABLE service (
@@ -110,7 +116,8 @@ CREATE TABLE doctor_service_price (
     original_price DECIMAL(38,2) NOT NULL,
     discount_amount DECIMAL(38,2) DEFAULT NULL,
     created_at DATETIME(6) DEFAULT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    CONSTRAINT "của" FOREIGN KEY (staff_id) REFERENCES staff(staff_id)
 );
 
 CREATE TABLE appointment (
@@ -139,7 +146,12 @@ CREATE TABLE appointment (
     checkout_time DATETIME DEFAULT NULL,
     reschedule_count INT DEFAULT 0,
     reschedule_reason VARCHAR(255) DEFAULT NULL,
-    PRIMARY KEY (appointment_id)
+    PRIMARY KEY (appointment_id),
+    CONSTRAINT "đặt" FOREIGN KEY (patient_id) REFERENCES patient(patient_id) ON DELETE CASCADE,
+    CONSTRAINT "khám" FOREIGN KEY (main_doctor_id) REFERENCES staff(staff_id),
+    CONSTRAINT "dùng" FOREIGN KEY (service_id) REFERENCES service(service_id),
+    CONSTRAINT "cần" FOREIGN KEY (expertise_id) REFERENCES expertise(expertise_id),
+    CONSTRAINT "gợi ý" FOREIGN KEY (suggested_expertise_id) REFERENCES expertise(expertise_id)
 );
 
 CREATE TABLE staff_schedule (
@@ -150,7 +162,8 @@ CREATE TABLE staff_schedule (
     end_time TIME NOT NULL,
     status ENUM DEFAULT NULL,
     note VARCHAR(255) DEFAULT NULL,
-    PRIMARY KEY (schedule_id)
+    PRIMARY KEY (schedule_id),
+    CONSTRAINT "của" FOREIGN KEY (staff_id) REFERENCES staff(staff_id)
 );
 
 CREATE TABLE leave_request (
@@ -166,7 +179,9 @@ CREATE TABLE leave_request (
     reviewed_at DATETIME DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME(6) DEFAULT NULL,
-    PRIMARY KEY (leave_id)
+    PRIMARY KEY (leave_id),
+    CONSTRAINT "xin" FOREIGN KEY (staff_id) REFERENCES staff(staff_id),
+    CONSTRAINT "duyệt" FOREIGN KEY (approved_by) REFERENCES staff(staff_id)
 );
 
 CREATE TABLE medical_record (
@@ -187,7 +202,11 @@ CREATE TABLE medical_record (
     consultation_discount DECIMAL(38,2) DEFAULT NULL,
     consultation_final_fee DECIMAL(38,2) DEFAULT NULL,
     consultation_original_fee DECIMAL(38,2) DEFAULT NULL,
-    PRIMARY KEY (record_id)
+    PRIMARY KEY (record_id),
+    CONSTRAINT "của" FOREIGN KEY (patient_id) REFERENCES patient(patient_id),
+    CONSTRAINT "từ" FOREIGN KEY (appointment_id) REFERENCES appointment(appointment_id),
+    CONSTRAINT "lập" FOREIGN KEY (main_doctor_id) REFERENCES staff(staff_id),
+    CONSTRAINT "sửa" FOREIGN KEY (updated_by_doctor_id) REFERENCES staff(staff_id)
 );
 
 CREATE TABLE medical_record_vital (
@@ -197,7 +216,9 @@ CREATE TABLE medical_record_vital (
     pulse INT DEFAULT NULL,
     recorded_by INT DEFAULT NULL,
     status VARCHAR(255) DEFAULT NULL,
-    PRIMARY KEY (record_id)
+    PRIMARY KEY (record_id),
+    CONSTRAINT "trong" FOREIGN KEY (record_id) REFERENCES medical_record(record_id) ON DELETE CASCADE,
+    CONSTRAINT "đo" FOREIGN KEY (recorded_by) REFERENCES staff(staff_id)
 );
 
 CREATE TABLE service_order (
@@ -217,7 +238,11 @@ CREATE TABLE service_order (
     service_discount DECIMAL(10,2) DEFAULT NULL,
     service_final_fee DECIMAL(10,2) NOT NULL,
     service_original_fee DECIMAL(10,2) DEFAULT NULL,
-    PRIMARY KEY (order_id)
+    PRIMARY KEY (order_id),
+    CONSTRAINT "trong" FOREIGN KEY (record_id) REFERENCES medical_record(record_id),
+    CONSTRAINT "là" FOREIGN KEY (service_id) REFERENCES service(service_id),
+    CONSTRAINT "chỉ định" FOREIGN KEY (ordered_by) REFERENCES staff(staff_id),
+    CONSTRAINT "lấy mẫu" FOREIGN KEY (sample_collected_by) REFERENCES staff(staff_id)
 );
 
 CREATE TABLE service_result (
@@ -231,7 +256,9 @@ CREATE TABLE service_result (
     created_at DATETIME(6) DEFAULT NULL,
     updated_at DATETIME(6) DEFAULT NULL,
     is_deleted TINYINT DEFAULT 0,
-    PRIMARY KEY (result_id)
+    PRIMARY KEY (result_id),
+    CONSTRAINT "từ" FOREIGN KEY (order_id) REFERENCES service_order(order_id),
+    CONSTRAINT "nhập" FOREIGN KEY (entered_by) REFERENCES staff(staff_id)
 );
 
 CREATE TABLE medicine (
@@ -253,7 +280,8 @@ CREATE TABLE prescription (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(20) DEFAULT 'PENDING',
     is_deleted TINYINT DEFAULT 0,
-    PRIMARY KEY (prescription_id)
+    PRIMARY KEY (prescription_id),
+    CONSTRAINT "trong" FOREIGN KEY (record_id) REFERENCES medical_record(record_id)
 );
 
 CREATE TABLE prescription_item (
@@ -264,7 +292,9 @@ CREATE TABLE prescription_item (
     unit VARCHAR(50) NOT NULL,
     quantity DECIMAL(8,2) NOT NULL,
     dosage VARCHAR(255) DEFAULT NULL,
-    PRIMARY KEY (prescription_item_id)
+    PRIMARY KEY (prescription_item_id),
+    CONSTRAINT "trong" FOREIGN KEY (prescription_id) REFERENCES prescription(prescription_id),
+    CONSTRAINT "là" FOREIGN KEY (medicine_id) REFERENCES medicine(medicine_id)
 );
 
 CREATE TABLE invoice (
@@ -276,7 +306,9 @@ CREATE TABLE invoice (
     status ENUM DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (invoice_id)
+    PRIMARY KEY (invoice_id),
+    CONSTRAINT "từ" FOREIGN KEY (record_id) REFERENCES medical_record(record_id),
+    CONSTRAINT "trả" FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
 );
 
 CREATE TABLE invoice_item (
@@ -286,7 +318,8 @@ CREATE TABLE invoice_item (
     reference_id INT NOT NULL,
     description VARCHAR(255) NOT NULL,
     price_at_time DECIMAL(10,2) NOT NULL,
-    PRIMARY KEY (item_id)
+    PRIMARY KEY (item_id),
+    CONSTRAINT "trong" FOREIGN KEY (invoice_id) REFERENCES invoice(invoice_id) ON DELETE CASCADE
 );
 
 CREATE TABLE device_token (
@@ -296,7 +329,8 @@ CREATE TABLE device_token (
     device_type VARCHAR(50) DEFAULT NULL,
     token VARCHAR(255) NOT NULL,
     account_id INT NOT NULL,
-    PRIMARY KEY (token_id)
+    PRIMARY KEY (token_id),
+    CONSTRAINT "của" FOREIGN KEY (account_id) REFERENCES account(account_id)
 );
 
 CREATE TABLE doctor_review (
@@ -314,7 +348,11 @@ CREATE TABLE doctor_review (
     ai_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     ai_moderation_note VARCHAR(500) DEFAULT NULL,
     PRIMARY KEY (review_id),
-    UNIQUE KEY unique_review (doctor_id, patient_id)
+    UNIQUE KEY unique_review (doctor_id, patient_id),
+    CONSTRAINT "nhận" FOREIGN KEY (doctor_id) REFERENCES staff(staff_id) ON DELETE CASCADE,
+    CONSTRAINT "viết" FOREIGN KEY (patient_id) REFERENCES patient(patient_id) ON DELETE CASCADE,
+    CONSTRAINT "trả lời" FOREIGN KEY (replied_by) REFERENCES staff(staff_id),
+    CONSTRAINT "từ" FOREIGN KEY (appointment_id) REFERENCES appointment(appointment_id)
 );
 
 CREATE TABLE feedback (
@@ -329,7 +367,9 @@ CREATE TABLE feedback (
     is_anonymous BIT(1) DEFAULT NULL,
     ai_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     ai_moderation_note VARCHAR(500) DEFAULT NULL,
-    PRIMARY KEY (feedback_id)
+    PRIMARY KEY (feedback_id),
+    CONSTRAINT "về" FOREIGN KEY (record_id) REFERENCES medical_record(record_id),
+    CONSTRAINT "trả lời" FOREIGN KEY (replied_by) REFERENCES staff(staff_id)
 );
 
 CREATE TABLE contact_message (
@@ -345,7 +385,8 @@ CREATE TABLE contact_message (
     replied_by INT DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (message_id)
+    PRIMARY KEY (message_id),
+    CONSTRAINT "trả lời" FOREIGN KEY (replied_by) REFERENCES staff(staff_id) ON DELETE SET NULL
 );
 
 CREATE TABLE chat_session (
@@ -354,7 +395,8 @@ CREATE TABLE chat_session (
     started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     rating INT DEFAULT NULL,
     feedback_comment VARCHAR(255) DEFAULT NULL,
-    PRIMARY KEY (session_id)
+    PRIMARY KEY (session_id),
+    CONSTRAINT "của" FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
 );
 
 CREATE TABLE chat_message (
@@ -363,7 +405,8 @@ CREATE TABLE chat_message (
     sender_type ENUM NOT NULL,
     message_content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (message_id)
+    PRIMARY KEY (message_id),
+    CONSTRAINT "trong" FOREIGN KEY (session_id) REFERENCES chat_session(session_id) ON DELETE CASCADE
 );
 
 CREATE TABLE notification (
@@ -372,7 +415,8 @@ CREATE TABLE notification (
     type ENUM DEFAULT NULL,
     content VARCHAR(255) DEFAULT NULL,
     sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (notification_id)
+    PRIMARY KEY (notification_id),
+    CONSTRAINT "gửi" FOREIGN KEY (account_id) REFERENCES account(account_id)
 );
 
 CREATE TABLE follow_up (
@@ -389,66 +433,10 @@ CREATE TABLE follow_up (
     confirmed_at DATETIME DEFAULT NULL,
     reminder_sent_at DATETIME DEFAULT NULL,
     cancel_reason VARCHAR(255) DEFAULT NULL,
-    PRIMARY KEY (follow_up_id)
+    PRIMARY KEY (follow_up_id),
+    CONSTRAINT "từ" FOREIGN KEY (record_id) REFERENCES medical_record(record_id),
+    CONSTRAINT "của" FOREIGN KEY (patient_id) REFERENCES patient(patient_id),
+    CONSTRAINT "khám" FOREIGN KEY (doctor_id) REFERENCES staff(staff_id),
+    CONSTRAINT "từ" FOREIGN KEY (appointment_id) REFERENCES appointment(appointment_id)
 );
 
-ALTER TABLE account_role ADD CONSTRAINT fk_ac_role_account FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE;
-ALTER TABLE account_role ADD CONSTRAINT fk_ac_role_role FOREIGN KEY (role_id) REFERENCES role(role_id);
-
-ALTER TABLE staff ADD CONSTRAINT fk_staff_account FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE;
-ALTER TABLE staff ADD CONSTRAINT fk_staff_expertise FOREIGN KEY (expertise_id) REFERENCES expertise(expertise_id);
-ALTER TABLE patient ADD CONSTRAINT fk_patient_account FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE SET NULL;
-ALTER TABLE patient_vital_profile ADD CONSTRAINT fk_vital_patient FOREIGN KEY (patient_id) REFERENCES patient(patient_id) ON DELETE CASCADE;
-
-ALTER TABLE doctor_service_price ADD CONSTRAINT fk_price_staff FOREIGN KEY (staff_id) REFERENCES staff(staff_id);
-
-ALTER TABLE staff_schedule ADD CONSTRAINT fk_sched_staff FOREIGN KEY (staff_id) REFERENCES staff(staff_id);
-ALTER TABLE leave_request ADD CONSTRAINT fk_leave_staff FOREIGN KEY (staff_id) REFERENCES staff(staff_id);
-ALTER TABLE leave_request ADD CONSTRAINT fk_leave_approver FOREIGN KEY (approved_by) REFERENCES staff(staff_id);
-
-ALTER TABLE appointment ADD CONSTRAINT fk_app_patient FOREIGN KEY (patient_id) REFERENCES patient(patient_id) ON DELETE CASCADE;
-ALTER TABLE appointment ADD CONSTRAINT fk_app_doctor FOREIGN KEY (main_doctor_id) REFERENCES staff(staff_id);
-ALTER TABLE appointment ADD CONSTRAINT fk_app_service FOREIGN KEY (service_id) REFERENCES service(service_id);
-ALTER TABLE appointment ADD CONSTRAINT fk_app_exp FOREIGN KEY (expertise_id) REFERENCES expertise(expertise_id);
-ALTER TABLE appointment ADD CONSTRAINT fk_app_sug_exp FOREIGN KEY (suggested_expertise_id) REFERENCES expertise(expertise_id);
-
-ALTER TABLE medical_record ADD CONSTRAINT fk_rec_patient FOREIGN KEY (patient_id) REFERENCES patient(patient_id);
-ALTER TABLE medical_record ADD CONSTRAINT fk_rec_app FOREIGN KEY (appointment_id) REFERENCES appointment(appointment_id);
-ALTER TABLE medical_record ADD CONSTRAINT fk_rec_doctor FOREIGN KEY (main_doctor_id) REFERENCES staff(staff_id);
-ALTER TABLE medical_record ADD CONSTRAINT fk_rec_editor FOREIGN KEY (updated_by_doctor_id) REFERENCES staff(staff_id);
-ALTER TABLE medical_record_vital ADD CONSTRAINT fk_rec_vital_record FOREIGN KEY (record_id) REFERENCES medical_record(record_id) ON DELETE CASCADE;
-ALTER TABLE medical_record_vital ADD CONSTRAINT fk_rec_vital_staff FOREIGN KEY (recorded_by) REFERENCES staff(staff_id);
-
-ALTER TABLE service_order ADD CONSTRAINT fk_ord_record FOREIGN KEY (record_id) REFERENCES medical_record(record_id);
-ALTER TABLE service_order ADD CONSTRAINT fk_ord_service FOREIGN KEY (service_id) REFERENCES service(service_id);
-ALTER TABLE service_order ADD CONSTRAINT fk_ord_staff FOREIGN KEY (ordered_by) REFERENCES staff(staff_id);
-ALTER TABLE service_order ADD CONSTRAINT fk_ord_collector FOREIGN KEY (sample_collected_by) REFERENCES staff(staff_id);
-ALTER TABLE service_result ADD CONSTRAINT fk_res_order FOREIGN KEY (order_id) REFERENCES service_order(order_id);
-ALTER TABLE service_result ADD CONSTRAINT fk_res_staff FOREIGN KEY (entered_by) REFERENCES staff(staff_id);
-
-ALTER TABLE prescription ADD CONSTRAINT fk_pres_record FOREIGN KEY (record_id) REFERENCES medical_record(record_id);
-ALTER TABLE prescription_item ADD CONSTRAINT fk_item_pres FOREIGN KEY (prescription_id) REFERENCES prescription(prescription_id);
-ALTER TABLE prescription_item ADD CONSTRAINT fk_item_med FOREIGN KEY (medicine_id) REFERENCES medicine(medicine_id);
-
-ALTER TABLE invoice ADD CONSTRAINT fk_invoice_record FOREIGN KEY (record_id) REFERENCES medical_record(record_id);
-ALTER TABLE invoice ADD CONSTRAINT fk_invoice_patient FOREIGN KEY (patient_id) REFERENCES patient(patient_id);
-ALTER TABLE invoice_item ADD CONSTRAINT fk_item_invoice FOREIGN KEY (invoice_id) REFERENCES invoice(invoice_id) ON DELETE CASCADE;
-
-ALTER TABLE device_token ADD CONSTRAINT fk_device_account FOREIGN KEY (account_id) REFERENCES account(account_id);
-
-ALTER TABLE doctor_review ADD CONSTRAINT fk_rev_doctor FOREIGN KEY (doctor_id) REFERENCES staff(staff_id) ON DELETE CASCADE;
-ALTER TABLE doctor_review ADD CONSTRAINT fk_rev_patient FOREIGN KEY (patient_id) REFERENCES patient(patient_id) ON DELETE CASCADE;
-ALTER TABLE doctor_review ADD CONSTRAINT fk_rev_replier FOREIGN KEY (replied_by) REFERENCES staff(staff_id);
-ALTER TABLE doctor_review ADD CONSTRAINT fk_rev_app FOREIGN KEY (appointment_id) REFERENCES appointment(appointment_id);
-ALTER TABLE feedback ADD CONSTRAINT fk_fb_record FOREIGN KEY (record_id) REFERENCES medical_record(record_id);
-ALTER TABLE feedback ADD CONSTRAINT fk_fb_replier FOREIGN KEY (replied_by) REFERENCES staff(staff_id);
-ALTER TABLE contact_message ADD CONSTRAINT fk_msg_replier FOREIGN KEY (replied_by) REFERENCES staff(staff_id) ON DELETE SET NULL;
-
-ALTER TABLE chat_session ADD CONSTRAINT fk_chat_patient FOREIGN KEY (patient_id) REFERENCES patient(patient_id);
-ALTER TABLE chat_message ADD CONSTRAINT fk_chat_msg_session FOREIGN KEY (session_id) REFERENCES chat_session(session_id) ON DELETE CASCADE;
-ALTER TABLE notification ADD CONSTRAINT fk_notif_account FOREIGN KEY (account_id) REFERENCES account(account_id);
-
-ALTER TABLE follow_up ADD CONSTRAINT fk_fup_record FOREIGN KEY (record_id) REFERENCES medical_record(record_id);
-ALTER TABLE follow_up ADD CONSTRAINT fk_fup_patient FOREIGN KEY (patient_id) REFERENCES patient(patient_id);
-ALTER TABLE follow_up ADD CONSTRAINT fk_fup_doctor FOREIGN KEY (doctor_id) REFERENCES staff(staff_id);
-ALTER TABLE follow_up ADD CONSTRAINT fk_fup_app FOREIGN KEY (appointment_id) REFERENCES appointment(appointment_id);
