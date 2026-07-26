@@ -20,6 +20,8 @@ public class RegisterRequest {
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
 
+    @NotBlank(message = "Phone number is required")
+    @jakarta.validation.constraints.Pattern(regexp = "^\\d{10,11}$", message = "Invalid phone format")
     private String phone;
 
     @NotBlank(message = "Gender is required")

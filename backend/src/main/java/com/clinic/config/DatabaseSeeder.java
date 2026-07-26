@@ -47,28 +47,32 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         // 2. Initialize Master Admin Account
         String adminEmail = "kiet@gmail.com";
-        if (!accountRepository.existsByEmail(adminEmail)) {
-            log.info("No admin account found. Seeding default Master Admin...");
+        seedAccountIfNotFound(adminEmail, "12345678", "ADMIN");
 
-            Account admin = new Account();
-            admin.setEmail(adminEmail);
-            admin.setPassword(passwordEncoder.encode("12345678"));
-            admin.setIsActive(1);
-            admin.setFailedAttempt(0);
+        // 3. Initialize Dummy Accounts for Testing
+        seedAccountIfNotFound("admin@gmail.com", "12345678", "ADMIN");
+        seedAccountIfNotFound("receptionist@clinic.com", "12345678", "RECEPTIONIST");
+        seedAccountIfNotFound("doctor@clinic.com", "12345678", "DOCTOR");
+        seedAccountIfNotFound("lab_tech@clinic.com", "12345678", "NURSE"); // Giả sử Lab Tech dùng role NURSE tạm
+        seedAccountIfNotFound("patient1@clinic.com", "12345678", "PATIENT");
 
-            // Lấy role ADMIN (mã "ADMIN")
-            Role adminRole = roleRepository.findByRoleCode("ADMIN")
-                    .orElseThrow(() -> new RuntimeException("ADMIN role not found during seeding"));
-            
-            admin.getRoles().add(adminRole);
+    }
 
-            accountRepository.save(admin);
-            log.info(" Master Admin account created successfully! Email: {} | Password: 12345678", adminEmail);
-        } else {
-            log.info("Database already contains the admin account. Skipping seeder.");
+    private void seedAccountIfNotFound(String email, String password, String roleCode) {
+        Account account = accountRepository.findByEmail(email).orElse(new Account());
+        account.setEmail(email);
+        account.setPassword(passwordEncoder.encode(password));
+        account.setIsActive(1);
+        account.setFailedAttempt(0);
+
+        if (account.getRoles() == null || account.getRoles().isEmpty()) {
+            Role role = roleRepository.findByRoleCode(roleCode)
+                    .orElseThrow(() -> new RuntimeException(roleCode + " role not found during seeding"));
+            account.getRoles().add(role);
         }
 
-
+        accountRepository.save(account);
+        log.info("Created/Updated test account: {} with role: {}", email, roleCode);
     }
 
     private void seedRoleIfNotFound(String roleCode, String roleName) {

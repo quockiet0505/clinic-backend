@@ -46,7 +46,7 @@ public class AppointmentController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'PATIENT')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> update(
             @PathVariable Integer id,
             @Valid @RequestBody AppointmentRequest request) {

@@ -44,6 +44,7 @@ public class AppointmentRequest {
     @NotNull
     private CreatedByType createdBy;
 
+    @jakarta.validation.constraints.NotBlank(message = "Vui lòng nhập triệu chứng hoặc lý do khám")
     private String note;
 
     private String rescheduleReason;

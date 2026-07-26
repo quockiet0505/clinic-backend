@@ -97,7 +97,7 @@ public class MedicalRecordController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR', 'PATIENT', 'LAB_TECH')")
     public ApiResponse<MedicalRecordDetailResponse> getRecordDetail(
             @PathVariable Integer id
     ) {

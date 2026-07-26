@@ -17,6 +17,21 @@ public class FileUploadController {
 
     @PostMapping("/image")
     public ResponseEntity<ApiResponse<String>> uploadImage(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseUtil.error("Tệp không được để trống", null);
+        }
+
+        // Validate file size (e.g., max 5MB)
+        if (file.getSize() > 5 * 1024 * 1024) {
+            return ResponseUtil.error("Kích thước tệp vượt quá giới hạn (5MB)", null);
+        }
+
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
+            return ResponseUtil.error("Chỉ hỗ trợ định dạng hình ảnh hoặc PDF", null);
+        }
+
         String url = fileStorageService.storeFile(file);
         return ResponseUtil.success("Tải ảnh lên thành công", url);
     }

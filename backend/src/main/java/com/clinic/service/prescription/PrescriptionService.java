@@ -51,6 +51,10 @@ public class PrescriptionService {
         MedicalRecord record = medicalRecordRepository.findById(request.getRecordId())
                 .orElseThrow(() -> new RuntimeException("Medical record not found."));
 
+        if (record.getStatus() == com.clinic.common.enums.MedicalRecordStatus.DONE) {
+            throw new RuntimeException("Không thể kê đơn cho bệnh án đã hoàn thành.");
+        }
+
         boolean hasPendingLabOrders = serviceOrderRepository.findByMedicalRecordId(record.getRecordId())
                 .stream()
                 .anyMatch(o -> o.getStatus() == ServiceOrderStatus.ORDERED);
@@ -58,8 +62,25 @@ public class PrescriptionService {
             throw new RuntimeException("Không thể kê đơn khi còn chỉ định cận lâm sàng chưa có kết quả.");
         }
 
-        // Tự động kiểm tra tương tác thuốc trước khi lưu
         if (request.getItems() != null && !request.getItems().isEmpty()) {
+            java.util.Set<Integer> uniqueIds = new java.util.HashSet<>();
+            for (PrescriptionItemRequest item : request.getItems()) {
+                if (item.getMedicineId() != null) {
+                    if (!uniqueIds.add(item.getMedicineId())) {
+                        throw new RuntimeException("Không thể chọn trùng cùng một loại thuốc.");
+                    }
+                    Medicine med = medicineRepository.findById(item.getMedicineId())
+                            .orElseThrow(() -> new RuntimeException("Không tìm thấy thuốc."));
+                    
+                    if (med.getIsDeleted() == 1) {
+                        throw new RuntimeException("Thuốc " + med.getName() + " không còn hoạt động.");
+                    }
+                    if (item.getQuantity().compareTo(java.math.BigDecimal.valueOf(med.getStockQuantity())) > 0) {
+                        throw new RuntimeException("Số lượng thuốc " + med.getName() + " vượt tồn kho.");
+                    }
+                }
+            }
+
             List<Integer> medicineIds = request.getItems().stream()
                     .map(PrescriptionItemRequest::getMedicineId)
                     .filter(id -> id != null)
@@ -76,6 +97,9 @@ public class PrescriptionService {
         }
 
         Prescription prescription = prescriptionMapper.toEntity(request);
+        if (prescription.getItems() != null) {
+            prescription.getItems().clear();
+        }
         prescription.setMedicalRecord(record);
         prescription.setStatus("PENDING");
         prescription.setCreatedAt(LocalDateTime.now());
@@ -86,13 +110,17 @@ public class PrescriptionService {
             for (PrescriptionItemRequest itemReq : request.getItems()) {
                 Medicine medicine = null;
                 if (itemReq.getMedicineId() != null) {
-                    medicine = medicineRepository.findById(itemReq.getMedicineId())
-                            .orElseThrow(() -> new RuntimeException("Medicine not found: " + itemReq.getMedicineId()));
+                    medicine = medicineRepository.findById(itemReq.getMedicineId()).get();
+                    // Optional: deduct stock
+                    medicine.setStockQuantity(medicine.getStockQuantity() - itemReq.getQuantity().intValue());
+                    medicineRepository.save(medicine);
                 }
                 PrescriptionItem item = prescriptionMapper.toItemEntity(itemReq);
                 item.setPrescription(saved);
                 item.setMedicine(medicine);
                 item.setMedicineName(itemReq.getMedicineName());
+                item.setFrequency(itemReq.getFrequency());
+                item.setDurationDays(itemReq.getDurationDays());
                 saved.getItems().add(item);
             }
             prescriptionRepository.save(saved);

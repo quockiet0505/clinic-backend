@@ -154,7 +154,11 @@ public class MedicalRecordService {
 
         Patient patient = record.getPatient();
         PatientVitalProfile vitalProfile = vitalProfileRepository.findById(patient.getPatientId())
-                .orElse(new PatientVitalProfile(patient.getPatientId(), patient, null, null, null, null, null, null, null, null, null));
+                .orElseGet(() -> {
+                    PatientVitalProfile pvp = new PatientVitalProfile();
+                    pvp.setPatient(patient);
+                    return pvp;
+                });
 
         vitalProfile.setHeight(request.getHeight());
         vitalProfile.setWeight(request.getWeight());

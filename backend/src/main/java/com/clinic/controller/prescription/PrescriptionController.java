@@ -32,6 +32,7 @@ public class PrescriptionController {
     private final PrescriptionService prescriptionService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
     public ApiResponse<PrescriptionResponse> create(@Valid @RequestBody PrescriptionRequest request) {
         return ResponseUtil.success(
                 "Prescription created", 

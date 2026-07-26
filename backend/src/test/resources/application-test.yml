@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:clinic_test_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+# JWT Configuration for testing
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  access-expiration: 3600000
+  refresh-expiration: 86400000
+
+# Mock Firebase or any other external services if needed
+firebase:
+  config: mock_path
+
+sepay:
+  webhook-secret: test_sepay_secret_12345

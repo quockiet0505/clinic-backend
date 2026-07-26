@@ -49,4 +49,10 @@ public class PrescriptionItem {
     @Column(length = 255)
     private String dosage;
 
+    @Column(length = 100)
+    private String frequency;
+
+    @Column(name = "duration_days")
+    private Integer durationDays;
+
 }

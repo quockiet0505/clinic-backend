@@ -93,8 +93,12 @@ public class AppointmentService {
     private Patient getCurrentPatient() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
-        return patientRepository.findByAccount_Email(email)
+        Patient patient = patientRepository.findByAccount_Email(email)
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
+        if (patient.getAccount().getIsActive() == 0) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa.");
+        }
+        return patient;
     }
 
     private BookingMode resolveBookingMode(AppointmentRequest request) {
@@ -501,8 +505,13 @@ public class AppointmentService {
         boolean justCheckedIn = false;
         boolean justCompleted = false;
 
-        if (newStatus == AppointmentStatus.CHECKED_IN && 
-            (appointment.getStatus() == AppointmentStatus.PENDING || appointment.getStatus() == AppointmentStatus.CONFIRMED)) {
+        if (newStatus == AppointmentStatus.CHECKED_IN) {
+            if (appointment.getStatus() == AppointmentStatus.CHECKED_IN) {
+                throw new RuntimeException("Lịch hẹn đã được Check-in trước đó.");
+            }
+            if (appointment.getStatus() != AppointmentStatus.PENDING && appointment.getStatus() != AppointmentStatus.CONFIRMED) {
+                throw new RuntimeException("Chỉ có thể Check-in lịch hẹn ở trạng thái Chờ khám hoặc Đã xác nhận.");
+            }
             appointment.setCheckinTime(LocalDateTime.now());
             
             if (Boolean.TRUE.equals(isPriority)) {
@@ -572,12 +581,25 @@ public class AppointmentService {
 
     @Transactional
     public AppointmentResponse cancelByPatient(Integer id, String reason) {
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new RuntimeException("Vui lòng nhập lý do hủy lịch.");
+        }
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
-        LocalDateTime appointmentDateTime = LocalDateTime.of(
-                appointment.getAppointmentDate(), appointment.getTimeStart());
-        if (LocalDateTime.now().isAfter(appointmentDateTime.minusHours(3))) {
-            throw new RuntimeException("Chỉ được phép hủy lịch trước thời gian khám ít nhất 3 tiếng.");
+
+        if (appointment.getStatus() != AppointmentStatus.PENDING && appointment.getStatus() != AppointmentStatus.CONFIRMED) {
+            throw new RuntimeException("Không thể hủy lịch khi trạng thái là " + appointment.getStatus().name());
+        }
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isPatient = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
+        
+        if (isPatient) {
+            LocalDateTime appointmentDateTime = LocalDateTime.of(
+                    appointment.getAppointmentDate(), appointment.getTimeStart());
+            if (LocalDateTime.now().isAfter(appointmentDateTime.minusHours(3))) {
+                throw new RuntimeException("Chỉ được phép hủy lịch trước thời gian khám ít nhất 3 tiếng.");
+            }
         }
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointment.setCancelledBy(CancelledByType.PATIENT);

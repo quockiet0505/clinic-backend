@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import jakarta.validation.Valid;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +49,7 @@ public class AuthController {
 
     @PostMapping("/patient/register")
     public ResponseEntity<ApiResponse<AuthResponse>> registerPatient(
-            @RequestBody RegisterRequest request,
+            @Valid @RequestBody RegisterRequest request,
             HttpServletResponse response
     ) {
 
@@ -62,7 +64,7 @@ public class AuthController {
 
     @PostMapping("/patient/login")
     public ResponseEntity<ApiResponse<AuthResponse>> loginPatient(
-            @RequestBody LoginRequest request,
+            @Valid @RequestBody LoginRequest request,
             HttpServletResponse response
     ) {
 
@@ -77,7 +79,7 @@ public class AuthController {
 
     @PostMapping("/staff/login")
     public ResponseEntity<ApiResponse<AuthResponse>> loginStaff(
-            @RequestBody LoginRequest request,
+            @Valid @RequestBody LoginRequest request,
             HttpServletResponse response
     ) {
 
@@ -113,7 +115,7 @@ public class AuthController {
 
     @PostMapping("/google/register")
     public ResponseEntity<ApiResponse<AuthResponse>> googleRegister(
-            @RequestBody GoogleRegisterRequest request,
+            @Valid @RequestBody GoogleRegisterRequest request,
             HttpServletResponse response
     ) {
         AuthResponse res = authService.googleRegister(request, response);

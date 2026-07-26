@@ -44,6 +44,9 @@ public class Medicine {
     @Column(name = "is_deleted")
     private Integer isDeleted = 0;
 
+    @Column(name = "stock_quantity")
+    private Integer stockQuantity = 0;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
