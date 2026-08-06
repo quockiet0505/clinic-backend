@@ -92,7 +92,7 @@ public class StaffService {
         account.setEmail(request.getEmail());
         account.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        String roleCode = "ROLE_" + request.getStaffType().name();
+        String roleCode = request.getStaffType().name();
         Role role = roleRepository.findByRoleCode(roleCode)
                 .orElseThrow(() -> new RuntimeException("Role " + roleCode + " not found"));
         account.getRoles().add(role);

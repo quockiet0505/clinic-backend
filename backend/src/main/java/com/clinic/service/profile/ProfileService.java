@@ -76,6 +76,7 @@ public class ProfileService {
                 response.setDateOfBirth(staff.getDateOfBirth());
                 response.setPhone(staff.getPhone());
                 response.setAddress(staff.getAddress());
+                response.setAvatarUrl(staff.getImageUrl());
             }
         }
 
@@ -122,6 +123,9 @@ public class ProfileService {
                 staff.setDateOfBirth(request.getDateOfBirth());
                 staff.setPhone(request.getPhone());
                 staff.setAddress(request.getAddress());
+                if (request.getAvatarUrl() != null) {
+                    staff.setImageUrl(request.getAvatarUrl());
+                }
                 staffRepository.save(staff);
             }
         }

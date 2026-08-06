@@ -136,6 +136,7 @@ public class PatientService {
         patient.setDateOfBirth(request.getDateOfBirth());
         patient.setPhone(request.getPhone());
         patient.setAddress(request.getAddress());
+        patient.setAvatarUrl(request.getAvatarUrl());
 
         Patient savedPatient = patientRepository.save(patient);
 

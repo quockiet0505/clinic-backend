@@ -17,6 +17,7 @@ public class PatientRequest {
     private LocalDate dateOfBirth;
     private String phone;
     private String address;
+    private String avatarUrl;
     
     // Vitals 
     private Integer height;
