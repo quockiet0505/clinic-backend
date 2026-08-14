@@ -76,14 +76,6 @@ public class PrescriptionController {
         ).getBody();
     }
 
-    @PutMapping("/{id}/dispense")
-    public ApiResponse<Void> dispense(@PathVariable Integer id) {
-        prescriptionService.dispense(id);
-        return ResponseUtil.success(
-                "Prescription dispensed", 
-                (Void) null
-        ).getBody(); 
-    }
 
     @PostMapping("/check-interactions")
     public ApiResponse<List<DrugInteractionWarning>> checkInteractions(@RequestBody List<Integer> medicineIds) {

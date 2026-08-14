@@ -75,9 +75,6 @@ public class PrescriptionService {
                     if (med.getIsDeleted() == 1) {
                         throw new RuntimeException("Thuốc " + med.getName() + " không còn hoạt động.");
                     }
-                    if (item.getQuantity().compareTo(java.math.BigDecimal.valueOf(med.getStockQuantity())) > 0) {
-                        throw new RuntimeException("Số lượng thuốc " + med.getName() + " vượt tồn kho.");
-                    }
                 }
             }
 
@@ -111,9 +108,6 @@ public class PrescriptionService {
                 Medicine medicine = null;
                 if (itemReq.getMedicineId() != null) {
                     medicine = medicineRepository.findById(itemReq.getMedicineId()).get();
-                    // Optional: deduct stock
-                    medicine.setStockQuantity(medicine.getStockQuantity() - itemReq.getQuantity().intValue());
-                    medicineRepository.save(medicine);
                 }
                 PrescriptionItem item = prescriptionMapper.toItemEntity(itemReq);
                 item.setPrescription(saved);
@@ -161,13 +155,6 @@ public class PrescriptionService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public void dispense(Integer id) {
-        Prescription prescription = prescriptionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Prescription not found."));
-        prescription.setStatus("DISPENSED");
-        prescriptionRepository.save(prescription);
-    }
 
     @Transactional(readOnly = true)
     public List<DrugInteractionWarning> checkInteractions(List<Integer> medicineIds) {
