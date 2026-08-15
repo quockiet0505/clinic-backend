@@ -35,15 +35,13 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        log.info("Cleaning up database tables to prepare for seeding...");
+        log.info("Cleaning up transaction tables to prepare for seeding...");
         entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0").executeUpdate();
         String[] tables = {
             "appointment", "medical_record", "medical_record_vital", "service_order",
             "service_result", "invoice_item", "invoice", "prescription_item",
             "prescription", "doctor_review", "feedback", "follow_up",
-            "patient_vital_profile", "device_token", "leave_request", "staff_schedule",
-            "doctor_service_price", "patient", "staff", "account_role", "account",
-            "role", "expertise", "service", "medicine"
+            "device_token", "leave_request", "staff_schedule"
         };
         for (String table : tables) {
             try {

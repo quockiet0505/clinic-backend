@@ -70,46 +70,65 @@ public class DashboardDataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         log.info("Preparing complete clinic workflow mock data...");
 
-        // 1. Seed Expertise
-        List<Expertise> expertises = new ArrayList<>();
-        expertises.add(createExpertise("Nội tổng quát"));
-        expertises.add(createExpertise("Tai Mũi Họng"));
-        expertises.add(createExpertise("Răng Hàm Mặt"));
+        // 1. Fetch or Seed Expertise
+        List<Expertise> expertises = expertiseRepository.findAll();
+        if (expertises.isEmpty()) {
+            expertises = new ArrayList<>();
+            expertises.add(createExpertise("Nội tổng quát"));
+            expertises.add(createExpertise("Tai Mũi Họng"));
+            expertises.add(createExpertise("Răng Hàm Mặt"));
+        }
 
-        // 2. Seed Services
-        List<Service> services = new ArrayList<>();
-        services.add(createService("Khám nội tổng quát", ServiceType.EXAM, new BigDecimal("150000")));
-        services.add(createService("Khám răng hàm mặt", ServiceType.EXAM, new BigDecimal("200000")));
-        services.add(createService("Xét nghiệm tổng công thức máu", ServiceType.LAB_TEST, new BigDecimal("250000")));
-        services.add(createService("Siêu âm bụng tổng quát", ServiceType.ULTRASOUND, new BigDecimal("350000")));
-        services.add(createService("Chụp X-Quang phổi", ServiceType.X_RAY, new BigDecimal("200000")));
+        // 2. Fetch or Seed Services
+        List<Service> services = serviceRepository.findAll();
+        if (services.isEmpty()) {
+            services = new ArrayList<>();
+            services.add(createService("Khám nội tổng quát", ServiceType.EXAM, new BigDecimal("150000")));
+            services.add(createService("Khám răng hàm mặt", ServiceType.EXAM, new BigDecimal("200000")));
+            services.add(createService("Xét nghiệm tổng công thức máu", ServiceType.LAB_TEST, new BigDecimal("250000")));
+            services.add(createService("Siêu âm bụng tổng quát", ServiceType.ULTRASOUND, new BigDecimal("350000")));
+            services.add(createService("Chụp X-Quang phổi", ServiceType.X_RAY, new BigDecimal("200000")));
+        }
 
-        // 3. Seed Medicines
-        List<Medicine> medicines = new ArrayList<>();
-        medicines.add(createMedicine("Paracetamol 500mg", "Paracetamol", "Hộp 10 vỉ x 10 viên", "Viên", 100));
-        medicines.add(createMedicine("Amoxicillin 500mg", "Amoxicillin", "Hộp 10 vỉ x 10 viên", "Viên", 200));
-        medicines.add(createMedicine("Ibuprofen 400mg", "Ibuprofen", "Hộp 10 vỉ x 10 viên", "Viên", 150));
-        medicines.add(createMedicine("Decolgen Forte", "Paracetamol + Phenylephrine", "Hộp 25 vỉ x 4 viên", "Viên", 120));
-        medicines.add(createMedicine("Cetirizine 10mg", "Cetirizine dihydrochloride", "Hộp 10 vỉ x 10 viên", "Viên", 80));
+        // 3. Fetch or Seed Medicines
+        List<Medicine> medicines = medicineRepository.findAll();
+        if (medicines.isEmpty()) {
+            medicines = new ArrayList<>();
+            medicines.add(createMedicine("Paracetamol 500mg", "Paracetamol", "Hộp 10 vỉ x 10 viên", "Viên", 100));
+            medicines.add(createMedicine("Amoxicillin 500mg", "Amoxicillin", "Hộp 10 vỉ x 10 viên", "Viên", 200));
+            medicines.add(createMedicine("Ibuprofen 400mg", "Ibuprofen", "Hộp 10 vỉ x 10 viên", "Viên", 150));
+            medicines.add(createMedicine("Decolgen Forte", "Paracetamol + Phenylephrine", "Hộp 25 vỉ x 4 viên", "Viên", 120));
+            medicines.add(createMedicine("Cetirizine 10mg", "Cetirizine dihydrochloride", "Hộp 10 vỉ x 10 viên", "Viên", 80));
+        }
 
-        // 4. Seed Staff & link to seeded system accounts
-        Staff doctorA = createStaff("doctor@clinic.com", "BS. Nguyễn Văn A", StaffType.DOCTOR, expertises.get(0));
-        Staff doctorB = createStaff("doctor2@clinic.com", "BS. Trần Thị B", StaffType.DOCTOR, expertises.get(1));
-        Staff doctorC = createStaff("doctor3@clinic.com", "BS. Phạm Minh C", StaffType.DOCTOR, expertises.get(2));
+        // 4. Fetch or Seed Staff
+        List<Staff> doctorsList = staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0);
+        if (doctorsList.isEmpty()) {
+            doctorsList = new ArrayList<>();
+            doctorsList.add(createStaff("doctor@clinic.com", "BS. Nguyễn Văn A", StaffType.DOCTOR, expertises.get(0)));
+            doctorsList.add(createStaff("doctor2@clinic.com", "BS. Trần Thị B", StaffType.DOCTOR, expertises.get(1)));
+            doctorsList.add(createStaff("doctor3@clinic.com", "BS. Phạm Minh C", StaffType.DOCTOR, expertises.get(2)));
+        }
 
-        Staff labTech = createStaff("lab_tech@clinic.com", "KTV. Lê Văn Lab", StaffType.LAB_TECH, null);
-        Staff nurse = createStaff("nurse@clinic.com", "ĐD. Phạm Thị Điều Dưỡng", StaffType.NURSE, null);
-        Staff receptionist = createStaff("receptionist@clinic.com", "LT. Trần Thị Lễ Tân", StaffType.RECEPTIONIST, null);
+        Staff labTech = staffRepository.findByStaffTypeAndIsDeleted(StaffType.LAB_TECH, 0).stream().findFirst().orElse(null);
+        if (labTech == null) {
+            labTech = createStaff("lab_tech@clinic.com", "KTV. Lê Văn Lab", StaffType.LAB_TECH, null);
+        }
+        Staff nurse = staffRepository.findByStaffTypeAndIsDeleted(StaffType.NURSE, 0).stream().findFirst().orElse(null);
+        if (nurse == null) {
+            nurse = createStaff("nurse@clinic.com", "ĐD. Phạm Thị Điều Dưỡng", StaffType.NURSE, null);
+        }
 
-        List<Staff> doctorsList = List.of(doctorA, doctorB, doctorC);
-
-        // 5. Seed Patients
-        List<Patient> patients = new ArrayList<>();
-        patients.add(createPatient("patient1@clinic.com", "Dương Quốc Kiệt", "0912345678"));
-        patients.add(createPatient("patient2@clinic.com", "Nguyễn Văn Bình", "0901234567"));
-        patients.add(createPatient("patient3@clinic.com", "Lê Thị Hoa", "0902345678"));
-        patients.add(createPatient("patient4@clinic.com", "Trần Văn Cường", "0903456789"));
-        patients.add(createPatient("patient5@clinic.com", "Phạm Thị Mai", "0904567890"));
+        // 5. Fetch or Seed Patients
+        List<Patient> patients = patientRepository.findByIsDeleted(0);
+        if (patients.isEmpty()) {
+            patients = new ArrayList<>();
+            patients.add(createPatient("patient1@clinic.com", "Dương Quốc Kiệt", "0912345678"));
+            patients.add(createPatient("patient2@clinic.com", "Nguyễn Văn Bình", "0901234567"));
+            patients.add(createPatient("patient3@clinic.com", "Lê Thị Hoa", "0902345678"));
+            patients.add(createPatient("patient4@clinic.com", "Trần Văn Cường", "0903456789"));
+            patients.add(createPatient("patient5@clinic.com", "Phạm Thị Mai", "0904567890"));
+        }
 
         // 6. Seed Complete Clinic Workflows from August 1 to August 15, 2026
         LocalDate startDate = LocalDate.of(2026, 8, 1);
