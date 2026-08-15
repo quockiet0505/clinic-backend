@@ -62,6 +62,13 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
         throw new RuntimeException("Email is already in use. Please login or use a different email.");
     }
     
+    if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+        throw new RuntimeException("Password is required");
+    }
+    if (request.getPassword().length() < 6) {
+        throw new RuntimeException("Password must be at least 6 characters long");
+    }
+    
     Account account = new Account();
     account.setEmail(request.getEmail());
     account.setPassword(passwordEncoder.encode(request.getPassword()));
