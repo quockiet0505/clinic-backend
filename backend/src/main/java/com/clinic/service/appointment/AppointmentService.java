@@ -400,7 +400,7 @@ public class AppointmentService {
     }
 
     @Transactional
-    public AppointmentResponse updateAppointment(Integer id, AppointmentRequest request) {
+    public AppointmentResponse updateAppointment(Integer id, com.clinic.dto.appointment.AppointmentRescheduleRequest request) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
         

@@ -49,7 +49,7 @@ public class AppointmentController {
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'PATIENT')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> update(
             @PathVariable Integer id,
-            @Valid @RequestBody AppointmentRequest request) {
+            @Valid @RequestBody com.clinic.dto.appointment.AppointmentRescheduleRequest request) {
         return ResponseUtil.success("Appointment updated successfully", appointmentService.updateAppointment(id, request));
     }
 
