@@ -250,9 +250,31 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
                 throw new RuntimeException("Email mismatch or not found in Google token");
             }
 
-            // Register using existing logic but mock a random password since it's Google Auth
-            request.setPassword(java.util.UUID.randomUUID().toString() + "Gg@1");
-            return registerPatient(request, response);
+            try {
+                // Register using existing logic but mock a random password since it's Google Auth
+                request.setPassword(java.util.UUID.randomUUID().toString() + "Gg@1");
+                return registerPatient(request, response);
+            } catch (RuntimeException e) {
+                if (e.getMessage() != null && e.getMessage().contains("Email is already in use")) {
+                    return accountRepository.findByEmail(email).map(account -> {
+                        CustomUserDetails userDetails = new CustomUserDetails(account);
+                        String token = jwtService.generateToken(userDetails);
+                        setCookie(response, token);
+                        
+                        List<String> roles = userDetails.getAuthorities().stream()
+                                .map(GrantedAuthority::getAuthority)
+                                .collect(Collectors.toList());
+
+                        return AuthResponse.builder()
+                                .accountId(account.getAccountId())
+                                .email(account.getEmail())
+                                .token(token)
+                                .roles(roles)
+                                .build();
+                    }).orElseThrow(() -> new RuntimeException("Unexpected error during Google registration fallback"));
+                }
+                throw e;
+            }
 
         } catch (Exception e) {
             log.error("Google register failed: {}", e.getMessage());
