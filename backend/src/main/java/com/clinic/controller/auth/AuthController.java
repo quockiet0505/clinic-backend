@@ -127,7 +127,11 @@ public class AuthController {
             HttpServletRequest request
     ) {
 
-        String token = extractTokenFromCookie(request);
+        String token = null;
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        }
 
         if (token == null) {
             throw new RuntimeException("No token found");
@@ -176,24 +180,7 @@ public class AuthController {
         );
     }
 
-    private String extractTokenFromCookie(
-            HttpServletRequest request
-    ) {
 
-        Cookie[] cookies = request.getCookies();
-
-        if (cookies != null) {
-
-            for (Cookie cookie : cookies) {
-
-                if ("token".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-
-        return null;
-    }
 
    
 }
