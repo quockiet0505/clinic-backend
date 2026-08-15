@@ -35,28 +35,41 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-
+        log.info("Cleaning up database tables to prepare for seeding...");
+        entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0").executeUpdate();
+        String[] tables = {
+            "appointment", "medical_record", "medical_record_vital", "service_order",
+            "service_result", "invoice_item", "invoice", "prescription_item",
+            "prescription", "doctor_review", "feedback", "follow_up",
+            "patient_vital_profile", "device_token", "leave_request", "staff_schedule",
+            "doctor_service_price", "patient", "staff", "account_role", "account",
+            "role", "expertise", "service", "medicine"
+        };
+        for (String table : tables) {
+            try {
+                entityManager.createNativeQuery("TRUNCATE TABLE " + table).executeUpdate();
+            } catch (Exception e) {
+                log.warn("Failed to truncate table {}: {}", table, e.getMessage());
+            }
+        }
+        entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1").executeUpdate();
+        log.info("Database cleaned up successfully!");
 
         // 1. Initialize System Roles (KHÔNG có tiền tố ROLE_)
         seedRoleIfNotFound("ADMIN", "Administrator");
         seedRoleIfNotFound("DOCTOR", "Doctor");
-        // seedRoleIfNotFound("STAFF", "Clinic Staff");
         seedRoleIfNotFound("PATIENT", "Patient");
         seedRoleIfNotFound("RECEPTIONIST", "Receptionist");
         seedRoleIfNotFound("NURSE", "Nurse");
         seedRoleIfNotFound("LAB_TECH", "Lab Technician");
 
-        // 2. Initialize Master Admin Account
-        String adminEmail = "kiet@gmail.com";
-        seedAccountIfNotFound(adminEmail, "12345678", "ADMIN");
-
-        // 3. Initialize Dummy Accounts for Testing
+        // 2. Initialize Dummy Accounts for Testing
         seedAccountIfNotFound("admin@clinic.com", "12345678", "ADMIN");
         seedAccountIfNotFound("receptionist@clinic.com", "12345678", "RECEPTIONIST");
         seedAccountIfNotFound("doctor@clinic.com", "12345678", "DOCTOR");
         seedAccountIfNotFound("lab_tech@clinic.com", "12345678", "LAB_TECH");
+        seedAccountIfNotFound("nurse@clinic.com", "12345678", "NURSE");
         seedAccountIfNotFound("patient1@clinic.com", "12345678", "PATIENT");
-
     }
 
     private void seedAccountIfNotFound(String email, String password, String roleCode) {
