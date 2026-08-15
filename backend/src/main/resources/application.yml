@@ -38,5 +38,5 @@ logging:
     com.clinic: DEBUG
 
 sepay:
-  api-key: ${SEPAY_API_KEY}
-  webhook-secret: ${SEPAY_WEBHOOK_SECRET}
+  api-key: ${SEPAY_API_KEY:default_api_key}
+  webhook-secret: ${SEPAY_WEBHOOK_SECRET:default_webhook_secret}
