@@ -63,6 +63,9 @@ jobs:
           docker push asia-southeast1-docker.pkg.dev/clinicqa-500817/clinic-artifact/backend:latest
 
       - name: Deploy to VM via IAP SSH
+        env:
+          SEPAY_API_KEY: ${{ secrets.SEPAY_API_KEY }}
+          SEPAY_WEBHOOK_SECRET: ${{ secrets.SEPAY_WEBHOOK_SECRET }}
         run: |
           # Create necessary directories and fix permissions to avoid Permission denied on scp
           gcloud compute ssh clinic-vm --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" --command "sudo mkdir -p ~/deploy/database ~/deploy/nginx && sudo chown -R \$USER:\$USER ~/deploy"
@@ -98,5 +101,5 @@ jobs:
             export JWT_SECRET=\$(gcloud secrets versions access latest --secret=JWT_SECRET)
             
             # Deploy or update the stack in Docker Swarm (uses VM's local GCR credential helper)
-            sudo DB_PASSWORD=\"\$DB_PASSWORD\" JWT_SECRET=\"\$JWT_SECRET\" docker stack deploy -c docker-compose.yml clinic --prune --with-registry-auth
+            sudo DB_PASSWORD=\"\$DB_PASSWORD\" JWT_SECRET=\"\$JWT_SECRET\" SEPAY_API_KEY=\"\$SEPAY_API_KEY\" SEPAY_WEBHOOK_SECRET=\"\$SEPAY_WEBHOOK_SECRET\" docker stack deploy -c docker-compose.yml clinic --prune --with-registry-auth
           "

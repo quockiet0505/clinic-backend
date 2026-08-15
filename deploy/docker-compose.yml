@@ -29,6 +29,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+      - SEPAY_API_KEY=${SEPAY_API_KEY}
+      - SEPAY_WEBHOOK_SECRET=${SEPAY_WEBHOOK_SECRET}
       - APPLICATION_AI_SERVER_URL=https://duongquockiet0511--clinic-ai-chat-fastapi-app.modal.run
     depends_on:
       - mysql-db
