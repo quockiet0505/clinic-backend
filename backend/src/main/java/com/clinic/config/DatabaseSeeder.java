@@ -44,6 +44,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         seedRoleIfNotFound("PATIENT", "Patient");
         seedRoleIfNotFound("RECEPTIONIST", "Receptionist");
         seedRoleIfNotFound("NURSE", "Nurse");
+        seedRoleIfNotFound("LAB_TECH", "Lab Technician");
 
         // 2. Initialize Master Admin Account
         String adminEmail = "kiet@gmail.com";
@@ -53,7 +54,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         seedAccountIfNotFound("admin@clinic.com", "12345678", "ADMIN");
         seedAccountIfNotFound("receptionist@clinic.com", "12345678", "RECEPTIONIST");
         seedAccountIfNotFound("doctor@clinic.com", "12345678", "DOCTOR");
-        seedAccountIfNotFound("lab_tech@clinic.com", "12345678", "NURSE"); // Giả sử Lab Tech dùng role NURSE tạm
+        seedAccountIfNotFound("lab_tech@clinic.com", "12345678", "LAB_TECH");
         seedAccountIfNotFound("patient1@clinic.com", "12345678", "PATIENT");
 
     }
