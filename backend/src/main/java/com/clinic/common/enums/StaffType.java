@@ -5,5 +5,6 @@ public enum StaffType {
     LAB_TECH,
     ADMIN,
     RECEPTIONIST,
-    NURSE
+    NURSE,
+    STAFF
 }
