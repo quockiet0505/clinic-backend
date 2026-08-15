@@ -652,6 +652,8 @@ public class DashboardDataSeeder implements CommandLineRunner {
         if (records.size() < 5) return;
 
         // A. Seed Clinic Feedbacks (Phòng khám)
+        Staff adminStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.ADMIN, 0).stream().findFirst().orElse(doctorsList.get(0));
+        
         // 2 APPROVED
         Feedback f1 = new Feedback();
         f1.setMedicalRecord(records.get(0));
@@ -659,6 +661,9 @@ public class DashboardDataSeeder implements CommandLineRunner {
         f1.setComment("Phòng khám rất sạch sẽ, khang trang. Đội ngũ y tá và bác sĩ đón tiếp rất chu đáo, nhiệt tình.");
         f1.setAiStatus("APPROVED");
         f1.setCreatedAt(LocalDateTime.now().minusDays(3));
+        f1.setReply("Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của phòng khám. Chúng tôi sẽ luôn cố gắng duy trì chất lượng phục vụ tốt nhất!");
+        f1.setRepliedAt(LocalDateTime.now().minusDays(2));
+        f1.setRepliedBy(adminStaff);
         feedbackRepository.save(f1);
 
         Feedback f2 = new Feedback();
@@ -686,6 +691,9 @@ public class DashboardDataSeeder implements CommandLineRunner {
         f4.setAiStatus("REJECTED");
         f4.setAiModerationNote("Chứa từ ngữ nhạy cảm quy chụp không bằng chứng (lừa đảo)");
         f4.setCreatedAt(LocalDateTime.now().minusHours(2));
+        f4.setReply("Chào bạn, phòng khám rất tiếc vì trải nghiệm không tốt của bạn. Xin vui lòng liên hệ hotline 1900 2115 để chúng tôi làm rõ vấn đề này.");
+        f4.setRepliedAt(LocalDateTime.now().minusHours(1));
+        f4.setRepliedBy(adminStaff);
         feedbackRepository.save(f4);
 
         // B. Seed Extra Doctor Reviews (Bác sĩ)

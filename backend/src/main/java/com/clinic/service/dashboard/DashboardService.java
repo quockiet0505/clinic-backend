@@ -57,7 +57,7 @@ public class DashboardService {
 
         long totalPatients = patientRepository.count();
         long appointmentsToday = appointmentRepository
-                .findByAppointmentDateAndStatusAndIsDeleted(today, AppointmentStatus.CONFIRMED, 0).size();
+                .findByAppointmentDateBetweenAndIsDeleted(today, today, 0).size();
         long appointmentsThisWeek = appointmentRepository
                 .findByAppointmentDateBetweenAndIsDeleted(startOfWeek, today, 0).size();
         long totalAppointments = appointmentRepository.count();
@@ -75,7 +75,7 @@ public class DashboardService {
         long totalDoctors = staffRepository.findByStaffTypeAndIsDeleted(StaffType.DOCTOR, 0).size();
         long totalFeedbacks = feedbackRepository.count();
 
-        Double avgRating = doctorReviewRepository.getAverageRatingByDoctorId(null);
+        Double avgRating = feedbackRepository.getAverageApprovedRating();
         if (avgRating == null) avgRating = 0.0;
 
         YearMonth currentMonth = YearMonth.now();
