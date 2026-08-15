@@ -66,11 +66,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         account.setIsActive(1);
         account.setFailedAttempt(0);
 
-        if (account.getRoles() == null || account.getRoles().isEmpty()) {
-            Role role = roleRepository.findByRoleCode(roleCode)
-                    .orElseThrow(() -> new RuntimeException(roleCode + " role not found during seeding"));
-            account.getRoles().add(role);
-        }
+        Role role = roleRepository.findByRoleCode(roleCode)
+                .orElseThrow(() -> new RuntimeException(roleCode + " role not found during seeding"));
+        account.getRoles().clear();
+        account.getRoles().add(role);
 
         accountRepository.save(account);
         log.info("Created/Updated test account: {} with role: {}", email, roleCode);
