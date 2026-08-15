@@ -21,6 +21,8 @@ import com.clinic.repository.crm.DoctorReviewRepository;
 import com.clinic.repository.crm.FollowUpRepository;
 import com.clinic.repository.medical.*;
 import com.clinic.repository.patient.PatientRepository;
+import com.clinic.repository.patient.PatientVitalProfileRepository;
+import com.clinic.entity.patient.PatientVitalProfile;
 import com.clinic.repository.prescription.MedicineRepository;
 import com.clinic.repository.prescription.PrescriptionRepository;
 import com.clinic.repository.staff.ExpertiseRepository;
@@ -68,6 +70,7 @@ public class DashboardDataSeeder implements CommandLineRunner {
     private final DoctorReviewRepository doctorReviewRepository;
     private final DoctorServicePriceRepository doctorServicePriceRepository;
     private final LeaveRequestRepository leaveRequestRepository;
+    private final PatientVitalProfileRepository patientVitalProfileRepository;
     private final StaffScheduleService staffScheduleService;
     private final PasswordEncoder passwordEncoder;
 
@@ -125,15 +128,19 @@ public class DashboardDataSeeder implements CommandLineRunner {
             nurse = createStaff("nurse@clinic.com", "ĐD. Phạm Thị Điều Dưỡng", StaffType.NURSE, null);
         }
 
-        // 5. Fetch or Seed Patients
+        // 5. Fetch or Seed Patients (Always seed exactly 20 clean patients)
         List<Patient> patients = patientRepository.findByIsDeleted(0);
         if (patients.isEmpty()) {
             patients = new ArrayList<>();
-            patients.add(createPatient("patient1@clinic.com", "Dương Quốc Kiệt", "0912345678"));
-            patients.add(createPatient("patient2@clinic.com", "Nguyễn Văn Bình", "0901234567"));
-            patients.add(createPatient("patient3@clinic.com", "Lê Thị Hoa", "0902345678"));
-            patients.add(createPatient("patient4@clinic.com", "Trần Văn Cường", "0903456789"));
-            patients.add(createPatient("patient5@clinic.com", "Phạm Thị Mai", "0904567890"));
+            String[] names = {
+                "Nguyễn Văn An", "Trần Thị Bình", "Lê Hoàng Cường", "Phạm Minh Đức", "Huỳnh Thu Thảo",
+                "Võ Văn Nam", "Đặng Thị Mai", "Bùi Quốc Anh", "Đỗ Kim Chi", "Ngô Thanh Tùng",
+                "Hoàng Diệu Hương", "Phan Văn Khải", "Vũ Thị Lành", "Tống Mỹ Linh", "Lý Khánh An",
+                "Trương Ngọc Hải", "Dương Quốc Kiệt", "Nguyễn Thị Kim", "Trần Bảo Long", "Nguyễn Minh Triết"
+            };
+            for (int i = 0; i < names.length; i++) {
+                patients.add(createPatient("patient" + (i + 1) + "@clinic.com", names[i], String.format("090%07d", 1234560 + i)));
+            }
         }
 
         Random rand = new Random();
@@ -181,6 +188,29 @@ public class DashboardDataSeeder implements CommandLineRunner {
             upcoming.setIsDeleted(0);
             appointmentRepository.save(upcoming);
         }
+
+        // 7.5 Seed active workflows for today (so the active tabs: Chuẩn bị khám, Đang khám, Chờ kết quả, Đọc kết quả are populated)
+        log.info("Generating active today's workflows for demo...");
+        LocalDate today = LocalDate.now();
+        
+        // 2 in Chuẩn bị khám (CHECKED_IN, 1 with vitals, 1 without)
+        // Patient 14 (Index 13) and Patient 15 (Index 14)
+        seedActiveWorkflow(today, LocalTime.of(9, 0), LocalTime.of(9, 30), patients.get(13), doctorsList.get(0), labTech, nurse, services.get(0), null, medicines, 1, rand, AppointmentStatus.CHECKED_IN, MedicalRecordStatus.PENDING, null);
+        seedActiveWorkflow(today, LocalTime.of(9, 30), LocalTime.of(10, 0), patients.get(14), doctorsList.get(0), labTech, nurse, services.get(0), null, medicines, 2, rand, AppointmentStatus.CHECKED_IN, MedicalRecordStatus.PENDING, null);
+        
+        // 2 in Đang khám (IN_PROGRESS)
+        // Patient 16 and 17
+        seedActiveWorkflow(today, LocalTime.of(10, 0), LocalTime.of(10, 30), patients.get(15), doctorsList.get(1), labTech, nurse, services.get(0), null, medicines, 3, rand, AppointmentStatus.IN_PROGRESS, MedicalRecordStatus.IN_PROGRESS, null);
+        seedActiveWorkflow(today, LocalTime.of(10, 30), LocalTime.of(11, 0), patients.get(16), doctorsList.get(1), labTech, nurse, services.get(0), null, medicines, 4, rand, AppointmentStatus.IN_PROGRESS, MedicalRecordStatus.IN_PROGRESS, null);
+        
+        // 2 in Chờ kết quả (WAITING_RESULT, ORDERED lab test)
+        // Patient 18 and 19
+        seedActiveWorkflow(today, LocalTime.of(11, 0), LocalTime.of(11, 30), patients.get(17), doctorsList.get(2), labTech, nurse, services.get(0), services.get(2), medicines, 5, rand, AppointmentStatus.WAITING_RESULT, MedicalRecordStatus.WAITING_RESULT, ServiceOrderStatus.ORDERED);
+        seedActiveWorkflow(today, LocalTime.of(11, 30), LocalTime.of(12, 0), patients.get(18), doctorsList.get(2), labTech, nurse, services.get(0), services.get(2), medicines, 6, rand, AppointmentStatus.WAITING_RESULT, MedicalRecordStatus.WAITING_RESULT, ServiceOrderStatus.ORDERED);
+        
+        // 1 in Đọc kết quả (WAITING_RESULT, DONE lab test)
+        // Patient 20
+        seedActiveWorkflow(today, LocalTime.of(13, 30), LocalTime.of(14, 0), patients.get(19), doctorsList.get(0), labTech, nurse, services.get(0), services.get(2), medicines, 7, rand, AppointmentStatus.WAITING_RESULT, MedicalRecordStatus.WAITING_RESULT, ServiceOrderStatus.DONE);
 
         // 8. Seed exactly 5 Leave Requests
         log.info("Generating mock leave requests...");
@@ -411,6 +441,94 @@ public class DashboardDataSeeder implements CommandLineRunner {
         followUpRepository.save(followUp);
     }
 
+    private void seedActiveWorkflow(
+            LocalDate date, LocalTime start, LocalTime end,
+            Patient patient, Staff doctor, Staff labTech, Staff nurse,
+            Service examService, Service labService, List<Medicine> medicines,
+            int index, Random rand, AppointmentStatus apptStatus, MedicalRecordStatus recStatus,
+            ServiceOrderStatus orderStatus) {
+
+        // A. Appointment
+        Appointment appt = new Appointment();
+        appt.setPatient(patient);
+        appt.setMainDoctor(doctor);
+        appt.setService(examService);
+        appt.setExpertise(doctor.getExpertise());
+        appt.setAppointmentDate(date);
+        appt.setTimeStart(start);
+        appt.setTimeEnd(end);
+        appt.setAppointmentType(AppointmentType.WALK_IN);
+        appt.setStatus(apptStatus);
+        appt.setCreatedBy(CreatedByType.RECEPTIONIST);
+        appt.setBookingMode(BookingMode.DOCTOR);
+        appt.setCheckinTime(date.atTime(start.minusMinutes(10)));
+        appt.setIsDeleted(0);
+        
+        if (apptStatus == AppointmentStatus.CHECKED_IN || apptStatus == AppointmentStatus.IN_PROGRESS || apptStatus == AppointmentStatus.WAITING_RESULT) {
+            appt.setQueueNumber(index);
+        } else {
+            appt.setQueueNumber(0);
+        }
+        
+        appt = appointmentRepository.save(appt);
+
+        // B. Medical Record (Created when not PENDING/CONFIRMED)
+        if (apptStatus != AppointmentStatus.PENDING && apptStatus != AppointmentStatus.CONFIRMED) {
+            MedicalRecord record = new MedicalRecord();
+            record.setPatient(patient);
+            record.setAppointment(appt);
+            record.setMainDoctor(doctor);
+            record.setStatus(recStatus);
+            record.setConsultationOriginalFee(examService.getOriginalPrice());
+            record.setConsultationFinalFee(examService.getOriginalPrice());
+            
+            // Alternately take vitals
+            boolean vitalsTaken = (index % 2 == 0); 
+            record.setVitalsTaken(vitalsTaken);
+            record = medicalRecordRepository.save(record);
+
+            if (vitalsTaken) {
+                MedicalRecordVital vitals = new MedicalRecordVital();
+                vitals.setMedicalRecord(record);
+                vitals.setWeight(new BigDecimal(50 + rand.nextInt(35)));
+                vitals.setBloodPressure((110 + rand.nextInt(20)) + "/" + (70 + rand.nextInt(15)));
+                vitals.setPulse(70 + rand.nextInt(25));
+                vitals.setRecordedBy(nurse);
+                vitals.setStatus("DONE");
+                medicalRecordVitalRepository.save(vitals);
+            }
+
+            // C. Service Order (If WAITING_RESULT and lab service ordered)
+            if (labService != null && (apptStatus == AppointmentStatus.WAITING_RESULT || orderStatus != null)) {
+                ServiceOrder order = new ServiceOrder();
+                order.setMedicalRecord(record);
+                order.setService(labService);
+                order.setCustomServiceName(labService.getServiceName());
+                order.setDoctorNote("Lấy máu xét nghiệm sinh hóa");
+                order.setOrderedBy(doctor);
+                order.setServiceOriginalFee(labService.getOriginalPrice());
+                order.setServiceFinalFee(labService.getOriginalPrice());
+                order.setStatus(orderStatus);
+                if (orderStatus == ServiceOrderStatus.DONE) {
+                    order.setSampleCollectedAt(date.atTime(start.plusMinutes(20)));
+                    order.setSampleCollectedBy(nurse);
+                    order = serviceOrderRepository.save(order);
+
+                    // Service Result
+                    ServiceResult result = new ServiceResult();
+                    result.setServiceOrder(order);
+                    result.setResultData("{\"Hồng cầu\": \"4.2 M/uL\", \"Bạch cầu\": \"6.8 K/uL\", \"Tiểu cầu\": \"250 K/uL\"}");
+                    result.setConclusion("Các chỉ số trong giới hạn bình thường.");
+                    result.setEnteredBy(labTech);
+                    result.setEnteredAt(date.atTime(start.plusMinutes(40)));
+                    serviceResultRepository.save(result);
+                } else {
+                    serviceOrderRepository.save(order);
+                }
+            }
+        }
+    }
+
     private Expertise createExpertise(String name) {
         Expertise exp = new Expertise();
         exp.setExpertiseName(name);
@@ -485,9 +603,25 @@ public class DashboardDataSeeder implements CommandLineRunner {
         Patient patient = new Patient();
         patient.setAccount(acc);
         patient.setFullName(name);
-        patient.setGender("Nam");
+        patient.setGender(new Random().nextBoolean() ? "Nam" : "Nữ");
         patient.setPhone(phone);
         patient.setIsDeleted(0);
-        return patientRepository.save(patient);
+        patient = patientRepository.save(patient);
+
+        // Seed PatientVitalProfile
+        PatientVitalProfile pvp = new PatientVitalProfile();
+        pvp.setPatient(patient);
+        pvp.setHeight(160 + new Random().nextInt(25));
+        pvp.setWeight(new BigDecimal(50 + new Random().nextInt(30)));
+        pvp.setBloodPressure((110 + new Random().nextInt(15)) + "/" + (70 + new Random().nextInt(10)));
+        pvp.setPulse(70 + new Random().nextInt(20));
+        pvp.setBloodType(new String[]{"A", "B", "AB", "O"}[new Random().nextInt(4)]);
+        pvp.setAllergies("Không dị ứng");
+        pvp.setChronicDiseases("Không");
+        pvp.setMedicalHistory("Bình thường");
+        pvp.setUpdatedAt(LocalDateTime.now());
+        patientVitalProfileRepository.save(pvp);
+
+        return patient;
     }
 }

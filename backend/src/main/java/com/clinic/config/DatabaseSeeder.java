@@ -42,7 +42,8 @@ public class DatabaseSeeder implements CommandLineRunner {
             "appointment", "medical_record", "medical_record_vital", "service_order",
             "service_result", "invoice_item", "invoice", "prescription_item",
             "prescription", "doctor_review", "feedback", "follow_up",
-            "device_token", "leave_request", "staff_schedule", "notification"
+            "device_token", "leave_request", "staff_schedule", "notification",
+            "patient_vital_profile", "patient"
         };
         for (String table : tables) {
             try {
@@ -50,6 +51,12 @@ public class DatabaseSeeder implements CommandLineRunner {
             } catch (Exception e) {
                 log.warn("Failed to truncate table {}: {}", table, e.getMessage());
             }
+        }
+        // Delete patient accounts to avoid orphans
+        try {
+            entityManager.createNativeQuery("DELETE FROM account WHERE account_id NOT IN (SELECT account_id FROM staff WHERE account_id IS NOT NULL) AND email NOT IN ('admin@clinic.com', 'receptionist@clinic.com', 'doctor@clinic.com', 'lab_tech@clinic.com', 'nurse@clinic.com', 'kiet@gmail.com', 'quockietdev@gmail.com')").executeUpdate();
+        } catch (Exception e) {
+            log.warn("Failed to clean up patient accounts: {}", e.getMessage());
         }
         entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1").executeUpdate();
         log.info("Database cleaned up successfully!");
@@ -64,6 +71,7 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         // 2. Initialize Master Admin Account
         seedAccountIfNotFound("kiet@gmail.com", "12345678", "ADMIN");
+        seedAccountIfNotFound("quockietdev@gmail.com", "12345678", "ADMIN");
 
         // 3. Initialize Dummy Accounts for Testing
         seedAccountIfNotFound("admin@clinic.com", "12345678", "ADMIN");
