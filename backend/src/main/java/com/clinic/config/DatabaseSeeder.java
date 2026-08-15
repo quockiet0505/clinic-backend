@@ -50,7 +50,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         seedAccountIfNotFound(adminEmail, "12345678", "ADMIN");
 
         // 3. Initialize Dummy Accounts for Testing
-        seedAccountIfNotFound("admin@gmail.com", "12345678", "ADMIN");
+        seedAccountIfNotFound("admin@clinic.com", "12345678", "ADMIN");
         seedAccountIfNotFound("receptionist@clinic.com", "12345678", "RECEPTIONIST");
         seedAccountIfNotFound("doctor@clinic.com", "12345678", "DOCTOR");
         seedAccountIfNotFound("lab_tech@clinic.com", "12345678", "NURSE"); // Giả sử Lab Tech dùng role NURSE tạm
