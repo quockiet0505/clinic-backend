@@ -49,8 +49,10 @@ jobs:
           gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
 
       - name: Inject Firebase Secret
+        env:
+          FIREBASE_SECRET: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > backend/src/main/resources/firebase-service-account.json
+          echo "$FIREBASE_SECRET" > backend/src/main/resources/firebase-service-account.json
 
       - name: Build and Push Docker Image
         run: |
