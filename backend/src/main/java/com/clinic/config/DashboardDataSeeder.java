@@ -12,6 +12,7 @@ import com.clinic.entity.prescription.Prescription;
 import com.clinic.entity.prescription.PrescriptionItem;
 import com.clinic.entity.staff.Expertise;
 import com.clinic.entity.staff.Staff;
+import com.clinic.entity.staff.LeaveRequest;
 import com.clinic.entity.patient.Patient;
 import com.clinic.repository.appointment.AppointmentRepository;
 import com.clinic.repository.auth.AccountRepository;
@@ -24,6 +25,8 @@ import com.clinic.repository.prescription.MedicineRepository;
 import com.clinic.repository.prescription.PrescriptionRepository;
 import com.clinic.repository.staff.ExpertiseRepository;
 import com.clinic.repository.staff.StaffRepository;
+import com.clinic.repository.staff.LeaveRequestRepository;
+import com.clinic.service.staff.StaffScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -63,6 +66,8 @@ public class DashboardDataSeeder implements CommandLineRunner {
     private final FollowUpRepository followUpRepository;
     private final DoctorReviewRepository doctorReviewRepository;
     private final DoctorServicePriceRepository doctorServicePriceRepository;
+    private final LeaveRequestRepository leaveRequestRepository;
+    private final StaffScheduleService staffScheduleService;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -229,6 +234,66 @@ public class DashboardDataSeeder implements CommandLineRunner {
                 appointmentRepository.save(upcoming);
             }
         }
+
+        // 8. Seed Leave Requests
+        log.info("Generating mock leave requests...");
+        if (!doctorsList.isEmpty()) {
+            Staff manager = staffRepository.findByStaffTypeAndIsDeleted(StaffType.ADMIN, 0).stream().findFirst().orElse(null);
+
+            // Request 1: Approved annual leave for doctor 0
+            LeaveRequest req1 = new LeaveRequest();
+            req1.setStaff(doctorsList.get(0));
+            req1.setLeaveType(LeaveType.ANNUAL);
+            req1.setFromDate(LocalDate.of(2026, 8, 5));
+            req1.setToDate(LocalDate.of(2026, 8, 7));
+            req1.setReason("Nghỉ phép năm đi du lịch cùng gia đình");
+            req1.setStatus(LeaveStatus.APPROVED);
+            req1.setApprovedBy(manager);
+            req1.setReviewedAt(LocalDateTime.of(2026, 8, 1, 9, 0));
+            leaveRequestRepository.save(req1);
+
+            // Request 2: Rejected sick leave for doctor 1 (if exists)
+            if (doctorsList.size() > 1) {
+                LeaveRequest req2 = new LeaveRequest();
+                req2.setStaff(doctorsList.get(1));
+                req2.setLeaveType(LeaveType.SICK);
+                req2.setFromDate(LocalDate.of(2026, 8, 10));
+                req2.setToDate(LocalDate.of(2026, 8, 10));
+                req2.setReason("Nghỉ bệnh khám sức khoẻ định kỳ");
+                req2.setStatus(LeaveStatus.REJECTED);
+                req2.setApprovedBy(manager);
+                req2.setRejectionReason("Vui lòng đăng ký nghỉ phép năm hoặc đổi ca trực, không sử dụng phép bệnh cho khám định kỳ");
+                req2.setReviewedAt(LocalDateTime.of(2026, 8, 8, 14, 30));
+                leaveRequestRepository.save(req2);
+            }
+
+            // Request 3: Pending unpaid leave for doctor 0 in the future
+            LeaveRequest req3 = new LeaveRequest();
+            req3.setStaff(doctorsList.get(0));
+            req3.setLeaveType(LeaveType.UNPAID);
+            req3.setFromDate(LocalDate.of(2026, 8, 20));
+            req3.setToDate(LocalDate.of(2026, 8, 22));
+            req3.setReason("Giải quyết việc cá nhân quan trọng ở quê");
+            req3.setStatus(LeaveStatus.PENDING);
+            leaveRequestRepository.save(req3);
+
+            // Request 4: Pending annual leave for nurse in the future
+            if (nurse != null) {
+                LeaveRequest req4 = new LeaveRequest();
+                req4.setStaff(nurse);
+                req4.setLeaveType(LeaveType.ANNUAL);
+                req4.setFromDate(LocalDate.of(2026, 8, 25));
+                req4.setToDate(LocalDate.of(2026, 8, 26));
+                req4.setReason("Nghỉ phép chăm sóc người thân ốm");
+                req4.setStatus(LeaveStatus.PENDING);
+                leaveRequestRepository.save(req4);
+            }
+        }
+
+        // 9. Generate Staff Schedules for August 2026 and rolling 30 days
+        log.info("Generating staff schedules...");
+        staffScheduleService.autoGenerateSchedules(2026, 8);
+        staffScheduleService.maintainRollingSchedule();
 
         log.info("Dashboard mock seeder finished successfully!");
     }
