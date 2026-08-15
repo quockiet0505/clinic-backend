@@ -18,7 +18,11 @@ import com.clinic.repository.appointment.AppointmentRepository;
 import com.clinic.repository.auth.AccountRepository;
 import com.clinic.repository.auth.RoleRepository;
 import com.clinic.repository.crm.DoctorReviewRepository;
+import com.clinic.repository.crm.FeedbackRepository;
+import com.clinic.repository.crm.NotificationRepository;
 import com.clinic.repository.crm.FollowUpRepository;
+import com.clinic.entity.crm.Feedback;
+import com.clinic.entity.crm.Notification;
 import com.clinic.repository.medical.*;
 import com.clinic.repository.patient.PatientRepository;
 import com.clinic.repository.patient.PatientVitalProfileRepository;
@@ -68,6 +72,8 @@ public class DashboardDataSeeder implements CommandLineRunner {
     private final InvoiceRepository invoiceRepository;
     private final FollowUpRepository followUpRepository;
     private final DoctorReviewRepository doctorReviewRepository;
+    private final FeedbackRepository feedbackRepository;
+    private final NotificationRepository notificationRepository;
     private final DoctorServicePriceRepository doctorServicePriceRepository;
     private final LeaveRequestRepository leaveRequestRepository;
     private final PatientVitalProfileRepository patientVitalProfileRepository;
@@ -229,28 +235,26 @@ public class DashboardDataSeeder implements CommandLineRunner {
             req1.setReviewedAt(LocalDateTime.of(2026, 8, 1, 9, 0));
             leaveRequestRepository.save(req1);
 
-            // Request 2: Rejected sick leave for doctor 1 (if exists)
-            if (doctorsList.size() > 1) {
-                LeaveRequest req2 = new LeaveRequest();
-                req2.setStaff(doctorsList.get(1));
-                req2.setLeaveType(LeaveType.SICK);
-                req2.setFromDate(LocalDate.of(2026, 8, 10));
-                req2.setToDate(LocalDate.of(2026, 8, 10));
-                req2.setReason("Nghỉ bệnh khám sức khoẻ định kỳ");
-                req2.setStatus(LeaveStatus.REJECTED);
-                req2.setApprovedBy(manager);
-                req2.setRejectionReason("Vui lòng đăng ký nghỉ phép năm hoặc đổi ca trực");
-                req2.setReviewedAt(LocalDateTime.of(2026, 8, 8, 14, 30));
-                leaveRequestRepository.save(req2);
-            }
+            // Request 2: Rejected sick leave for doctor 1
+            LeaveRequest req2 = new LeaveRequest();
+            req2.setStaff(doctorsList.get(1));
+            req2.setLeaveType(LeaveType.SICK);
+            req2.setFromDate(LocalDate.of(2026, 8, 10));
+            req2.setToDate(LocalDate.of(2026, 8, 10));
+            req2.setReason("Nghỉ ốm đi khám bệnh");
+            req2.setStatus(LeaveStatus.REJECTED);
+            req2.setApprovedBy(manager);
+            req2.setRejectionReason("Không có giấy xác nhận của bác sĩ");
+            req2.setReviewedAt(LocalDateTime.of(2026, 8, 9, 14, 0));
+            leaveRequestRepository.save(req2);
 
-            // Request 3: Pending unpaid leave for doctor 0 in the future
+            // Request 3: Pending annual leave for doctor 2
             LeaveRequest req3 = new LeaveRequest();
-            req3.setStaff(doctorsList.get(0));
-            req3.setLeaveType(LeaveType.UNPAID);
+            req3.setStaff(doctorsList.get(2));
+            req3.setLeaveType(LeaveType.ANNUAL);
             req3.setFromDate(LocalDate.of(2026, 8, 20));
             req3.setToDate(LocalDate.of(2026, 8, 22));
-            req3.setReason("Giải quyết việc cá nhân quan trọng ở quê");
+            req3.setReason("Nghỉ phép giải quyết việc gia đình");
             req3.setStatus(LeaveStatus.PENDING);
             leaveRequestRepository.save(req3);
 
@@ -278,6 +282,11 @@ public class DashboardDataSeeder implements CommandLineRunner {
                 leaveRequestRepository.save(req5);
             }
         }
+
+        // 8.5 Seed Feedbacks, DoctorReviews (Pending/Rejected), and Notifications
+        log.info("Seeding feedbacks, pending reviews, and notifications...");
+        seedExtraFeedbacksAndReviews(patients, doctorsList);
+        seedNotifications(patients);
 
         // 9. Generate Staff Schedules for rolling 7 days
         log.info("Generating staff schedules...");
@@ -623,5 +632,102 @@ public class DashboardDataSeeder implements CommandLineRunner {
         patientVitalProfileRepository.save(pvp);
 
         return patient;
+    }
+
+    private void seedExtraFeedbacksAndReviews(List<Patient> patients, List<Staff> doctorsList) {
+        if (patients.size() < 10 || doctorsList.isEmpty()) return;
+
+        List<MedicalRecord> records = medicalRecordRepository.findAll();
+        if (records.size() < 5) return;
+
+        // A. Seed Clinic Feedbacks (Phòng khám)
+        // 2 APPROVED
+        Feedback f1 = new Feedback();
+        f1.setMedicalRecord(records.get(0));
+        f1.setRating(5);
+        f1.setComment("Phòng khám rất sạch sẽ, khang trang. Đội ngũ y tá và bác sĩ đón tiếp rất chu đáo, nhiệt tình.");
+        f1.setAiStatus("APPROVED");
+        f1.setCreatedAt(LocalDateTime.now().minusDays(3));
+        feedbackRepository.save(f1);
+
+        Feedback f2 = new Feedback();
+        f2.setMedicalRecord(records.get(1));
+        f2.setRating(4);
+        f2.setComment("Dịch vụ tốt, thời gian lấy kết quả xét nghiệm nhanh chóng. Tuy nhiên bãi gửi xe hơi nhỏ.");
+        f2.setAiStatus("APPROVED");
+        f2.setCreatedAt(LocalDateTime.now().minusDays(2));
+        feedbackRepository.save(f2);
+
+        // 1 PENDING
+        Feedback f3 = new Feedback();
+        f3.setMedicalRecord(records.get(2));
+        f3.setRating(3);
+        f3.setComment("Tôi thấy mức giá dịch vụ cận lâm sàng hơi cao hơn so với các phòng khám xung quanh.");
+        f3.setAiStatus("PENDING");
+        f3.setCreatedAt(LocalDateTime.now().minusHours(5));
+        feedbackRepository.save(f3);
+
+        // 1 REJECTED (Violating comment)
+        Feedback f4 = new Feedback();
+        f4.setMedicalRecord(records.get(3));
+        f4.setRating(1);
+        f4.setComment("Phòng khám này làm ăn lừa đảo khách hàng! Đừng ai đến đây khám kẻo bị mất tiền oan uổng!!!");
+        f4.setAiStatus("REJECTED");
+        f4.setAiModerationNote("Chứa từ ngữ nhạy cảm quy chụp không bằng chứng (lừa đảo)");
+        f4.setCreatedAt(LocalDateTime.now().minusHours(2));
+        feedbackRepository.save(f4);
+
+        // B. Seed Extra Doctor Reviews (Bác sĩ)
+        // 2 PENDING
+        DoctorReview dr1 = new DoctorReview();
+        dr1.setDoctor(doctorsList.get(0));
+        dr1.setPatient(patients.get(4));
+        dr1.setRating(5);
+        dr1.setComment("Bác sĩ tư vấn cực kỳ tận tâm, giải thích cặn kẽ bệnh lý. Tôi rất an tâm khi khám ở đây.");
+        dr1.setAiStatus("PENDING");
+        dr1.setCreatedAt(LocalDateTime.now().minusHours(6));
+        doctorReviewRepository.save(dr1);
+
+        DoctorReview dr2 = new DoctorReview();
+        dr2.setDoctor(doctorsList.get(1 % doctorsList.size()));
+        dr2.setPatient(patients.get(5));
+        dr2.setRating(4);
+        dr2.setComment("Khám bệnh kỹ càng, đơn thuốc uống hiệu quả nhanh. Mong bác sĩ tiếp tục phát huy.");
+        dr2.setAiStatus("PENDING");
+        dr2.setCreatedAt(LocalDateTime.now().minusHours(4));
+        doctorReviewRepository.save(dr2);
+
+        // 1 REJECTED (Violating doctor review)
+        DoctorReview dr3 = new DoctorReview();
+        dr3.setDoctor(doctorsList.get(0));
+        dr3.setPatient(patients.get(6));
+        dr3.setRating(1);
+        dr3.setComment("Bác sĩ này khám ngu như bò, thái độ thì khinh khỉnh coi thường người nghèo!!! Tẩy chay đi bà con!");
+        dr3.setAiStatus("REJECTED");
+        dr3.setAiModerationNote("Chứa từ ngữ tục tĩu xúc phạm bác sĩ (ngu như bò)");
+        dr3.setCreatedAt(LocalDateTime.now().minusHours(1));
+        doctorReviewRepository.save(dr3);
+    }
+
+    private void seedNotifications(List<Patient> patients) {
+        if (patients.isEmpty()) return;
+
+        String[] messages = {
+            "Lịch hẹn khám #APT-26 của bạn đã được xác nhận thành công.",
+            "Yêu cầu đổi lịch khám của bạn sang 17/08/2026 đã được phê duyệt.",
+            "Kết quả xét nghiệm sinh hóa máu đã sẵn sàng. Vui lòng xem trên ứng dụng hoặc liên hệ bác sĩ.",
+            "Nhắc nhở: Lịch khám của bạn với BS CKII. Ngô Trung Nam sẽ bắt đầu sau 30 phút nữa.",
+            "Hệ thống vừa cập nhật giờ làm việc mới áp dụng từ ngày 20/08/2026."
+        };
+
+        for (int i = 0; i < messages.length; i++) {
+            Patient p = patients.get(i % patients.size());
+            Notification n = new Notification();
+            n.setAccount(p.getAccount());
+            n.setType(Notification.Type.SYSTEM);
+            n.setContent(messages[i]);
+            n.setSentAt(LocalDateTime.now().minusDays(i).minusHours(2));
+            notificationRepository.save(n);
+        }
     }
 }
