@@ -1,5 +1,0 @@
-﻿import hmac, hashlib, os
-secret = os.getenv('STRIPE_WEBHOOK_SECRET', 'your_stripe_webhook_secret_here')
-payload = '{"gateway":"MBBank","transactionDate":"2026-07-13 00:43:00","accountNumber":"0767664699","subAccount":null,"code":null,"content":"137408063903-BILL1-CHUYEN TIEN-OQCH000FWQAl-MOMO137408063903MOMO","transferType":"in","description":"BankAPINotify 137408063903-BILL1-CHUYEN TIEN-OQCH000FWQAl-MOMO137408063903MOMO","transferAmount":5000,"referenceCode":"FT26194005032356","accumulated":0,"id":67918603}'
-timestamp = '1783878209'
-print(hmac.new(secret.encode(), f'{timestamp}.{payload}'.encode(), hashlib.sha256).hexdigest())
