@@ -41,7 +41,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             "appointment", "medical_record", "medical_record_vital", "service_order",
             "service_result", "invoice_item", "invoice", "prescription_item",
             "prescription", "doctor_review", "feedback", "follow_up",
-            "device_token", "leave_request", "staff_schedule"
+            "device_token", "leave_request", "staff_schedule", "notification"
         };
         for (String table : tables) {
             try {
