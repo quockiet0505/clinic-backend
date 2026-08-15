@@ -32,6 +32,8 @@ services:
       - SEPAY_API_KEY=${SEPAY_API_KEY}
       - SEPAY_WEBHOOK_SECRET=${SEPAY_WEBHOOK_SECRET}
       - APPLICATION_AI_SERVER_URL=https://duongquockiet0511--clinic-ai-chat-fastapi-app.modal.run
+    volumes:
+      - backend-uploads:/app/public/uploads
     depends_on:
       - mysql-db
     logging: *default-logging
@@ -122,3 +124,4 @@ services:
 
 volumes:
   mysql-data:
+  backend-uploads:
