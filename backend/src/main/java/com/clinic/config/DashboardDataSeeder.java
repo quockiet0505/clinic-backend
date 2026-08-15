@@ -62,6 +62,7 @@ public class DashboardDataSeeder implements CommandLineRunner {
     private final InvoiceRepository invoiceRepository;
     private final FollowUpRepository followUpRepository;
     private final DoctorReviewRepository doctorReviewRepository;
+    private final DoctorServicePriceRepository doctorServicePriceRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -115,6 +116,7 @@ public class DashboardDataSeeder implements CommandLineRunner {
         LocalDate endDate = LocalDate.of(2026, 8, 15);
         Random rand = new Random();
         int index = 1;
+        java.util.Set<String> reviewedPairs = new java.util.HashSet<>();
 
         log.info("Generating transaction records from Aug 1 to Aug 15...");
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
@@ -128,7 +130,7 @@ public class DashboardDataSeeder implements CommandLineRunner {
                 LocalTime timeStart = LocalTime.of(8 + i * 2, 0);
                 LocalTime timeEnd = timeStart.plusMinutes(30);
 
-                seedCompleteWorkflow(date, timeStart, timeEnd, patient, doctor, labTech, nurse, examService, labService, medicines, index++, rand);
+                seedCompleteWorkflow(date, timeStart, timeEnd, patient, doctor, labTech, nurse, examService, labService, medicines, index++, rand, reviewedPairs);
             }
 
             // Seed 1 Cancelled appointment per day (15% rate)
@@ -216,7 +218,7 @@ public class DashboardDataSeeder implements CommandLineRunner {
             LocalDate date, LocalTime start, LocalTime end,
             Patient patient, Staff doctor, Staff labTech, Staff nurse,
             Service examService, Service labService, List<Medicine> medicines,
-            int index, Random rand) {
+            int index, Random rand, java.util.Set<String> reviewedPairs) {
 
         // A. Appointment
         Appointment appt = new Appointment();
@@ -335,16 +337,20 @@ public class DashboardDataSeeder implements CommandLineRunner {
         invoice.setTotalPrice(totalPrice);
         invoiceRepository.save(invoice);
 
-        // H. Doctor Review
-        DoctorReview review = new DoctorReview();
-        review.setDoctor(doctor);
-        review.setPatient(patient);
-        review.setAppointment(appt);
-        review.setRating(4 + rand.nextInt(2)); // 4 or 5 stars
-        review.setComment(rand.nextBoolean() ? "Bác sĩ rất thân thiện, tư vấn chi tiết" : "Dịch vụ phòng khám nhanh chóng, sạch sẽ");
-        review.setCreatedAt(date.atTime(start));
-        review.setAiStatus("APPROVED");
-        doctorReviewRepository.save(review);
+        // H. Doctor Review (Only if not already reviewed)
+        String reviewKey = patient.getPatientId() + "-" + doctor.getStaffId();
+        if (!reviewedPairs.contains(reviewKey)) {
+            DoctorReview review = new DoctorReview();
+            review.setDoctor(doctor);
+            review.setPatient(patient);
+            review.setAppointment(appt);
+            review.setRating(4 + rand.nextInt(2)); // 4 or 5 stars
+            review.setComment(rand.nextBoolean() ? "Bác sĩ rất thân thiện, tư vấn chi tiết" : "Dịch vụ phòng khám nhanh chóng, sạch sẽ");
+            review.setCreatedAt(date.atTime(start));
+            review.setAiStatus("APPROVED");
+            doctorReviewRepository.save(review);
+            reviewedPairs.add(reviewKey);
+        }
 
         // I. Follow Up
         FollowUp followUp = new FollowUp();
@@ -403,7 +409,18 @@ public class DashboardDataSeeder implements CommandLineRunner {
         staff.setStaffType(type);
         staff.setExpertise(expertise);
         staff.setIsDeleted(0);
-        return staffRepository.save(staff);
+        staff = staffRepository.save(staff);
+
+        // Seed doctor consultation fee if the staff is a DOCTOR
+        if (type == StaffType.DOCTOR) {
+            DoctorServicePrice price = doctorServicePriceRepository.findByStaff_StaffId(staff.getStaffId())
+                    .orElse(new DoctorServicePrice());
+            price.setStaff(staff);
+            price.setOriginalPrice(new BigDecimal("150000"));
+            price.setDiscountAmount(BigDecimal.ZERO);
+            doctorServicePriceRepository.save(price);
+        }
+        return staff;
     }
 
     private Patient createPatient(String email, String name, String phone) {

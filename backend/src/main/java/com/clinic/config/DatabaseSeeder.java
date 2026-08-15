@@ -63,13 +63,19 @@ public class DatabaseSeeder implements CommandLineRunner {
         seedRoleIfNotFound("NURSE", "Nurse");
         seedRoleIfNotFound("LAB_TECH", "Lab Technician");
 
-        // 2. Initialize Dummy Accounts for Testing
+        // 2. Initialize Master Admin Account
+        seedAccountIfNotFound("kiet@gmail.com", "12345678", "ADMIN");
+
+        // 3. Initialize Dummy Accounts for Testing
         seedAccountIfNotFound("admin@clinic.com", "12345678", "ADMIN");
         seedAccountIfNotFound("receptionist@clinic.com", "12345678", "RECEPTIONIST");
         seedAccountIfNotFound("doctor@clinic.com", "12345678", "DOCTOR");
         seedAccountIfNotFound("lab_tech@clinic.com", "12345678", "LAB_TECH");
         seedAccountIfNotFound("nurse@clinic.com", "12345678", "NURSE");
         seedAccountIfNotFound("patient1@clinic.com", "12345678", "PATIENT");
+
+        // 4. Seed Default Settings if missing (since we might have truncated them or database is empty)
+        seedDefaultSettings();
     }
 
     private void seedAccountIfNotFound(String email, String password, String roleCode) {
@@ -96,6 +102,52 @@ public class DatabaseSeeder implements CommandLineRunner {
             newRole.setRoleName(roleName);
             roleRepository.save(newRole);
             log.info("Created missing role: {}", roleCode);
+        }
+    }
+
+    private void seedDefaultSettings() {
+        // Seed system_setting if missing
+        seedSystemSettingIfNotFound("address", "71-73 Ngô Thời Nhiệm, Phường Võ Thị Sáu, Quận 3, TP.HCM", "Địa chỉ");
+        seedSystemSettingIfNotFound("AI_MODERATION_ENABLED", "false", null);
+        seedSystemSettingIfNotFound("clinicName", "Trustcare Clinic", "Tên phòng khám");
+        seedSystemSettingIfNotFound("email", "cskh@clinic.com", "Email hỗ trợ");
+        seedSystemSettingIfNotFound("operatingHours", "T2 – T7: 07:30 – 17:00, Chủ nhật: Nghỉ", "Giờ làm việc");
+        seedSystemSettingIfNotFound("phone", "1900 2115", "Hotline 24/7");
+        seedSystemSettingIfNotFound("website", "www.trustcare.vn", "Website");
+
+        // Seed logo_setting if missing
+        seedLogoSettingIfNotFound("main", "/images/logo.png");
+        seedLogoSettingIfNotFound("login", "/images/logo.png");
+    }
+
+    private void seedSystemSettingIfNotFound(String key, String value, String description) {
+        boolean exists = entityManager.createQuery(
+                "SELECT COUNT(s) FROM SystemSetting s WHERE s.settingKey = :key", Long.class)
+                .setParameter("key", key)
+                .getSingleResult() > 0;
+        if (!exists) {
+            entityManager.createNativeQuery(
+                "INSERT INTO system_setting (setting_key, setting_value, description, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())")
+                .setParameter(1, key)
+                .setParameter(2, value)
+                .setParameter(3, description)
+                .executeUpdate();
+            log.info("Seeded missing system setting: {}", key);
+        }
+    }
+
+    private void seedLogoSettingIfNotFound(String key, String url) {
+        boolean exists = entityManager.createQuery(
+                "SELECT COUNT(l) FROM LogoSetting l WHERE l.logoKey = :key", Long.class)
+                .setParameter("key", key)
+                .getSingleResult() > 0;
+        if (!exists) {
+            entityManager.createNativeQuery(
+                "INSERT INTO logo_setting (logo_key, image_url, created_at, updated_at) VALUES (?, ?, NOW(), NOW())")
+                .setParameter(1, key)
+                .setParameter(2, url)
+                .executeUpdate();
+            log.info("Seeded missing logo setting: {}", key);
         }
     }
 }
