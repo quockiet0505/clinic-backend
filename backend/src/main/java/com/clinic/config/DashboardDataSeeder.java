@@ -612,8 +612,19 @@ public class DashboardDataSeeder implements CommandLineRunner {
         Patient patient = new Patient();
         patient.setAccount(acc);
         patient.setFullName(name);
-        patient.setGender(new Random().nextBoolean() ? "Nam" : "Nữ");
+        // Clean matching of gender for patient names if possible, else random
+        String gender = "Nam";
+        if (name.contains("Thị") || name.contains("Chi") || name.contains("Thảo") || name.contains("Mai") || name.contains("Hương") || name.contains("Lành") || name.contains("Linh") || name.contains("An") || name.contains("Bình")) {
+            gender = "Nữ";
+        }
+        patient.setGender(gender);
         patient.setPhone(phone);
+        
+        // Seed address and birth date
+        String[] addresses = {"Cần Thơ", "Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "An Giang", "Bình Dương", "Đồng Nai", "Vĩnh Long"};
+        patient.setAddress(addresses[new Random().nextInt(addresses.length)]);
+        patient.setDateOfBirth(LocalDate.of(1975 + new Random().nextInt(30), 1 + new Random().nextInt(11), 1 + new Random().nextInt(27)));
+        
         patient.setIsDeleted(0);
         patient = patientRepository.save(patient);
 
