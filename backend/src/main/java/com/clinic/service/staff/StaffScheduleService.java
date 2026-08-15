@@ -131,8 +131,8 @@ public class StaffScheduleService {
     @Transactional
     public void maintainRollingSchedule() {
         LocalDate today = LocalDate.now();
-        // Always ensure we have schedules for the next 30 days
-        for (int i = 0; i <= 30; i++) {
+        // Always ensure we have schedules for the next 7 days
+        for (int i = 0; i <= 7; i++) {
             generateScheduleForDate(today.plusDays(i));
         }
     }

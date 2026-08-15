@@ -290,9 +290,8 @@ public class DashboardDataSeeder implements CommandLineRunner {
             }
         }
 
-        // 9. Generate Staff Schedules for August 2026 and rolling 30 days
+        // 9. Generate Staff Schedules for rolling 7 days
         log.info("Generating staff schedules...");
-        staffScheduleService.autoGenerateSchedules(2026, 8);
         staffScheduleService.maintainRollingSchedule();
 
         log.info("Dashboard mock seeder finished successfully!");
