@@ -22,6 +22,9 @@ spring:
 server:
   forward-headers-strategy: framework
 
+app:
+  seed:
+    enabled: false
 application:
   ai-server-url: https://duongquockiet0511--clinic-ai-chat-fastapi-app.modal.run
   security:

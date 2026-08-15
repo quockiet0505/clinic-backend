@@ -136,107 +136,53 @@ public class DashboardDataSeeder implements CommandLineRunner {
             patients.add(createPatient("patient5@clinic.com", "Phạm Thị Mai", "0904567890"));
         }
 
-        // 6. Seed Complete Clinic Workflows from August 1 to August 15, 2026
-        LocalDate startDate = LocalDate.of(2026, 8, 1);
-        LocalDate endDate = LocalDate.of(2026, 8, 15);
         Random rand = new Random();
         int index = 1;
         java.util.Set<String> reviewedPairs = new java.util.HashSet<>();
 
-        log.info("Generating transaction records from Aug 1 to Aug 15...");
-        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
-            // Seed 2 completed appointments + workflows per day
-            for (int i = 0; i < 2; i++) {
-                Patient patient = patients.get(rand.nextInt(patients.size()));
-                Staff doctor = doctorsList.get(rand.nextInt(doctorsList.size()));
-                Service examService = (doctor.getExpertise().getExpertiseName().equals("Răng Hàm Mặt")) ? services.get(1) : services.get(0);
-                Service labService = rand.nextBoolean() ? services.get(2) : services.get(3); // Blood test or Ultrasound
+        // 6. Seed exactly 20 completed workflows in the past/today
+        log.info("Generating 20 past transaction records...");
+        for (int i = 0; i < 20; i++) {
+            LocalDate apptDate = LocalDate.of(2026, 8, 1).plusDays(i % 15);
+            Patient patient = patients.get(i % patients.size());
+            Staff doctor = doctorsList.get(i % doctorsList.size());
+            Service examService = (doctor.getExpertise().getExpertiseName().equals("Răng Hàm Mặt")) ? services.get(1) : services.get(0);
+            
+            // exactly 10 patients have lab services
+            boolean hasLab = (i < 10);
+            Service labService = hasLab ? services.get(2) : null; 
 
-                LocalTime timeStart = LocalTime.of(8 + i * 2, 0);
-                LocalTime timeEnd = timeStart.plusMinutes(30);
+            LocalTime timeStart = LocalTime.of(8 + (i % 8), (i % 2 == 0) ? 0 : 30);
+            LocalTime timeEnd = timeStart.plusMinutes(30);
 
-                seedCompleteWorkflow(date, timeStart, timeEnd, patient, doctor, labTech, nurse, examService, labService, medicines, index++, rand, reviewedPairs);
-            }
-
-            // Seed 1 Cancelled appointment per day (15% rate)
-            if (date.getDayOfMonth() % 3 == 0) {
-                Patient patient = patients.get(rand.nextInt(patients.size()));
-                Staff doctor = doctorsList.get(rand.nextInt(doctorsList.size()));
-                Service examService = services.get(0);
-
-                Appointment cancelAppt = new Appointment();
-                cancelAppt.setPatient(patient);
-                cancelAppt.setMainDoctor(doctor);
-                cancelAppt.setService(examService);
-                cancelAppt.setExpertise(doctor.getExpertise());
-                cancelAppt.setAppointmentDate(date);
-                cancelAppt.setTimeStart(LocalTime.of(15, 0));
-                cancelAppt.setTimeEnd(LocalTime.of(15, 30));
-                cancelAppt.setAppointmentType(AppointmentType.ONLINE);
-                cancelAppt.setStatus(AppointmentStatus.CANCELLED);
-                cancelAppt.setCreatedBy(CreatedByType.PATIENT);
-                cancelAppt.setBookingMode(BookingMode.DOCTOR);
-                cancelAppt.setCancelledBy(CancelledByType.PATIENT);
-                cancelAppt.setCancelReason("Bận việc gia đình đột xuất");
-                cancelAppt.setIsDeleted(0);
-                appointmentRepository.save(cancelAppt);
-            }
-
-            // Seed 1 Rescheduled appointment (Dời lịch)
-            if (date.getDayOfMonth() % 4 == 0) {
-                Patient patient = patients.get(rand.nextInt(patients.size()));
-                Staff doctor = doctorsList.get(rand.nextInt(doctorsList.size()));
-                Service examService = services.get(0);
-
-                Appointment reschedAppt = new Appointment();
-                reschedAppt.setPatient(patient);
-                reschedAppt.setMainDoctor(doctor);
-                reschedAppt.setService(examService);
-                reschedAppt.setExpertise(doctor.getExpertise());
-                reschedAppt.setAppointmentDate(date);
-                reschedAppt.setTimeStart(LocalTime.of(16, 0));
-                reschedAppt.setTimeEnd(LocalTime.of(16, 30));
-                reschedAppt.setAppointmentType(AppointmentType.ONLINE);
-                reschedAppt.setStatus(AppointmentStatus.CONFIRMED);
-                reschedAppt.setCreatedBy(CreatedByType.RECEPTIONIST);
-                reschedAppt.setBookingMode(BookingMode.DOCTOR);
-                reschedAppt.setRescheduleCount(1);
-                reschedAppt.setRescheduleReason("Bệnh nhân xin dời lịch do kẹt xe");
-                reschedAppt.setIsDeleted(0);
-                appointmentRepository.save(reschedAppt);
-            }
+            seedCompleteWorkflow(apptDate, timeStart, timeEnd, patient, doctor, labTech, nurse, examService, labService, medicines, index++, rand, reviewedPairs);
         }
 
-        // 7. Seed Calendar appointments for the future (Aug 17 to Aug 30, 2026)
-        log.info("Generating future calendar appointments...");
-        LocalDate futureStart = LocalDate.of(2026, 8, 17);
-        LocalDate futureEnd = LocalDate.of(2026, 8, 30);
-        for (LocalDate date = futureStart; !date.isAfter(futureEnd); date = date.plusDays(1)) {
-            // Seed 1-2 upcoming appointments per day
-            int count = 1 + rand.nextInt(2);
-            for (int i = 0; i < count; i++) {
-                Patient patient = patients.get(rand.nextInt(patients.size()));
-                Staff doctor = doctorsList.get(rand.nextInt(doctorsList.size()));
-                Service service = services.get(rand.nextInt(2)); // Clinical exam
+        // 7. Seed exactly 5 Calendar appointments for the future
+        log.info("Generating 5 future calendar appointments...");
+        for (int i = 0; i < 5; i++) {
+            LocalDate date = LocalDate.of(2026, 8, 17).plusDays(i);
+            Patient patient = patients.get(rand.nextInt(patients.size()));
+            Staff doctor = doctorsList.get(rand.nextInt(doctorsList.size()));
+            Service service = services.get(0); 
 
-                Appointment upcoming = new Appointment();
-                upcoming.setPatient(patient);
-                upcoming.setMainDoctor(doctor);
-                upcoming.setService(service);
-                upcoming.setExpertise(doctor.getExpertise());
-                upcoming.setAppointmentDate(date);
-                upcoming.setTimeStart(LocalTime.of(9 + i, 30));
-                upcoming.setTimeEnd(LocalTime.of(10 + i, 0));
-                upcoming.setAppointmentType(AppointmentType.ONLINE);
-                upcoming.setStatus(AppointmentStatus.CONFIRMED);
-                upcoming.setCreatedBy(CreatedByType.PATIENT);
-                upcoming.setBookingMode(BookingMode.DOCTOR);
-                upcoming.setIsDeleted(0);
-                appointmentRepository.save(upcoming);
-            }
+            Appointment upcoming = new Appointment();
+            upcoming.setPatient(patient);
+            upcoming.setMainDoctor(doctor);
+            upcoming.setService(service);
+            upcoming.setExpertise(doctor.getExpertise());
+            upcoming.setAppointmentDate(date);
+            upcoming.setTimeStart(LocalTime.of(9 + i, 30));
+            upcoming.setTimeEnd(LocalTime.of(10 + i, 0));
+            upcoming.setAppointmentType(AppointmentType.ONLINE);
+            upcoming.setStatus(AppointmentStatus.CONFIRMED);
+            upcoming.setCreatedBy(CreatedByType.PATIENT);
+            upcoming.setBookingMode(BookingMode.DOCTOR);
+            upcoming.setIsDeleted(0);
+            appointmentRepository.save(upcoming);
         }
 
-        // 8. Seed Leave Requests
+        // 8. Seed exactly 5 Leave Requests
         log.info("Generating mock leave requests...");
         if (!doctorsList.isEmpty()) {
             Staff manager = staffRepository.findByStaffTypeAndIsDeleted(StaffType.ADMIN, 0).stream().findFirst().orElse(null);
@@ -263,7 +209,7 @@ public class DashboardDataSeeder implements CommandLineRunner {
                 req2.setReason("Nghỉ bệnh khám sức khoẻ định kỳ");
                 req2.setStatus(LeaveStatus.REJECTED);
                 req2.setApprovedBy(manager);
-                req2.setRejectionReason("Vui lòng đăng ký nghỉ phép năm hoặc đổi ca trực, không sử dụng phép bệnh cho khám định kỳ");
+                req2.setRejectionReason("Vui lòng đăng ký nghỉ phép năm hoặc đổi ca trực");
                 req2.setReviewedAt(LocalDateTime.of(2026, 8, 8, 14, 30));
                 leaveRequestRepository.save(req2);
             }
@@ -288,6 +234,18 @@ public class DashboardDataSeeder implements CommandLineRunner {
                 req4.setReason("Nghỉ phép chăm sóc người thân ốm");
                 req4.setStatus(LeaveStatus.PENDING);
                 leaveRequestRepository.save(req4);
+            }
+
+            // Request 5: Pending sick leave for lab tech in the future
+            if (labTech != null) {
+                LeaveRequest req5 = new LeaveRequest();
+                req5.setStaff(labTech);
+                req5.setLeaveType(LeaveType.SICK);
+                req5.setFromDate(LocalDate.of(2026, 8, 23));
+                req5.setToDate(LocalDate.of(2026, 8, 23));
+                req5.setReason("Đi tiêm ngừa cảm cúm định kỳ");
+                req5.setStatus(LeaveStatus.PENDING);
+                leaveRequestRepository.save(req5);
             }
         }
 
@@ -369,27 +327,30 @@ public class DashboardDataSeeder implements CommandLineRunner {
         prescriptionRepository.save(prescription);
 
         // E. Service Order (Xét nghiệm được chỉ định khi khám)
-        ServiceOrder order = new ServiceOrder();
-        order.setMedicalRecord(record);
-        order.setService(labService);
-        order.setCustomServiceName(labService.getServiceName());
-        order.setDoctorNote("Lấy máu kiểm tra chỉ số");
-        order.setOrderedBy(doctor);
-        order.setServiceOriginalFee(labService.getOriginalPrice());
-        order.setServiceFinalFee(labService.getOriginalPrice());
-        order.setStatus(ServiceOrderStatus.DONE);
-        order.setSampleCollectedAt(date.atTime(start.plusMinutes(20)));
-        order.setSampleCollectedBy(nurse);
-        order = serviceOrderRepository.save(order);
+        ServiceOrder order = null;
+        if (labService != null) {
+            order = new ServiceOrder();
+            order.setMedicalRecord(record);
+            order.setService(labService);
+            order.setCustomServiceName(labService.getServiceName());
+            order.setDoctorNote("Lấy máu kiểm tra chỉ số");
+            order.setOrderedBy(doctor);
+            order.setServiceOriginalFee(labService.getOriginalPrice());
+            order.setServiceFinalFee(labService.getOriginalPrice());
+            order.setStatus(ServiceOrderStatus.DONE);
+            order.setSampleCollectedAt(date.atTime(start.plusMinutes(20)));
+            order.setSampleCollectedBy(nurse);
+            order = serviceOrderRepository.save(order);
 
-        // F. Service Result
-        ServiceResult result = new ServiceResult();
-        result.setServiceOrder(order);
-        result.setResultData("{\"Hồng cầu\": \"4.6 M/uL\", \"Bạch cầu\": \"7.5 K/uL\", \"Tiểu cầu\": \"280 K/uL\"}");
-        result.setConclusion("Các chỉ số huyết học nằm trong giới hạn bình thường.");
-        result.setEnteredBy(labTech);
-        result.setEnteredAt(date.atTime(start.plusMinutes(50)));
-        serviceResultRepository.save(result);
+            // F. Service Result
+            ServiceResult result = new ServiceResult();
+            result.setServiceOrder(order);
+            result.setResultData("{\"Hồng cầu\": \"4.6 M/uL\", \"Bạch cầu\": \"7.5 K/uL\", \"Tiểu cầu\": \"280 K/uL\"}");
+            result.setConclusion("Các chỉ số huyết học nằm trong giới hạn bình thường.");
+            result.setEnteredBy(labTech);
+            result.setEnteredAt(date.atTime(start.plusMinutes(50)));
+            serviceResultRepository.save(result);
+        }
 
         // G. Invoice
         Invoice invoice = new Invoice();
@@ -408,16 +369,18 @@ public class DashboardDataSeeder implements CommandLineRunner {
         item1.setPriceAtTime(examService.getOriginalPrice());
         invoice.getItems().add(item1);
 
-        // Item 2: Lab service fee
-        InvoiceItem item2 = new InvoiceItem();
-        item2.setInvoice(invoice);
-        item2.setItemType(InvoiceItemType.SERVICE);
-        item2.setReferenceId(order.getOrderId());
-        item2.setDescription("Chi phí chỉ định xét nghiệm (" + labService.getServiceName() + ")");
-        item2.setPriceAtTime(labService.getOriginalPrice());
-        invoice.getItems().add(item2);
+        // Item 2: Lab service fee (Optional)
+        if (labService != null && order != null) {
+            InvoiceItem item2 = new InvoiceItem();
+            item2.setInvoice(invoice);
+            item2.setItemType(InvoiceItemType.SERVICE);
+            item2.setReferenceId(order.getOrderId());
+            item2.setDescription("Chi phí chỉ định xét nghiệm (" + labService.getServiceName() + ")");
+            item2.setPriceAtTime(labService.getOriginalPrice());
+            invoice.getItems().add(item2);
+        }
 
-        BigDecimal totalPrice = examService.getOriginalPrice().add(labService.getOriginalPrice());
+        BigDecimal totalPrice = examService.getOriginalPrice().add(labService != null ? labService.getOriginalPrice() : BigDecimal.ZERO);
         invoice.setTotalPrice(totalPrice);
         invoiceRepository.save(invoice);
 
