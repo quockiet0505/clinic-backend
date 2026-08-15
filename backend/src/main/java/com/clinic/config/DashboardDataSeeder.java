@@ -47,6 +47,7 @@ import java.util.Random;
 @Component
 @RequiredArgsConstructor
 @Order(2)
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true")
 public class DashboardDataSeeder implements CommandLineRunner {
 
     private final AccountRepository accountRepository;

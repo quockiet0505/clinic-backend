@@ -23,6 +23,7 @@ import org.springframework.core.annotation.Order;
 @Component
 @RequiredArgsConstructor
 @Order(1)
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true")
 public class DatabaseSeeder implements CommandLineRunner {
 
     private final AccountRepository accountRepository;
