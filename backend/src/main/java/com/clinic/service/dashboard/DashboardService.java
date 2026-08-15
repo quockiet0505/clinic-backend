@@ -336,7 +336,7 @@ public class DashboardService {
 
         double consultationRevenue = appointments.stream()
                 .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED && a.getService() != null)
-                .filter(a -> "EXAMINATION".equals(a.getService().getServiceType().name()))
+                .filter(a -> "EXAM".equals(a.getService().getServiceType().name()))
                 .mapToDouble(a -> a.getService().getOriginalPrice().doubleValue())
                 .sum();
 

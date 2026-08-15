@@ -52,7 +52,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     @Query("SELECT MAX(a.queueNumber) FROM Appointment a WHERE (a.mainDoctor.staffId = :doctorId OR (:doctorId IS NULL AND a.mainDoctor IS NULL)) AND a.appointmentDate = :date AND a.isDeleted = 0")
     Optional<Integer> findMaxQueueNumberByDoctorAndDate(@Param("doctorId") Integer doctorId, @Param("date") LocalDate date);
 
-    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.patient.patientId = :patientId AND a.appointmentDate BETWEEN :start AND :end AND a.isDeleted = 0")
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.patient.patientId = :patientId AND a.appointmentDate BETWEEN :start AND :end AND a.status = 'COMPLETED' AND a.isDeleted = 0")
     long countByPatientIdAndAppointmentDateBetween(
             @Param("patientId") Integer patientId,
             @Param("start") LocalDate start,
