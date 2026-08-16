@@ -71,7 +71,6 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         // 2. Initialize Master Admin Account
         seedAccountIfNotFound("kiet@gmail.com", "12345678", "ADMIN");
-        seedAccountIfNotFound("quockietdev@gmail.com", "12345678", "ADMIN");
 
         // 3. Initialize Dummy Accounts for Testing
         seedAccountIfNotFound("admin@clinic.com", "12345678", "ADMIN");
