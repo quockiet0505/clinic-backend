@@ -8,7 +8,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM medicine WHERE medicine_id BETWEEN 51 AND 100;
 
 INSERT INTO medicine (medicine_id, name, active_element, packing_standard, base_unit, usage_note, is_deleted, created_at) VALUES 
-(51, 'Brista 100mg', 'Aceclofenac', 'Hộp 60 viên nén', 'Viên', 'Uống sau bữa ăn no để tránh kích ứng dạ dày. CHỐNG CHỈ ĐỊNH phối hợp với Ketorolac.', 0, NOW()),
+(51, 'ccc 100mg', 'Aceclofenac', 'Hộp 60 viên nén', 'Viên', 'Uống sau bữa ăn no để tránh kích ứng dạ dày. CHỐNG CHỈ ĐỊNH phối hợp với Ketorolac.', 0, NOW()),
 (52, 'Toradol 10mg', 'Ketorolac', 'Hộp 20 viên nén', 'Viên', 'Dùng giảm đau ngắn hạn. CHỐNG CHỈ ĐỊNH dùng chung với các NSAID khác như Aceclofenac/Ibuprofen.', 0, NOW()),
 (53, 'Soriatane 10mg', 'Acitretin', 'Hộp 30 viên nang', 'Viên', 'Điều trị vảy nến nặng. CHỐNG CHỈ ĐỊNH dùng chung với Tetracyclin/Doxycyclin.', 0, NOW()),
 (54, 'Doxycyclin 100mg DHG', 'Doxycyclin', 'Hộp 100 viên nang', 'Viên', 'Uống with nhiều nước, không nằm ngay sau khi uống. Không dùng chung với Acitretin.', 0, NOW()),
