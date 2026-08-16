@@ -13,6 +13,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.clinic.common.enums.AppointmentStatus;
+import com.clinic.common.enums.AppointmentType;
+import com.clinic.common.enums.BookingMode;
+import com.clinic.common.enums.CreatedByType;
 import com.clinic.common.enums.FollowUpStatus;
 import com.clinic.dto.common.PageResponse;
 import com.clinic.dto.crm.FollowUpFilterRequest;
@@ -153,15 +157,32 @@ public class FollowUpService {
         if (followUp.getStatus() == FollowUpStatus.CANCELLED || followUp.getStatus() == FollowUpStatus.COMPLETED) {
             throw new RuntimeException("Không thể xác nhận lịch tái khám ở trạng thái hiện tại.");
         }
-        followUp.setStatus(FollowUpStatus.CONFIRMED);
+        followUp.setStatus(FollowUpStatus.COMPLETED);
         followUp.setConfirmedAt(LocalDateTime.now());
+        
+        Appointment appointment = new Appointment();
+        appointment.setPatient(patient);
+        appointment.setMainDoctor(followUp.getDoctor());
+        appointment.setAppointmentDate(followUp.getScheduledDatetime().toLocalDate());
+        appointment.setTimeStart(followUp.getScheduledDatetime().toLocalTime());
+        appointment.setTimeEnd(followUp.getScheduledDatetime().toLocalTime().plusMinutes(30));
+        appointment.setAppointmentType(AppointmentType.ONLINE);
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
+        appointment.setCreatedBy(CreatedByType.PATIENT);
+        appointment.setBookingMode(BookingMode.DOCTOR);
+        appointment.setIsAiSuggested(false);
+        appointment.setNote("Tái khám: " + (followUp.getNote() != null ? followUp.getNote() : ""));
+        
+        Appointment savedAppt = appointmentRepository.save(appointment);
+        followUp.setAppointment(savedAppt);
+        
         FollowUp saved = followUpRepository.save(followUp);
 
         notificationService.createAndSendNotification(
                 patient.getAccount().getAccountId(),
                 "Bạn đã xác nhận lịch tái khám ngày "
                         + saved.getScheduledDatetime().format(DISPLAY_DATETIME)
-                        + ". Vui lòng đặt lịch khám trên ứng dụng.",
+                        + ". Hệ thống đã tự động đặt lịch vào khung giờ này.",
                 "SYSTEM"
         );
         return followUpMapper.toResponse(saved);
