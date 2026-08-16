@@ -101,5 +101,5 @@ jobs:
             export JWT_SECRET=\$(gcloud secrets versions access latest --secret=JWT_SECRET)
             
             # Deploy or update the stack in Docker Swarm (uses VM's local GCR credential helper)
-            sudo DB_PASSWORD=\"\$DB_PASSWORD\" JWT_SECRET=\"\$JWT_SECRET\" SEPAY_API_KEY=\"\$SEPAY_API_KEY\" SEPAY_WEBHOOK_SECRET=\"\$SEPAY_WEBHOOK_SECRET\" docker stack deploy -c docker-compose.yml clinic --prune --with-registry-auth
+            sudo DB_PASSWORD=\"\$DB_PASSWORD\" JWT_SECRET=\"\$JWT_SECRET\" SEPAY_API_KEY=\"${SEPAY_API_KEY}\" SEPAY_WEBHOOK_SECRET=\"${SEPAY_WEBHOOK_SECRET}\" docker stack deploy -c docker-compose.yml clinic --prune --with-registry-auth
           "
