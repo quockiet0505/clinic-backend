@@ -165,7 +165,10 @@ public class DashboardDataSeeder implements CommandLineRunner {
             boolean hasLab = (i < 10);
             Service labService = hasLab ? services.get(2) : null; 
 
-            LocalTime timeStart = LocalTime.of(8 + (i % 8), (i % 2 == 0) ? 0 : 30);
+            // Fix: ensure timeStart does not fall within 11:30 - 13:30
+            int hourOffset = (i % 8);
+            if (hourOffset == 4) hourOffset = 6; // skip 12:00
+            LocalTime timeStart = LocalTime.of(8 + hourOffset, (i % 2 == 0) ? 0 : 30);
             LocalTime timeEnd = timeStart.plusMinutes(30);
 
             seedCompleteWorkflow(apptDate, timeStart, timeEnd, patient, doctor, labTech, nurse, examService, labService, medicines, index++, rand, reviewedPairs);
@@ -185,8 +188,11 @@ public class DashboardDataSeeder implements CommandLineRunner {
             upcoming.setService(service);
             upcoming.setExpertise(doctor.getExpertise());
             upcoming.setAppointmentDate(date);
-            upcoming.setTimeStart(LocalTime.of(9 + i, 30));
-            upcoming.setTimeEnd(LocalTime.of(10 + i, 0));
+            int upcomingHour = 9 + i;
+            if (upcomingHour == 11) upcomingHour = 14;
+            if (upcomingHour == 12) upcomingHour = 15;
+            upcoming.setTimeStart(LocalTime.of(upcomingHour, 30));
+            upcoming.setTimeEnd(LocalTime.of(upcomingHour + 1, 0));
             upcoming.setAppointmentType(AppointmentType.ONLINE);
             upcoming.setStatus(AppointmentStatus.CONFIRMED);
             upcoming.setCreatedBy(CreatedByType.PATIENT);
@@ -212,7 +218,7 @@ public class DashboardDataSeeder implements CommandLineRunner {
         // 2 in Chờ kết quả (WAITING_RESULT, ORDERED lab test)
         // Patient 18 and 19
         seedActiveWorkflow(today, LocalTime.of(11, 0), LocalTime.of(11, 30), patients.get(17), doctorsList.get(2), labTech, nurse, services.get(0), services.get(2), medicines, 5, rand, AppointmentStatus.WAITING_RESULT, MedicalRecordStatus.WAITING_RESULT, ServiceOrderStatus.ORDERED);
-        seedActiveWorkflow(today, LocalTime.of(11, 30), LocalTime.of(12, 0), patients.get(18), doctorsList.get(2), labTech, nurse, services.get(0), services.get(2), medicines, 6, rand, AppointmentStatus.WAITING_RESULT, MedicalRecordStatus.WAITING_RESULT, ServiceOrderStatus.ORDERED);
+        seedActiveWorkflow(today, LocalTime.of(14, 0), LocalTime.of(14, 30), patients.get(18), doctorsList.get(2), labTech, nurse, services.get(0), services.get(2), medicines, 6, rand, AppointmentStatus.WAITING_RESULT, MedicalRecordStatus.WAITING_RESULT, ServiceOrderStatus.ORDERED);
         
         // 1 in Đọc kết quả (WAITING_RESULT, DONE lab test)
         // Patient 20
