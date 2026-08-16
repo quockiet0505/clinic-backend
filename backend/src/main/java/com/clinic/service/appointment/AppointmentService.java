@@ -447,12 +447,19 @@ public class AppointmentService {
             
             List<com.clinic.entity.staff.StaffSchedule> dailySchedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(doctorId, newDate);
             if (dailySchedules.isEmpty()) {
+                throw new RuntimeException("Bác sĩ không có lịch làm việc trong ngày này.");
+            } else {
                 LocalTime start = request.getTimeStart();
                 if (start != null) {
-                    boolean isMorning = (!start.isBefore(LocalTime.of(7, 30)) && start.isBefore(LocalTime.of(11, 30)));
-                    boolean isAfternoon = (!start.isBefore(LocalTime.of(13, 30)) && start.isBefore(LocalTime.of(17, 0)));
-                    if (!isMorning && !isAfternoon) {
-                        throw new RuntimeException("Giờ khám nằm ngoài giờ làm việc mặc định.");
+                    boolean isValidSlot = false;
+                    for (com.clinic.entity.staff.StaffSchedule sched : dailySchedules) {
+                        if (!start.isBefore(sched.getStartTime()) && start.isBefore(sched.getEndTime())) {
+                            isValidSlot = true;
+                            break;
+                        }
+                    }
+                    if (!isValidSlot) {
+                        throw new RuntimeException("Giờ khám nằm ngoài lịch làm việc của bác sĩ.");
                     }
                 }
             }
