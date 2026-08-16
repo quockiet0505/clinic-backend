@@ -50,6 +50,7 @@ public class DashboardService {
     private final ServiceRepository serviceRepository;
     private final ServiceOrderRepository serviceOrderRepository;
     private final StaffDoctorReviewRepository doctorReviewRepository;
+    private final com.clinic.repository.medical.InvoiceRepository invoiceRepository;
 
     public DashboardStatsResponse getStats() {
         LocalDate today = LocalDate.now();
@@ -82,11 +83,10 @@ public class DashboardService {
         LocalDate startOfMonth = currentMonth.atDay(1);
         LocalDate endOfMonth = currentMonth.atEndOfMonth();
 
-        double monthlyRevenue = appointmentRepository
-                .findByAppointmentDateBetweenAndIsDeleted(startOfMonth, endOfMonth, 0)
+        double monthlyRevenue = invoiceRepository
+                .findByCreatedAtBetweenAndStatus(startOfMonth.atStartOfDay(), endOfMonth.atTime(23, 59, 59), com.clinic.common.enums.InvoiceStatus.PAID)
                 .stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
-                .mapToDouble(a -> a.getService() != null ? a.getService().getOriginalPrice().doubleValue() : 0)
+                .mapToDouble(inv -> inv.getTotalPrice().doubleValue())
                 .sum();
 
         return DashboardStatsResponse.builder()
@@ -126,9 +126,12 @@ public class DashboardService {
                 .filter(a -> a.getMainDoctor() != null)
                 .collect(Collectors.groupingBy(a -> a.getMainDoctor().getStaffId()));
 
+        List<com.clinic.entity.medical.Invoice> invoices = invoiceRepository.findByCreatedAtBetweenAndStatus(
+                startDate.atStartOfDay(), endDate.atTime(23, 59, 59), com.clinic.common.enums.InvoiceStatus.PAID);
+
         List<DoctorStatResponse> ranked = doctors.stream()
                 .map(doctor -> buildDoctorStat(doctor,
-                        apptsByDoctor.getOrDefault(doctor.getStaffId(), List.of())))
+                        apptsByDoctor.getOrDefault(doctor.getStaffId(), List.of()), invoices))
                 .sorted((a, b) -> Double.compare(b.getCompletionRate(), a.getCompletionRate()))
                 .collect(Collectors.toList());
 
@@ -150,15 +153,19 @@ public class DashboardService {
                 .build();
     }
 
-    private DoctorStatResponse buildDoctorStat(Staff doctor, List<Appointment> appointments) {
+    private DoctorStatResponse buildDoctorStat(Staff doctor, List<Appointment> appointments, List<com.clinic.entity.medical.Invoice> invoices) {
         long total = appointments.size();
         long completed = appointments.stream()
                 .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
                 .count();
 
-        double revenue = appointments.stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
-                .mapToDouble(a -> a.getService() != null ? a.getService().getOriginalPrice().doubleValue() : 0)
+        double revenue = invoices.stream()
+                .filter(inv -> inv.getMedicalRecord() != null 
+                        && inv.getMedicalRecord().getMainDoctor() != null 
+                        && inv.getMedicalRecord().getMainDoctor().getStaffId().equals(doctor.getStaffId()))
+                .flatMap(inv -> inv.getItems().stream())
+                .filter(item -> item.getItemType() == com.clinic.common.enums.InvoiceItemType.CONSULTATION)
+                .mapToDouble(item -> item.getPriceAtTime().doubleValue())
                 .sum();
 
         double completionRate = total > 0 ? (completed * 100.0 / total) : 0;
@@ -326,18 +333,17 @@ public class DashboardService {
         LocalDate startDate = ym.atDay(1);
         LocalDate endDate = ym.atEndOfMonth();
 
-        List<Appointment> appointments = appointmentRepository
-                .findByAppointmentDateBetweenAndIsDeleted(startDate, endDate, 0);
+        List<com.clinic.entity.medical.Invoice> invoices = invoiceRepository.findByCreatedAtBetweenAndStatus(
+                startDate.atStartOfDay(), endDate.atTime(23, 59, 59), com.clinic.common.enums.InvoiceStatus.PAID);
 
-        double totalRevenue = appointments.stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
-                .mapToDouble(a -> a.getService() != null ? a.getService().getOriginalPrice().doubleValue() : 0)
+        double totalRevenue = invoices.stream()
+                .mapToDouble(inv -> inv.getTotalPrice().doubleValue())
                 .sum();
 
-        double consultationRevenue = appointments.stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED && a.getService() != null)
-                .filter(a -> "EXAM".equals(a.getService().getServiceType().name()))
-                .mapToDouble(a -> a.getService().getOriginalPrice().doubleValue())
+        double consultationRevenue = invoices.stream()
+                .flatMap(inv -> inv.getItems().stream())
+                .filter(item -> item.getItemType() == com.clinic.common.enums.InvoiceItemType.CONSULTATION)
+                .mapToDouble(item -> item.getPriceAtTime().doubleValue())
                 .sum();
 
         double serviceRevenue = totalRevenue - consultationRevenue;
@@ -348,11 +354,10 @@ public class DashboardService {
             LocalDate startTrend = ymTrend.atDay(1);
             LocalDate endTrend = ymTrend.atEndOfMonth();
 
-            double revenue = appointmentRepository
-                    .findByAppointmentDateBetweenAndIsDeleted(startTrend, endTrend, 0)
+            double revenue = invoiceRepository
+                    .findByCreatedAtBetweenAndStatus(startTrend.atStartOfDay(), endTrend.atTime(23, 59, 59), com.clinic.common.enums.InvoiceStatus.PAID)
                     .stream()
-                    .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED)
-                    .mapToDouble(a -> a.getService() != null ? a.getService().getOriginalPrice().doubleValue() : 0)
+                    .mapToDouble(inv -> inv.getTotalPrice().doubleValue())
                     .sum();
 
             monthlyTrend.add(RevenueStatsResponse.MonthlyTrend.builder()
@@ -361,11 +366,17 @@ public class DashboardService {
                     .build());
         }
 
-        Map<String, Double> serviceRevenueMap = appointments.stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED && a.getService() != null)
+        Map<String, Double> serviceRevenueMap = invoices.stream()
+                .flatMap(inv -> inv.getItems().stream())
+                .filter(item -> item.getItemType() == com.clinic.common.enums.InvoiceItemType.SERVICE)
                 .collect(Collectors.groupingBy(
-                        a -> a.getService().getServiceName(),
-                        Collectors.summingDouble(a -> a.getService().getOriginalPrice().doubleValue())
+                        item -> {
+                            if (item.getDescription().startsWith("Dịch vụ chỉ định: ")) {
+                                return item.getDescription().substring("Dịch vụ chỉ định: ".length());
+                            }
+                            return item.getDescription();
+                        },
+                        Collectors.summingDouble(item -> item.getPriceAtTime().doubleValue())
                 ));
 
         List<RevenueStatsResponse.ServiceRevenue> byServiceAll = serviceRevenueMap.entrySet().stream()
