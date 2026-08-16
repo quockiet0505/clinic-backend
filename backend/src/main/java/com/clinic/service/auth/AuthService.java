@@ -270,12 +270,8 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
                             patient.setFullName(request.getFullName());
                             patient.setPhone(request.getPhone());
                             patient.setGender(request.getGender());
-                            if (request.getDateOfBirth() != null && !request.getDateOfBirth().isEmpty()) {
-                                try {
-                                    patient.setDateOfBirth(java.time.LocalDate.parse(request.getDateOfBirth()));
-                                } catch (Exception ex) {
-                                    // ignore parse error or log
-                                }
+                            if (request.getDateOfBirth() != null) {
+                                patient.setDateOfBirth(request.getDateOfBirth());
                             }
                             patient.setAddress(request.getAddress());
                             patient.setCreatedAt(java.time.LocalDateTime.now());
