@@ -202,9 +202,13 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
             }
 
             return accountRepository.findByEmail(finalEmail).map(account -> {
-                // Check if patient exists
-                boolean hasPatient = patientRepository.findByAccount_AccountId(account.getAccountId()).isPresent();
-                if (!hasPatient) {
+                // Check if patient exists and has required fields
+                Optional<Patient> patientOpt = patientRepository.findByAccount_AccountId(account.getAccountId());
+                boolean hasCompleteProfile = patientOpt.isPresent() && 
+                    patientOpt.get().getPhone() != null && !patientOpt.get().getPhone().isEmpty() &&
+                    patientOpt.get().getDateOfBirth() != null;
+                    
+                if (!hasCompleteProfile) {
                     throw new RequiresRegistrationException(finalEmail, finalName, finalPicture);
                 }
 
@@ -263,21 +267,38 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
             } catch (RuntimeException e) {
                 if (e.getMessage() != null && e.getMessage().contains("Email is already in use")) {
                     return accountRepository.findByEmail(email).map(account -> {
-                        // Create Patient for this existing account if it doesn't exist
-                        if (patientRepository.findByAccount_AccountId(account.getAccountId()).isEmpty()) {
-                            Patient patient = new Patient();
+                        // Create or update Patient for this existing account
+                        Optional<Patient> existingPatientOpt = patientRepository.findByAccount_AccountId(account.getAccountId());
+                        Patient patient;
+                        if (existingPatientOpt.isEmpty()) {
+                            patient = new Patient();
                             patient.setAccount(account);
-                            patient.setFullName(request.getFullName());
-                            patient.setPhone(request.getPhone());
-                            patient.setGender(request.getGender());
-                            if (request.getDateOfBirth() != null) {
-                                patient.setDateOfBirth(request.getDateOfBirth());
-                            }
-                            patient.setAddress(request.getAddress());
                             patient.setCreatedAt(java.time.LocalDateTime.now());
-                            patient.setUpdatedAt(java.time.LocalDateTime.now());
-                            patient = patientRepository.save(patient);
-                            
+                        } else {
+                            patient = existingPatientOpt.get();
+                        }
+                        
+                        patient.setFullName(request.getFullName());
+                        patient.setPhone(request.getPhone());
+                        patient.setGender(request.getGender());
+                        if (request.getDateOfBirth() != null) {
+                            patient.setDateOfBirth(request.getDateOfBirth());
+                        }
+                        patient.setAddress(request.getAddress());
+                        patient.setUpdatedAt(java.time.LocalDateTime.now());
+                        patient = patientRepository.save(patient);
+                        
+                        // Ensure the account has ROLE_PATIENT
+                        boolean hasPatientRole = account.getRoles().stream()
+                                .anyMatch(r -> r.getName().equals("ROLE_PATIENT"));
+                        if (!hasPatientRole) {
+                            Role patientRole = roleRepository.findByName("ROLE_PATIENT")
+                                    .orElseThrow(() -> new RuntimeException("Role PATIENT not found"));
+                            account.getRoles().add(patientRole);
+                            account = accountRepository.save(account);
+                        }
+                        
+                        if (existingPatientOpt.isEmpty()) {
                             PatientVitalProfile vp = new PatientVitalProfile();
                             vp.setPatient(patient);
                             vitalProfileRepository.save(vp);
