@@ -20,7 +20,15 @@ public class LeaveRequestSpecification {
         return Specification.where(leaveSearch(filter.getSearch()))
                 .and(BaseSpecification.equalIfPresent("leaveType", filter.getLeaveType()))
                 .and(staffTypeEquals(filter.getStaffType()))
+                .and(staffIdEquals(filter.getStaffId()))
                 .and(tabFilter(filter));
+    }
+
+    private static Specification<LeaveRequest> staffIdEquals(Integer staffId) {
+        return (root, query, cb) -> {
+            if (staffId == null) return cb.conjunction();
+            return cb.equal(root.get("staff").get("staffId"), staffId);
+        };
     }
 
     private static Specification<LeaveRequest> leaveSearch(String search) {

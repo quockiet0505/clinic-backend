@@ -37,9 +37,10 @@ public class LeaveRequestController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ResponseEntity<ApiResponse<PageResponse<LeaveRequestResponse>>> getAll(
-            @ModelAttribute LeaveRequestFilterRequest filter
+            @ModelAttribute LeaveRequestFilterRequest filter,
+            Authentication authentication
     ) {
-        return ResponseUtil.success("Leave requests retrieved successfully", leaveRequestService.getAll(filter));
+        return ResponseUtil.success("Leave requests retrieved successfully", leaveRequestService.getAll(filter, authentication));
     }
 
     @GetMapping("/all")

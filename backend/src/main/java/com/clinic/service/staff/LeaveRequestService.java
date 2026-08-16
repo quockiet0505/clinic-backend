@@ -53,7 +53,14 @@ public class LeaveRequestService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<LeaveRequestResponse> getAll(LeaveRequestFilterRequest filter) {
+    public PageResponse<LeaveRequestResponse> getAll(LeaveRequestFilterRequest filter, org.springframework.security.core.Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin) {
+            Staff staff = staffRepository.findByAccount_Email(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("Logged in staff member not found."));
+            filter.setStaffId(staff.getStaffId());
+        }
+
         Specification<LeaveRequest> spec = LeaveRequestSpecification.filterBy(filter);
         Pageable pageable = FilterUtils.buildPageable(filter);
         Page<LeaveRequest> page = leaveRequestRepository.findAll(spec, pageable);

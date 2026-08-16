@@ -74,7 +74,16 @@ public class AppointmentService {
     private final com.clinic.service.crm.NotificationService notificationService;
 
     @Transactional(readOnly = true)
-    public PageResponse<AppointmentResponse> getAll(AppointmentFilterRequest filter) {
+    public PageResponse<AppointmentResponse> getAll(AppointmentFilterRequest filter, org.springframework.security.core.Authentication authentication) {
+        if (authentication != null) {
+            boolean isDoctor = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
+            boolean isAdminOrReceptionist = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_RECEPTIONIST"));
+            if (isDoctor && !isAdminOrReceptionist) {
+                Staff staff = staffRepository.findByAccount_Email(authentication.getName())
+                        .orElseThrow(() -> new RuntimeException("Logged in staff member not found."));
+                filter.setDoctorId(staff.getStaffId());
+            }
+        }
         Specification<Appointment> spec = AppointmentSpecification.filterBy(filter);
         Pageable pageable = FilterUtils.buildPageable(filter);
         Page<Appointment> page = appointmentRepository.findAll(spec, pageable);

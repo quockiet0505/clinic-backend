@@ -31,7 +31,7 @@ public class LeaveRequestFilterRequest extends BaseFilterRequest {
     /** today | pending | processed */
     private String tab;
 
-
+    private Integer staffId;
 
     public LeaveRequestFilterRequest() {
 

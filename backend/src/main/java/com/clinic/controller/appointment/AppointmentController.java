@@ -29,8 +29,11 @@ public class AppointmentController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
-    public ResponseEntity<ApiResponse<PageResponse<AppointmentResponse>>> getAll(@ModelAttribute AppointmentFilterRequest filter) {
-        return ResponseUtil.success("Appointments retrieved successfully", appointmentService.getAll(filter));
+    public ResponseEntity<ApiResponse<PageResponse<AppointmentResponse>>> getAll(
+            @ModelAttribute AppointmentFilterRequest filter,
+            org.springframework.security.core.Authentication authentication
+    ) {
+        return ResponseUtil.success("Appointments retrieved successfully", appointmentService.getAll(filter, authentication));
     }
 
     @GetMapping("/all")
