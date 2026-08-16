@@ -38,6 +38,9 @@ public class AiModerationService {
     @Value("${application.ai-server-url}")
     private String aiServerUrl;
 
+    @Value("${application.ai-moderation-url}")
+    private String aiModerationUrl;
+
     /**
      * Kiểm duyệt đánh giá phòng khám bất đồng bộ.
      * Chỉ gọi khi bình luận mới được tạo hoặc nội dung comment bị thay đổi.
@@ -105,7 +108,7 @@ public class AiModerationService {
      * Endpoint: POST /api/v1/moderation/check
      */
     private ModerationResult callModerationApi(String comment, Integer rating) {
-        String url = aiServerUrl + "/api/v1/moderation/check";
+        String url = aiModerationUrl + "/api/v1/moderation/check";
 
         Map<String, Object> body = new HashMap<>();
         body.put("comment", comment != null ? comment : "");

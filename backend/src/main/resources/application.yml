@@ -27,6 +27,7 @@ app:
     enabled: false  # Cấu hình này đang tắt (false)
 application:
   ai-server-url: https://duongquockiet0511--clinic-ai-chat-fastapi-app.modal.run
+  ai-moderation-url: https://duongquockiet0511--clinic-ai-moderation-fastapi-app.modal.run
   security:
     jwt:
       secret-key: VGhpc0lzQVN1cGVyU2VjdXJlSldUU2VjcmV0S2V5Rm9yQ2xpbmljU3lzdGVtMTIz
