@@ -34,7 +34,7 @@ public class AppointmentSlotService {
     @Transactional(readOnly = true)
     public List<TimeSlotResponse> getAvailableSlots(
             Integer doctorId, Integer expertiseId, Integer serviceId, LocalDate date, Integer ignoreAppointmentId) {
-        if (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+        if (date.getDayOfWeek() == DayOfWeek.SUNDAY && !date.equals(LocalDate.now())) {
             return List.of();
         }
 
@@ -116,6 +116,16 @@ public class AppointmentSlotService {
             List<StaffSchedule> schedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(staff.getStaffId(), date);
             if (leaveRequestRepository.isDoctorOnLeave(staff.getStaffId(), date)) continue;
 
+            if (schedules.isEmpty() && date.equals(LocalDate.now())) {
+                StaffSchedule am = new StaffSchedule();
+                am.setStartTime(LocalTime.of(7, 30));
+                am.setEndTime(LocalTime.of(11, 30));
+                StaffSchedule pm = new StaffSchedule();
+                pm.setStartTime(LocalTime.of(13, 30));
+                pm.setEndTime(LocalTime.of(17, 0));
+                schedules = List.of(am, pm);
+            }
+
             for (StaffSchedule schedule : schedules) {
                 LocalTime current = schedule.getStartTime();
                 while (current.isBefore(schedule.getEndTime())
@@ -164,7 +174,17 @@ public class AppointmentSlotService {
 
         List<StaffSchedule> schedules = scheduleRepository.findByStaff_StaffIdAndWorkingDate(doctorId, date);
         if (schedules.isEmpty()) {
-            return slots;
+            if (date.equals(LocalDate.now())) {
+                StaffSchedule am = new StaffSchedule();
+                am.setStartTime(LocalTime.of(7, 30));
+                am.setEndTime(LocalTime.of(11, 30));
+                StaffSchedule pm = new StaffSchedule();
+                pm.setStartTime(LocalTime.of(13, 30));
+                pm.setEndTime(LocalTime.of(17, 0));
+                schedules = List.of(am, pm);
+            } else {
+                return slots;
+            }
         }
 
         if (leaveRequestRepository.isDoctorOnLeave(doctorId, date)) {
