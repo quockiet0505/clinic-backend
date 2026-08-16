@@ -85,7 +85,20 @@ public class MedicalRecordService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<MedicalRecordResponse> getAll(MedicalRecordFilterRequest filter) {
+    public PageResponse<MedicalRecordResponse> getAll(MedicalRecordFilterRequest filter, org.springframework.security.core.Authentication authentication) {
+        if (authentication != null) {
+            boolean isDoctor = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
+            boolean isAdminOrStaff = authentication.getAuthorities().stream().anyMatch(a -> 
+                a.getAuthority().equals("ROLE_ADMIN") || 
+                a.getAuthority().equals("ROLE_RECEPTIONIST") || 
+                a.getAuthority().equals("ROLE_NURSE")
+            );
+            if (isDoctor && !isAdminOrStaff) {
+                Staff staff = staffRepository.findByAccount_Email(authentication.getName())
+                        .orElseThrow(() -> new RuntimeException("Logged in staff member not found."));
+                filter.setDoctorId(staff.getStaffId());
+            }
+        }
         Specification<MedicalRecord> spec = MedicalRecordSpecification.filterBy(filter);
         Pageable pageable = FilterUtils.buildPageable(filter);
         Page<MedicalRecord> page = medicalRecordRepository.findAll(spec, pageable);

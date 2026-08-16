@@ -46,11 +46,12 @@ public class MedicalRecordController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR')")
     public ApiResponse<PageResponse<MedicalRecordResponse>> getAll(
-            @ModelAttribute MedicalRecordFilterRequest filter
+            @ModelAttribute MedicalRecordFilterRequest filter,
+            org.springframework.security.core.Authentication authentication
     ) {
         return ResponseUtil.success(
                 "Medical records fetched successfully",
-                medicalRecordService.getAll(filter)
+                medicalRecordService.getAll(filter, authentication)
         ).getBody();
     }
 
