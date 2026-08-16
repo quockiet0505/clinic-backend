@@ -335,9 +335,7 @@ public class AppointmentService {
             if (Boolean.TRUE.equals(request.getIsPriority())) {
                 appointment.setQueueNumber(0);
             } else {
-                Integer maxQueue = appointmentRepository.findMaxQueueNumberByDoctorAndDate(
-                        doctor != null ? doctor.getStaffId() : null, 
-                        request.getAppointmentDate()).orElse(0);
+                Integer maxQueue = appointmentRepository.findMaxQueueNumberByDate(request.getAppointmentDate()).orElse(0);
                 appointment.setQueueNumber(maxQueue + 1);
             }
             if (mode == BookingMode.SERVICE) {
@@ -484,9 +482,7 @@ public class AppointmentService {
         if (oldDate != null && !oldDate.equals(newDate) && 
             (appointment.getStatus() == AppointmentStatus.CHECKED_IN || appointment.getStatus() == AppointmentStatus.PENDING)) {
             
-            Integer maxQueue = appointmentRepository.findMaxQueueNumberByDoctorAndDate(
-                    appointment.getMainDoctor() != null ? appointment.getMainDoctor().getStaffId() : null, 
-                    newDate).orElse(0);
+            Integer maxQueue = appointmentRepository.findMaxQueueNumberByDateExclude(newDate, appointment.getAppointmentId()).orElse(0);
             appointment.setQueueNumber(maxQueue + 1);
         }
         
@@ -534,9 +530,7 @@ public class AppointmentService {
             if (Boolean.TRUE.equals(isPriority)) {
                 appointment.setQueueNumber(0);
             } else {
-                Integer maxQueue = appointmentRepository.findMaxQueueNumberByDoctorAndDate(
-                        appointment.getMainDoctor() != null ? appointment.getMainDoctor().getStaffId() : null, 
-                        appointment.getAppointmentDate()).orElse(0);
+                Integer maxQueue = appointmentRepository.findMaxQueueNumberByDateExclude(appointment.getAppointmentDate(), appointment.getAppointmentId()).orElse(0);
                 appointment.setQueueNumber(maxQueue + 1);
             }
             

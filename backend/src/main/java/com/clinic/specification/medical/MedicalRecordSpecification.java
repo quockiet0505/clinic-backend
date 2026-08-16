@@ -61,11 +61,12 @@ public class MedicalRecordSpecification {
             LocalDate fromDate = FilterUtils.parseDate(fromDateStr);
             LocalDate toDate = FilterUtils.parseDate(toDateStr);
             List<Predicate> predicates = new ArrayList<>();
+            var appointmentJoin = root.join("appointment", jakarta.persistence.criteria.JoinType.LEFT);
             if (fromDate != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), fromDate.atStartOfDay()));
+                predicates.add(cb.greaterThanOrEqualTo(appointmentJoin.get("appointmentDate"), fromDate));
             }
             if (toDate != null) {
-                predicates.add(cb.lessThan(root.get("createdAt"), toDate.plusDays(1).atStartOfDay()));
+                predicates.add(cb.lessThanOrEqualTo(appointmentJoin.get("appointmentDate"), toDate));
             }
             if (predicates.isEmpty()) return cb.conjunction();
             return cb.and(predicates.toArray(new Predicate[0]));
