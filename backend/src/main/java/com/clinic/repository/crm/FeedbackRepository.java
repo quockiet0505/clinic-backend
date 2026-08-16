@@ -26,4 +26,6 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Integer>, Jp
 
     @Query("SELECT f FROM Feedback f WHERE f.aiStatus = 'PENDING' AND f.createdAt < :cutoff")
     List<Feedback> findPendingOlderThan(@Param("cutoff") LocalDateTime cutoff);
+
+    List<Feedback> findByAiStatus(String status);
 }

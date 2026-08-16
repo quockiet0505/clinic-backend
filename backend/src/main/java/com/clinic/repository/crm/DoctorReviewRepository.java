@@ -29,5 +29,7 @@ public interface DoctorReviewRepository extends JpaRepository<DoctorReview, Inte
 
     @Query("SELECT r FROM DoctorReview r WHERE r.aiStatus = 'PENDING' AND r.createdAt < :cutoff")
     List<DoctorReview> findPendingOlderThan(@Param("cutoff") LocalDateTime cutoff);
+
+    List<DoctorReview> findByAiStatus(String status);
 }
 
