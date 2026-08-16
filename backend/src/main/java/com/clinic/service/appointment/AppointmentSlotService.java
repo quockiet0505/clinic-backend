@@ -33,16 +33,16 @@ public class AppointmentSlotService {
 
     @Transactional(readOnly = true)
     public List<TimeSlotResponse> getAvailableSlots(
-            Integer doctorId, Integer expertiseId, Integer serviceId, LocalDate date) {
+            Integer doctorId, Integer expertiseId, Integer serviceId, LocalDate date, Integer ignoreAppointmentId) {
         if (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
             return List.of();
         }
 
         if (doctorId != null) {
-            return buildSlotsForDoctor(doctorId, date, null);
+            return buildSlotsForDoctor(doctorId, date, null, 30, ignoreAppointmentId);
         }
         if (expertiseId != null) {
-            return buildSlotsForExpertise(expertiseId, date);
+            return buildSlotsForExpertise(expertiseId, date, ignoreAppointmentId);
         }
         if (serviceId != null) {
             com.clinic.entity.medical.Service service = serviceRepository.findById(serviceId)
@@ -54,14 +54,19 @@ public class AppointmentSlotService {
                 throw new RuntimeException(
                         "Dịch vụ này chỉ được chỉ định trong quá trình khám, không đặt lịch trực tiếp.");
             }
-            // Ép buộc thời lượng 30 phút/slot cho dịch vụ theo yêu cầu
             int duration = 30;
-            return buildSlotsForLabStaff(date, duration);
+            return buildSlotsForLabStaff(date, duration, ignoreAppointmentId);
         }
         return List.of();
     }
 
-    private List<TimeSlotResponse> buildSlotsForExpertise(Integer expertiseId, LocalDate date) {
+    @Transactional(readOnly = true)
+    public List<TimeSlotResponse> getAvailableSlots(
+            Integer doctorId, Integer expertiseId, Integer serviceId, LocalDate date) {
+        return getAvailableSlots(doctorId, expertiseId, serviceId, date, null);
+    }
+
+    private List<TimeSlotResponse> buildSlotsForExpertise(Integer expertiseId, LocalDate date, Integer ignoreAppointmentId) {
         List<Staff> doctors = expertiseId != null
                 ? staffRepository.findByExpertise_ExpertiseIdAndStaffTypeAndIsDeleted(
                         expertiseId, StaffType.DOCTOR, 0)
@@ -69,7 +74,7 @@ public class AppointmentSlotService {
 
         Map<String, TimeSlotResponse> merged = new LinkedHashMap<>();
         for (Staff doctor : doctors) {
-            for (TimeSlotResponse slot : buildSlotsForDoctor(doctor.getStaffId(), date, doctor)) {
+            for (TimeSlotResponse slot : buildSlotsForDoctor(doctor.getStaffId(), date, doctor, 30, ignoreAppointmentId)) {
                 if (!slot.isAvailable()) {
                     continue;
                 }
@@ -97,7 +102,7 @@ public class AppointmentSlotService {
         return count;
     }
 
-    private List<TimeSlotResponse> buildSlotsForLabStaff(LocalDate date, Integer intervalMinutes) {
+    private List<TimeSlotResponse> buildSlotsForLabStaff(LocalDate date, Integer intervalMinutes, Integer ignoreAppointmentId) {
         int slotMinutes = intervalMinutes != null && intervalMinutes > 0 ? intervalMinutes : 30;
         List<Staff> labStaff = staffRepository.findByStaffTypeAndIsDeleted(StaffType.LAB_TECH, 0);
         if (labStaff.isEmpty()) {
@@ -130,6 +135,14 @@ public class AppointmentSlotService {
             long bookedCount = appointmentRepository.countByBookingModeAndDateAndTimeStart(
                     com.clinic.common.enums.BookingMode.SERVICE, date, start);
             
+            if (ignoreAppointmentId != null) {
+                Optional<com.clinic.entity.appointment.Appointment> ignoredApp = appointmentRepository.findById(ignoreAppointmentId);
+                if (ignoredApp.isPresent() && ignoredApp.get().getBookingMode() == com.clinic.common.enums.BookingMode.SERVICE 
+                    && ignoredApp.get().getAppointmentDate().equals(date) && ignoredApp.get().getTimeStart().equals(start)) {
+                    bookedCount--;
+                }
+            }
+            
             TimeSlotResponse slot = new TimeSlotResponse();
             slot.setTimeStart(start);
             slot.setTimeEnd(start.plusMinutes(slotMinutes));
@@ -140,12 +153,12 @@ public class AppointmentSlotService {
         return finalSlots;
     }
 
-    private List<TimeSlotResponse> buildSlotsForDoctor(Integer doctorId, LocalDate date, Staff staffRef) {
-        return buildSlotsForDoctor(doctorId, date, staffRef, 30);
+    private List<TimeSlotResponse> buildSlotsForDoctor(Integer doctorId, LocalDate date, Staff staffRef, Integer ignoreAppointmentId) {
+        return buildSlotsForDoctor(doctorId, date, staffRef, 30, ignoreAppointmentId);
     }
 
     private List<TimeSlotResponse> buildSlotsForDoctor(
-            Integer doctorId, LocalDate date, Staff staffRef, int intervalMinutes) {
+            Integer doctorId, LocalDate date, Staff staffRef, int intervalMinutes, Integer ignoreAppointmentId) {
         List<TimeSlotResponse> slots = new ArrayList<>();
         int slotMinutes = intervalMinutes > 0 ? intervalMinutes : 30;
 
@@ -162,7 +175,7 @@ public class AppointmentSlotService {
             LocalTime current = schedule.getStartTime();
             while (current.isBefore(schedule.getEndTime())
                     && !current.plusMinutes(slotMinutes).isAfter(schedule.getEndTime())) {
-                slots.add(createSlot(doctorId, date, current, staffRef, slotMinutes));
+                slots.add(createSlot(doctorId, date, current, staffRef, slotMinutes, ignoreAppointmentId));
                 current = current.plusMinutes(slotMinutes);
             }
         }
@@ -170,16 +183,24 @@ public class AppointmentSlotService {
         return slots;
     }
 
-    private TimeSlotResponse createSlot(Integer doctorId, LocalDate date, LocalTime start, Staff staffRef) {
-        return createSlot(doctorId, date, start, staffRef, 30);
+    private TimeSlotResponse createSlot(Integer doctorId, LocalDate date, LocalTime start, Staff staffRef, Integer ignoreAppointmentId) {
+        return createSlot(doctorId, date, start, staffRef, 30, ignoreAppointmentId);
     }
 
     private TimeSlotResponse createSlot(
-            Integer doctorId, LocalDate date, LocalTime start, Staff staffRef, int intervalMinutes) {
+            Integer doctorId, LocalDate date, LocalTime start, Staff staffRef, int intervalMinutes, Integer ignoreAppointmentId) {
         int slotMinutes = intervalMinutes > 0 ? intervalMinutes : 30;
-        boolean isBooked = appointmentRepository
-                .existsByMainDoctor_StaffIdAndAppointmentDateAndTimeStartAndIsDeleted(
-                        doctorId, date, start, 0);
+        
+        boolean isBooked = false;
+        List<com.clinic.entity.appointment.Appointment> bookings = appointmentRepository.findByMainDoctor_StaffIdAndAppointmentDateAndIsDeleted(doctorId, date, 0);
+        for (com.clinic.entity.appointment.Appointment app : bookings) {
+            if (app.getTimeStart().equals(start)) {
+                if (ignoreAppointmentId == null || !app.getAppointmentId().equals(ignoreAppointmentId)) {
+                    isBooked = true;
+                    break;
+                }
+            }
+        }
 
         TimeSlotResponse slot = new TimeSlotResponse();
         slot.setTimeStart(start);

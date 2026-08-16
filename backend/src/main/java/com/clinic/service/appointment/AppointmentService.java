@@ -377,23 +377,25 @@ public class AppointmentService {
         // Send Notification
         String dateStr = request.getAppointmentDate().toString();
         String timeStr = request.getTimeStart().toString();
-        if (request.getAppointmentType() == AppointmentType.WALK_IN) {
-            if (mode == BookingMode.SERVICE) {
-                notificationService.createAndSendNotification(
-                        patient.getAccount().getAccountId(),
-                        "Bạn đã được tạo phiếu chỉ định. Vui lòng di chuyển đến phòng Xét nghiệm / Chụp chiếu.",
-                        "SYSTEM");
+        if (patient.getAccount() != null) {
+            if (request.getAppointmentType() == AppointmentType.WALK_IN) {
+                if (mode == BookingMode.SERVICE) {
+                    notificationService.createAndSendNotification(
+                            patient.getAccount().getAccountId(),
+                            "Bạn đã được tạo phiếu chỉ định. Vui lòng di chuyển đến phòng Xét nghiệm / Chụp chiếu.",
+                            "SYSTEM");
+                } else {
+                    notificationService.createAndSendNotification(
+                            patient.getAccount().getAccountId(),
+                            "Lịch khám trực tiếp của bạn đã được Check-in. Số thứ tự của bạn là " + savedAppointment.getQueueNumber() + ".",
+                            "SYSTEM");
+                }
             } else {
                 notificationService.createAndSendNotification(
                         patient.getAccount().getAccountId(),
-                        "Lịch khám trực tiếp của bạn đã được Check-in. Số thứ tự của bạn là " + savedAppointment.getQueueNumber() + ".",
+                        "Lịch hẹn khám của bạn vào ngày " + dateStr + " lúc " + timeStr + " đã được tạo thành công.",
                         "SYSTEM");
             }
-        } else {
-            notificationService.createAndSendNotification(
-                    patient.getAccount().getAccountId(),
-                    "Lịch hẹn khám của bạn vào ngày " + dateStr + " lúc " + timeStr + " đã được tạo thành công.",
-                    "SYSTEM");
         }
 
         return enrichResponse(savedAppointment);
@@ -504,10 +506,19 @@ public class AppointmentService {
         
         boolean justCheckedIn = false;
         boolean justCompleted = false;
+        boolean justConfirmed = false;
+        boolean justCancelled = false;
+
+        if (newStatus == AppointmentStatus.CONFIRMED && appointment.getStatus() != AppointmentStatus.CONFIRMED) {
+            justConfirmed = true;
+        }
+        if (newStatus == AppointmentStatus.CANCELLED && appointment.getStatus() != AppointmentStatus.CANCELLED) {
+            justCancelled = true;
+        }
 
         if (newStatus == AppointmentStatus.CHECKED_IN) {
             if (appointment.getStatus() == AppointmentStatus.CHECKED_IN) {
-                throw new RuntimeException("Lịch hẹn đã được Check-in trước đó.");
+                throw new RuntimeException("Lịch hẹn đã được Check-in trước đây.");
             }
             if (appointment.getStatus() != AppointmentStatus.PENDING && appointment.getStatus() != AppointmentStatus.CONFIRMED) {
                 throw new RuntimeException("Chỉ có thể Check-in lịch hẹn ở trạng thái Chờ khám hoặc Đã xác nhận.");
@@ -532,7 +543,7 @@ public class AppointmentService {
                 MedicalRecord record = new MedicalRecord();
                 record.setPatient(appointment.getPatient());
                 record.setAppointment(appointment);
-                record.setStatus(MedicalRecordStatus.WAITING_RESULT);
+                record.setStatus(com.clinic.common.enums.MedicalRecordStatus.WAITING_RESULT);
                 MedicalRecord savedRecord = medicalRecordRepository.save(record);
 
                 ServiceOrder order = new ServiceOrder();
@@ -547,6 +558,16 @@ public class AppointmentService {
                     staffRepository.findByAccount_Email(auth.getName()).ifPresent(order::setOrderedBy);
                 }
                 serviceOrderRepository.save(order);
+            } else if (appointment.getBookingMode() == BookingMode.DOCTOR) {
+                if (medicalRecordRepository.findByAppointment_AppointmentId(appointment.getAppointmentId()).isEmpty()) {
+                    MedicalRecord record = new MedicalRecord();
+                    record.setPatient(appointment.getPatient());
+                    record.setAppointment(appointment);
+                    record.setMainDoctor(appointment.getMainDoctor());
+                    record.setStatus(com.clinic.common.enums.MedicalRecordStatus.PENDING);
+                    record.setVitalsTaken(false);
+                    medicalRecordRepository.save(record);
+                }
             }
         }
         if (newStatus == AppointmentStatus.COMPLETED && appointment.getStatus() != AppointmentStatus.COMPLETED) {
@@ -558,22 +579,40 @@ public class AppointmentService {
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
         if (justCheckedIn) {
-            if (appointment.getBookingMode() == BookingMode.SERVICE) {
-                notificationService.createAndSendNotification(
-                        appointment.getPatient().getAccount().getAccountId(),
-                        "Bạn đã được tạo phiếu chỉ định. Vui lòng di chuyển đến phòng Xét nghiệm / Chụp chiếu.",
-                        "SYSTEM");
-            } else {
-                notificationService.createAndSendNotification(
-                        appointment.getPatient().getAccount().getAccountId(),
-                        "Bạn đã check-in thành công. Vui lòng chờ đến lượt khám. Số thứ tự của bạn là " + savedAppointment.getQueueNumber() + ".",
-                        "SYSTEM");
+            if (appointment.getPatient().getAccount() != null) {
+                if (appointment.getBookingMode() == BookingMode.SERVICE) {
+                    notificationService.createAndSendNotification(
+                            appointment.getPatient().getAccount().getAccountId(),
+                            "Bạn đã được tạo phiếu chỉ định. Vui lòng di chuyển đến phòng Xét nghiệm / Chụp chiếu.",
+                            "SYSTEM");
+                } else {
+                    notificationService.createAndSendNotification(
+                            appointment.getPatient().getAccount().getAccountId(),
+                            "Bạn đã check-in thành công. Vui lòng chờ đến lượt khám. Số thứ tự của bạn là " + savedAppointment.getQueueNumber() + ".",
+                            "SYSTEM");
+                }
             }
         } else if (justCompleted) {
-            notificationService.createAndSendNotification(
-                    appointment.getPatient().getAccount().getAccountId(),
-                    "Ca khám của bạn đã hoàn tất. Cảm ơn bạn đã sử dụng dịch vụ của phòng khám.",
-                    "SYSTEM");
+            if (appointment.getPatient().getAccount() != null) {
+                notificationService.createAndSendNotification(
+                        appointment.getPatient().getAccount().getAccountId(),
+                        "Ca khám của bạn đã hoàn tất. Cảm ơn bạn đã sử dụng dịch vụ của phòng khám.",
+                        "SYSTEM");
+            }
+        } else if (justConfirmed) {
+            if (appointment.getPatient().getAccount() != null) {
+                notificationService.createAndSendNotification(
+                        appointment.getPatient().getAccount().getAccountId(),
+                        "Lịch hẹn khám ngày " + appointment.getAppointmentDate() + " lúc " + appointment.getTimeStart() + " của bạn đã được phê duyệt thành công.",
+                        "SYSTEM");
+            }
+        } else if (justCancelled) {
+            if (appointment.getPatient().getAccount() != null) {
+                notificationService.createAndSendNotification(
+                        appointment.getPatient().getAccount().getAccountId(),
+                        "Lịch hẹn khám ngày " + appointment.getAppointmentDate() + " lúc " + appointment.getTimeStart() + " của bạn đã bị hủy bởi phòng khám.",
+                        "SYSTEM");
+            }
         }
 
         return enrichResponse(savedAppointment);
@@ -629,10 +668,12 @@ public class AppointmentService {
         
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        notificationService.createAndSendNotification(
-                appointment.getPatient().getAccount().getAccountId(),
-                "Lịch hẹn của bạn đã được chuyển sang Bác sĩ " + newDoctor.getFullName() + " phụ trách.",
-                "SYSTEM");
+        if (appointment.getPatient().getAccount() != null) {
+            notificationService.createAndSendNotification(
+                    appointment.getPatient().getAccount().getAccountId(),
+                    "Lịch hẹn của bạn đã được chuyển sang Bác sĩ " + newDoctor.getFullName() + " phụ trách.",
+                    "SYSTEM");
+        }
 
         return enrichResponse(savedAppointment);
     }

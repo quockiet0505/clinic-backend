@@ -43,7 +43,11 @@ public class MedicalRecordSpecification {
         return (root, query, cb) -> {
             if (tab == null) return cb.conjunction();
             if ("active".equals(tab)) {
-                return root.get("status").in(MedicalRecordStatus.IN_PROGRESS, MedicalRecordStatus.WAITING_RESULT);
+                return root.get("status").in(
+                        MedicalRecordStatus.PENDING,
+                        MedicalRecordStatus.IN_PROGRESS,
+                        MedicalRecordStatus.WAITING_RESULT
+                );
             }
             if ("archived".equals(tab)) {
                 return root.get("status").in(MedicalRecordStatus.DONE, MedicalRecordStatus.CANCELLED);

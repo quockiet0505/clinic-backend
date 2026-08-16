@@ -103,6 +103,10 @@ public class DashboardDataSeeder implements CommandLineRunner {
             services.add(createService("Xét nghiệm tổng công thức máu", ServiceType.LAB_TEST, new BigDecimal("250000")));
             services.add(createService("Siêu âm bụng tổng quát", ServiceType.ULTRASOUND, new BigDecimal("350000")));
             services.add(createService("Chụp X-Quang phổi", ServiceType.X_RAY, new BigDecimal("200000")));
+            services.add(createService("Chụp CT Scan não", ServiceType.CT_SCAN, new BigDecimal("1200000")));
+            services.add(createService("Chụp MRI cột sống", ServiceType.MRI, new BigDecimal("2200000")));
+            services.add(createService("Nội soi dạ dày", ServiceType.ENDOSCOPY, new BigDecimal("600000")));
+            services.add(createService("Dịch vụ khác", ServiceType.OTHER, new BigDecimal("100000")));
         }
 
         // 3. Fetch or Seed Medicines

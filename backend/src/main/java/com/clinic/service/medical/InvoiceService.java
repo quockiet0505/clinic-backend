@@ -53,6 +53,7 @@ public class InvoiceService {
     private final PatientRepository patientRepository;
     private final AccountRepository accountRepository;
     private final InvoiceMapper invoiceMapper;
+    private final com.clinic.service.crm.NotificationService notificationService;
 
     @Transactional
     public Invoice generateInvoice(Integer recordId) {
@@ -144,7 +145,18 @@ public class InvoiceService {
         invoice.setStatus(InvoiceStatus.PAID);
         invoice.setPaymentMethod(method);
 
-        return invoiceMapper.toResponse(invoiceRepository.save(invoice));
+        Invoice saved = invoiceRepository.save(invoice);
+
+        // Notify Patient
+        if (saved.getPatient() != null && saved.getPatient().getAccount() != null) {
+            notificationService.createAndSendNotification(
+                    saved.getPatient().getAccount().getAccountId(),
+                    "Thanh toán thành công hóa đơn số #INV-" + saved.getInvoiceId() + " số tiền " + saved.getTotalPrice() + "đ. Cảm ơn quý khách!",
+                    "SYSTEM"
+            );
+        }
+
+        return invoiceMapper.toResponse(saved);
     }
 
     @Transactional
@@ -198,8 +210,17 @@ public class InvoiceService {
 
             invoice.setStatus(InvoiceStatus.PAID);
             invoice.setPaymentMethod(PaymentMethod.TRANSFER);
-            invoiceRepository.save(invoice);
+            Invoice saved = invoiceRepository.save(invoice);
             log.info("Invoice {} successfully marked as PAID via Sepay Webhook.", invoiceId);
+
+            // Notify Patient
+            if (saved.getPatient() != null && saved.getPatient().getAccount() != null) {
+                notificationService.createAndSendNotification(
+                        saved.getPatient().getAccount().getAccountId(),
+                        "Thanh toán chuyển khoản thành công hóa đơn số #INV-" + saved.getInvoiceId() + " số tiền " + saved.getTotalPrice() + "đ. Cảm ơn quý khách!",
+                        "SYSTEM"
+                );
+            }
 
         } catch (NumberFormatException e) {
             log.error("Failed to parse invoice ID from content: {}", content);
@@ -237,7 +258,26 @@ public class InvoiceService {
             invoice.setPaymentMethod(null);
         }
 
-        return invoiceMapper.toResponse(invoiceRepository.save(invoice));
+        Invoice saved = invoiceRepository.save(invoice);
+
+        // Notify Patient
+        if (saved.getPatient() != null && saved.getPatient().getAccount() != null) {
+            if (approve) {
+                notificationService.createAndSendNotification(
+                        saved.getPatient().getAccount().getAccountId(),
+                        "Xác nhận thanh toán thành công hóa đơn số #INV-" + saved.getInvoiceId() + " số tiền " + saved.getTotalPrice() + "đ. Cảm ơn quý khách!",
+                        "SYSTEM"
+                );
+            } else {
+                notificationService.createAndSendNotification(
+                        saved.getPatient().getAccount().getAccountId(),
+                        "Yêu cầu xác nhận thanh toán hóa đơn số #INV-" + saved.getInvoiceId() + " của bạn đã bị từ chối.",
+                        "SYSTEM"
+                );
+            }
+        }
+
+        return invoiceMapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)

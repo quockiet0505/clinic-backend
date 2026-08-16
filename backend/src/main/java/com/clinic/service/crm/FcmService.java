@@ -23,8 +23,10 @@ public class FcmService {
                     .build();
 
             FirebaseMessaging.getInstance().sendAsync(message);
+            System.out.println("FCM push notification sent asynchronously to token: " + fcmToken);
         } catch (Exception e) {
-            System.err.println("Failed to send FCM push notification: " + e.getMessage());
+            System.err.println("Failed to send FCM push notification: ");
+            e.printStackTrace();
         }
     }
 }

@@ -68,6 +68,7 @@ public class MedicalRecordService {
     private final com.clinic.service.appointment.AppointmentService appointmentService;
     private final PatientVitalProfileRepository vitalProfileRepository;
     private final InvoiceService invoiceService;
+    private final com.clinic.service.crm.NotificationService notificationService;
 
     @Transactional
     public MedicalRecordResponse create(MedicalRecordRequest request) {
@@ -171,7 +172,17 @@ public class MedicalRecordService {
         vitalProfileRepository.save(vitalProfile);
 
         record.setVitalsTaken(true);
-        return medicalRecordMapper.toResponse(medicalRecordRepository.save(record));
+        MedicalRecord saved = medicalRecordRepository.save(record);
+
+        if (patient.getAccount() != null) {
+            notificationService.createAndSendNotification(
+                    patient.getAccount().getAccountId(),
+                    "Chỉ số sinh hiệu của bạn đã được ghi nhận. Vui lòng chờ đến lượt khám của Bác sĩ.",
+                    "SYSTEM"
+            );
+        }
+
+        return medicalRecordMapper.toResponse(saved);
     }
 
     public List<MedicalRecordResponse> getMyRecords() {

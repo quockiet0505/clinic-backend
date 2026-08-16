@@ -125,9 +125,10 @@ public class AppointmentController {
             @RequestParam(required = false) Integer doctorId,
             @RequestParam(required = false) Integer expertiseId,
             @RequestParam(required = false) Integer serviceId,
-            @RequestParam java.time.LocalDate date) {
+            @RequestParam java.time.LocalDate date,
+            @RequestParam(required = false) Integer ignoreAppointmentId) {
         return ResponseUtil.success(
                 "Time slots retrieved successfully",
-                appointmentSlotService.getAvailableSlots(doctorId, expertiseId, serviceId, date));
+                appointmentSlotService.getAvailableSlots(doctorId, expertiseId, serviceId, date, ignoreAppointmentId));
     }
 }

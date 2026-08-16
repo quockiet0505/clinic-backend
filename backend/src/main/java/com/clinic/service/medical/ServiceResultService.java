@@ -51,6 +51,7 @@ public class ServiceResultService {
         result.setServiceOrder(order);
         result.setResultData(request.getResultData());
         result.setConclusion(request.getConclusion());
+        result.setAttachmentUrls(request.getAttachmentUrls());
         result.setEnteredBy(labTech);
 
         // Auto-update Order Status
@@ -63,6 +64,16 @@ public class ServiceResultService {
             notificationService.createAndSendNotification(
                     order.getMedicalRecord().getMainDoctor().getAccount().getAccountId(),
                     "Đã có kết quả cận lâm sàng cho bệnh nhân " + order.getMedicalRecord().getPatient().getFullName() + " (Mã Order: " + order.getOrderId() + ").",
+                    "SYSTEM"
+            );
+        }
+
+        // Notify Patient
+        if (order.getMedicalRecord() != null && order.getMedicalRecord().getPatient() != null
+                && order.getMedicalRecord().getPatient().getAccount() != null) {
+            notificationService.createAndSendNotification(
+                    order.getMedicalRecord().getPatient().getAccount().getAccountId(),
+                    "Kết quả cận lâm sàng " + order.getService().getServiceName() + " của bạn đã sẵn sàng. Vui lòng quay lại phòng khám.",
                     "SYSTEM"
             );
         }

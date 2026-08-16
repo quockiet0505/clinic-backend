@@ -57,4 +57,31 @@ public class AppointmentReminderJob {
         
         log.info("Finished Appointment Reminder Job.");
     }
+
+    // Runs every 5 minutes to automatically approve pending appointments that are older than 30 minutes
+    @Scheduled(cron = "0 */5 * * * ?")
+    @org.springframework.transaction.annotation.Transactional
+    public void autoApprovePendingAppointments() {
+        log.info("Starting Auto-Approve Pending Appointments Job...");
+        java.time.LocalDateTime thirtyMinutesAgo = java.time.LocalDateTime.now().minusMinutes(30);
+        List<Appointment> pendingAppointments = appointmentRepository.findByStatusAndCreatedAtBeforeAndIsDeleted(
+                AppointmentStatus.PENDING, thirtyMinutesAgo, 0);
+
+        if (!pendingAppointments.isEmpty()) {
+            log.info("Found {} pending appointments older than 30 minutes to auto-approve", pendingAppointments.size());
+            for (Appointment app : pendingAppointments) {
+                app.setStatus(AppointmentStatus.CONFIRMED);
+                appointmentRepository.save(app);
+                
+                // Notify patient
+                if (app.getPatient().getAccount() != null) {
+                    notificationService.createAndSendNotification(
+                            app.getPatient().getAccount().getAccountId(),
+                            "Lịch hẹn khám ngày " + app.getAppointmentDate() + " lúc " + app.getTimeStart() + " của bạn đã được phê duyệt tự động thành công.",
+                            "SYSTEM");
+                }
+            }
+        }
+        log.info("Finished Auto-Approve Pending Appointments Job.");
+    }
 }

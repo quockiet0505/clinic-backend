@@ -45,6 +45,7 @@ public class PrescriptionService {
     private final DrugInteractionRepository drugInteractionRepository;
     private final PatientRepository patientRepository;
     private final PrescriptionMapper prescriptionMapper;
+    private final com.clinic.service.crm.NotificationService notificationService;
 
     @Transactional
     public PrescriptionResponse create(PrescriptionRequest request) {
@@ -118,6 +119,15 @@ public class PrescriptionService {
                 saved.getItems().add(item);
             }
             prescriptionRepository.save(saved);
+        }
+
+        // Notify Patient
+        if (record.getPatient() != null && record.getPatient().getAccount() != null) {
+            notificationService.createAndSendNotification(
+                    record.getPatient().getAccount().getAccountId(),
+                    "Đơn thuốc của bạn đã sẵn sàng. Vui lòng di chuyển đến quầy Dược để nhận thuốc.",
+                    "SYSTEM"
+            );
         }
 
         return prescriptionMapper.toResponse(saved);
