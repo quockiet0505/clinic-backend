@@ -411,14 +411,16 @@ public class AppointmentService {
             throw new RuntimeException("Không thể dời lịch khi trạng thái là " + appointment.getStatus().name());
         }
 
-        // 2. Limit Check
-        int currentCount = appointment.getRescheduleCount() != null ? appointment.getRescheduleCount() : 0;
-        if (currentCount >= 2) {
-            throw new RuntimeException("Lịch hẹn này đã đạt giới hạn số lần dời lịch (2 lần). Vui lòng liên hệ lễ tân để được hỗ trợ.");
-        }
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isPatient = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
+        boolean isPatient = auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
+
+        // 2. Limit Check for Patient
+        int currentCount = appointment.getRescheduleCount() != null ? appointment.getRescheduleCount() : 0;
+        if (isPatient) {
+            if (currentCount >= 2) {
+                throw new RuntimeException("Lịch hẹn này đã đạt giới hạn số lần dời lịch (2 lần). Vui lòng liên hệ lễ tân để được hỗ trợ.");
+            }
+        }
         
         // 3. Time constraint for PATIENT
         if (isPatient) {
@@ -469,7 +471,9 @@ public class AppointmentService {
         appointment.setTimeStart(request.getTimeStart());
         appointment.setTimeEnd(request.getTimeEnd());
         appointment.setRescheduleReason(request.getRescheduleReason());
-        appointment.setRescheduleCount(currentCount + 1);
+        if (isPatient) {
+            appointment.setRescheduleCount(currentCount + 1);
+        }
         
         if (request.getMainDoctorId() != null) {
             Staff doctor = staffRepository.findById(request.getMainDoctorId())
@@ -490,10 +494,12 @@ public class AppointmentService {
 
         // 6. Notify Patient
         if (!isPatient) {
-            notificationService.createAndSendNotification(
-                    appointment.getPatient().getAccount().getAccountId(),
-                    "Lịch hẹn khám của bạn đã được dời sang ngày " + newDate + " lúc " + request.getTimeStart() + ".",
-                    "SYSTEM");
+            if (appointment.getPatient() != null && appointment.getPatient().getAccount() != null) {
+                notificationService.createAndSendNotification(
+                        appointment.getPatient().getAccount().getAccountId(),
+                        "Lịch hẹn khám của bạn đã được dời sang ngày " + newDate + " lúc " + request.getTimeStart() + ".",
+                        "SYSTEM");
+            }
         }
 
         return enrichResponse(savedAppointment);
