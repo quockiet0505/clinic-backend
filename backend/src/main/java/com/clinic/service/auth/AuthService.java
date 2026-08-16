@@ -202,7 +202,13 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
             }
 
             return accountRepository.findByEmail(finalEmail).map(account -> {
-                // User exists, login
+                // Check if patient exists
+                boolean hasPatient = patientRepository.findByAccount_AccountId(account.getAccountId()).isPresent();
+                if (!hasPatient) {
+                    throw new RequiresRegistrationException(finalEmail, finalName, finalPicture);
+                }
+
+                // User exists and has patient, login
                 CustomUserDetails userDetails = new CustomUserDetails(account);
                 String token = jwtService.generateToken(userDetails);
                 setCookie(response, token);
@@ -257,6 +263,30 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
             } catch (RuntimeException e) {
                 if (e.getMessage() != null && e.getMessage().contains("Email is already in use")) {
                     return accountRepository.findByEmail(email).map(account -> {
+                        // Create Patient for this existing account if it doesn't exist
+                        if (patientRepository.findByAccount_AccountId(account.getAccountId()).isEmpty()) {
+                            Patient patient = new Patient();
+                            patient.setAccount(account);
+                            patient.setFullName(request.getFullName());
+                            patient.setPhone(request.getPhone());
+                            patient.setGender(request.getGender());
+                            if (request.getDateOfBirth() != null && !request.getDateOfBirth().isEmpty()) {
+                                try {
+                                    patient.setDateOfBirth(java.time.LocalDate.parse(request.getDateOfBirth()));
+                                } catch (Exception ex) {
+                                    // ignore parse error or log
+                                }
+                            }
+                            patient.setAddress(request.getAddress());
+                            patient.setCreatedAt(java.time.LocalDateTime.now());
+                            patient.setUpdatedAt(java.time.LocalDateTime.now());
+                            patient = patientRepository.save(patient);
+                            
+                            PatientVitalProfile vp = new PatientVitalProfile();
+                            vp.setPatient(patient);
+                            vitalProfileRepository.save(vp);
+                        }
+
                         CustomUserDetails userDetails = new CustomUserDetails(account);
                         String token = jwtService.generateToken(userDetails);
                         setCookie(response, token);
