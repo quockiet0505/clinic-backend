@@ -370,6 +370,14 @@ public class AppointmentService {
                 }
             }
             serviceOrderRepository.save(order);
+        } else if (request.getAppointmentType() == AppointmentType.WALK_IN && mode == BookingMode.DOCTOR) {
+            MedicalRecord record = new MedicalRecord();
+            record.setPatient(patient);
+            record.setAppointment(savedAppointment);
+            record.setMainDoctor(savedAppointment.getMainDoctor());
+            record.setStatus(com.clinic.common.enums.MedicalRecordStatus.PENDING);
+            record.setVitalsTaken(false);
+            medicalRecordRepository.save(record);
         }
 
         // Send Notification
@@ -479,11 +487,17 @@ public class AppointmentService {
             appointment.setMainDoctor(doctor);
         }
 
-        if (oldDate != null && !oldDate.equals(newDate) && 
-            (appointment.getStatus() == AppointmentStatus.CHECKED_IN || appointment.getStatus() == AppointmentStatus.PENDING)) {
+        if (appointment.getStatus() == AppointmentStatus.CHECKED_IN) {
+            appointment.setStatus(AppointmentStatus.PENDING);
+            appointment.setCheckinTime(null);
+            appointment.setQueueNumber(null);
             
-            Integer maxQueue = appointmentRepository.findMaxQueueNumberByDateExclude(newDate, appointment.getAppointmentId()).orElse(0);
-            appointment.setQueueNumber(maxQueue + 1);
+            medicalRecordRepository.findByAppointment_AppointmentId(appointment.getAppointmentId()).ifPresent(record -> {
+                if (record.getStatus() == com.clinic.common.enums.MedicalRecordStatus.PENDING) {
+                    record.setStatus(com.clinic.common.enums.MedicalRecordStatus.CANCELLED);
+                    medicalRecordRepository.save(record);
+                }
+            });
         }
         
         Appointment savedAppointment = appointmentRepository.save(appointment);
