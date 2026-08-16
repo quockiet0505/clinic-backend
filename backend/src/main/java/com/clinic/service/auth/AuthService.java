@@ -212,6 +212,16 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
                     throw new RequiresRegistrationException(finalEmail, finalName, finalPicture);
                 }
 
+                // Ensure the account has ROLE_PATIENT since they have a complete profile
+                boolean hasPatientRole = account.getRoles().stream()
+                        .anyMatch(r -> r.getName().equals("ROLE_PATIENT"));
+                if (!hasPatientRole) {
+                    Role patientRole = roleRepository.findByName("ROLE_PATIENT")
+                            .orElseThrow(() -> new RuntimeException("Role PATIENT not found"));
+                    account.getRoles().add(patientRole);
+                    accountRepository.save(account);
+                }
+
                 // User exists and has patient, login
                 CustomUserDetails userDetails = new CustomUserDetails(account);
                 String token = jwtService.generateToken(userDetails);
