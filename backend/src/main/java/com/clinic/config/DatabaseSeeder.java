@@ -38,6 +38,15 @@ public class DatabaseSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         log.info("Cleaning up transaction tables to prepare for seeding...");
         entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0").executeUpdate();
+
+        // Delete quockietdev account forcibly from DB
+        try {
+            entityManager.createNativeQuery("DELETE FROM account_role WHERE account_id IN (SELECT account_id FROM account WHERE email='quockietdev@gmail.com')").executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM account WHERE email='quockietdev@gmail.com'").executeUpdate();
+        } catch(Exception e) {
+            log.warn("Failed to delete quockietdev: " + e.getMessage());
+        }
+
         String[] tables = {
             "appointment", "medical_record", "medical_record_vital", "service_order",
             "service_result", "invoice_item", "invoice", "prescription_item",

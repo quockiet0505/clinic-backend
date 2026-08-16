@@ -1,6 +1,7 @@
 package com.clinic.service.auth;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -214,9 +215,9 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
 
                 // Ensure the account has ROLE_PATIENT since they have a complete profile
                 boolean hasPatientRole = account.getRoles().stream()
-                        .anyMatch(r -> r.getName().equals("ROLE_PATIENT"));
+                        .anyMatch(r -> "PATIENT".equals(r.getRoleCode()) || "ROLE_PATIENT".equals(r.getRoleCode()));
                 if (!hasPatientRole) {
-                    Role patientRole = roleRepository.findByName("ROLE_PATIENT")
+                    Role patientRole = roleRepository.findByRoleCode("PATIENT")
                             .orElseThrow(() -> new RuntimeException("Role PATIENT not found"));
                     account.getRoles().add(patientRole);
                     accountRepository.save(account);
@@ -300,9 +301,9 @@ public AuthResponse registerPatient(RegisterRequest request, HttpServletResponse
                         
                         // Ensure the account has ROLE_PATIENT
                         boolean hasPatientRole = account.getRoles().stream()
-                                .anyMatch(r -> r.getName().equals("ROLE_PATIENT"));
+                                .anyMatch(r -> "PATIENT".equals(r.getRoleCode()) || "ROLE_PATIENT".equals(r.getRoleCode()));
                         if (!hasPatientRole) {
-                            Role patientRole = roleRepository.findByName("ROLE_PATIENT")
+                            Role patientRole = roleRepository.findByRoleCode("PATIENT")
                                     .orElseThrow(() -> new RuntimeException("Role PATIENT not found"));
                             account.getRoles().add(patientRole);
                             account = accountRepository.save(account);
