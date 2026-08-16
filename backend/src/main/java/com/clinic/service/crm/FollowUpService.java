@@ -157,7 +157,7 @@ public class FollowUpService {
         if (followUp.getStatus() == FollowUpStatus.CANCELLED || followUp.getStatus() == FollowUpStatus.COMPLETED) {
             throw new RuntimeException("Không thể xác nhận lịch tái khám ở trạng thái hiện tại.");
         }
-        followUp.setStatus(FollowUpStatus.COMPLETED);
+        followUp.setStatus(FollowUpStatus.CONFIRMED);
         followUp.setConfirmedAt(LocalDateTime.now());
         
         Appointment appointment = new Appointment();

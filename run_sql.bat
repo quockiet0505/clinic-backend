@@ -1,0 +1,1 @@
+gcloud compute ssh clinic-vm --zone "asia-southeast1-a" --tunnel-through-iap --project "clinicqa-500817" --command "sudo docker exec 5bcac9c39ab6 mysql -u root -p12345678 clinic_system -e \"DELETE FROM invoice WHERE total_price IN (10, 20) AND status = 'UNPAID';\""
