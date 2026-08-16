@@ -439,7 +439,7 @@ public class AppointmentService {
         if (request.getMainDoctorId() != null || appointment.getMainDoctor() != null) {
             Integer doctorId = request.getMainDoctorId() != null ? request.getMainDoctorId() : appointment.getMainDoctor().getStaffId();
             
-            if (newDate.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+            if (newDate.getDayOfWeek() == java.time.DayOfWeek.SUNDAY && !newDate.equals(LocalDate.now())) {
                 throw new RuntimeException("Phòng khám nghỉ Chủ nhật, vui lòng chọn ngày khác.");
             }
             if (HolidayUtils.isHoliday(newDate)) {
