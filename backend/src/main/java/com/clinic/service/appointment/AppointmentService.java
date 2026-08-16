@@ -653,11 +653,19 @@ public class AppointmentService {
             if (LocalDateTime.now().isAfter(appointmentDateTime.minusHours(3))) {
                 throw new RuntimeException("Chỉ được phép hủy lịch trước thời gian khám ít nhất 3 tiếng.");
             }
+            appointment.setCancelledBy(CancelledByType.PATIENT);
+        } else {
+            CancelledByType cancelledBy = CancelledByType.ADMIN;
+            if (auth != null) {
+                if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_RECEPTIONIST"))) cancelledBy = CancelledByType.RECEPTIONIST;
+                else if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"))) cancelledBy = CancelledByType.DOCTOR;
+                else if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_NURSE"))) cancelledBy = CancelledByType.NURSE;
+            }
+            appointment.setCancelledBy(cancelledBy);
         }
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        appointment.setCancelledBy(CancelledByType.PATIENT);
         appointment.setCancelReason(reason);
-        appointment.setIsDeleted(1);
+        // Do not set isDeleted = 1 so the appointment history is kept on frontend
         
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
